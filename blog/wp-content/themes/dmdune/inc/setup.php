@@ -31,6 +31,9 @@ add_action(
 				'toLight'  => __( 'Switch to light mode', 'dmdune' ),
 				'toDark'   => __( 'Switch to dark mode', 'dmdune' ),
 				'close'    => __( 'Close', 'dmdune' ),
+				'prev'     => __( 'Previous picture', 'dmdune' ),
+				'next'     => __( 'Next picture', 'dmdune' ),
+				'viewer'   => __( 'Picture viewer', 'dmdune' ),
 				'playLabel' => __( 'Play video', 'dmdune' ),
 			)
 		);

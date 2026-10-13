@@ -44,48 +44,103 @@
 		}
 
 		var link = e.target.closest('a[data-dm-lightbox], .dm-prose a[href]');
-		if (link && link.querySelector('img') && /\.(jpe?g|png|gif|webp)(\?.*)?$/i.test(link.getAttribute('href') || '')) {
+		if (link && isImageLink(link)) {
 			if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
 			e.preventDefault();
-			openViewer(link.href, link.getAttribute('title') || (link.querySelector('img').getAttribute('alt') || ''));
+			openViewer(groupOf(link), link);
 			return;
 		}
 
 		// Tapping outside the open "More" sheet closes it.
-		document.querySelectorAll('.dm-sheet[open]').forEach(function (d) {
+		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) {
 			if (!d.contains(e.target)) d.removeAttribute('open');
 		});
 	});
 
-	function openViewer(src, caption) {
+	function isImageLink(a) {
+		return a.querySelector('img') && /\.(jpe?g|png|gif|webp)(\?.*)?$/i.test(a.getAttribute('href') || '');
+	}
+
+	// The old Lightbox/Thickbox plugins grouped pictures into sets with rel="lightbox[name]" (or any
+	// shared rel). Pictures in one set browse together; anything else opens on its own.
+	function groupOf(link) {
+		var rel = link.getAttribute('rel') || '';
+		var scope = link.closest('.dm-prose') || document;
+		var all = Array.prototype.filter.call(scope.querySelectorAll('a[href]'), isImageLink);
+		if (rel && rel !== 'lightbox') {
+			return all.filter(function (a) { return a.getAttribute('rel') === rel; });
+		}
+		var p = link.closest('.thumbnails, .dm-figure, p');
+		if (p && p.classList.contains('thumbnails')) {
+			return all.filter(function (a) { return p.contains(a); });
+		}
+		return [link];
+	}
+
+	function captionOf(a) {
+		var img = a.querySelector('img');
+		var fig = a.closest('figure');
+		var cap = fig && fig.querySelector('figcaption');
+		return a.getAttribute('title') || (cap && cap.textContent.trim()) || (img && img.getAttribute('alt')) || '';
+	}
+
+	function openViewer(set, start) {
+		var index = Math.max(0, set.indexOf(start));
 		var dlg = document.createElement('dialog');
 		dlg.className = 'dm-lightbox';
+		dlg.setAttribute('aria-label', window.dmdune.viewer);
 		var fig = document.createElement('figure');
 		var img = document.createElement('img');
-		img.src = src;
-		img.alt = caption;
+		var cap = document.createElement('figcaption');
 		fig.appendChild(img);
-		if (caption) {
-			var cap = document.createElement('figcaption');
-			cap.textContent = caption;
-			fig.appendChild(cap);
+		fig.appendChild(cap);
+
+		function button(cls, label, text, fn) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = cls;
+			b.setAttribute('aria-label', label);
+			b.textContent = text;
+			b.addEventListener('click', function (ev) { ev.stopPropagation(); fn(); });
+			dlg.appendChild(b);
+			return b;
 		}
-		var close = document.createElement('button');
-		close.type = 'button';
-		close.setAttribute('aria-label', window.dmdune.close);
-		close.textContent = '×';
-		close.addEventListener('click', function () { dlg.close(); });
-		dlg.appendChild(close);
+		function show(i) {
+			index = (i + set.length) % set.length;
+			img.src = set[index].href;
+			img.alt = captionOf(set[index]);
+			var counter = set.length > 1 ? (index + 1) + ' / ' + set.length : '';
+			cap.textContent = [img.alt, counter].filter(Boolean).join('  ·  ');
+			if (set.length > 1) {
+				new Image().src = set[(index + 1) % set.length].href;
+			}
+		}
+		button('dm-lightbox__close', window.dmdune.close, '×', function () { dlg.close(); });
+		if (set.length > 1) {
+			button('dm-lightbox__prev', window.dmdune.prev, '‹', function () { show(index - 1); });
+			button('dm-lightbox__next', window.dmdune.next, '›', function () { show(index + 1); });
+		}
 		dlg.appendChild(fig);
 		dlg.addEventListener('click', function (ev) { if (ev.target === dlg || ev.target === fig) dlg.close(); });
+		dlg.addEventListener('keydown', function (ev) {
+			if (ev.key === 'ArrowLeft') show(index - 1);
+			if (ev.key === 'ArrowRight') show(index + 1);
+		});
+		var x0 = null;
+		fig.addEventListener('pointerdown', function (ev) { x0 = ev.clientX; });
+		fig.addEventListener('pointerup', function (ev) {
+			if (x0 !== null && set.length > 1 && Math.abs(ev.clientX - x0) > 50) show(index + (ev.clientX < x0 ? 1 : -1));
+			x0 = null;
+		});
 		dlg.addEventListener('close', function () { dlg.remove(); });
 		document.body.appendChild(dlg);
+		show(index);
 		dlg.showModal();
 	}
 
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape') {
-			document.querySelectorAll('.dm-sheet[open]').forEach(function (d) { d.removeAttribute('open'); });
+			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) { d.removeAttribute('open'); });
 		}
 	});
 
@@ -100,6 +155,81 @@
 		// YouTube serves a 120px grey placeholder (status 200) for some removed videos.
 		img.addEventListener('load', function () { if (img.naturalWidth <= 120) markGone(img); });
 	});
+
+	// A random subtitle per visit, as the Randomize plugin did from 2005.
+	var tag = document.querySelector('.dm-hero__tag[data-taglines]');
+	if (tag) {
+		try {
+			var lines = JSON.parse(tag.getAttribute('data-taglines'));
+			if (lines.length) {
+				tag.textContent = lines[Math.floor(Math.random() * lines.length)];
+				tag.lang = /[\u3040-\u30ff\u4e00-\u9fff]/.test(tag.textContent) ? 'ja' : 'en';
+			}
+		} catch (err) {}
+	}
+
+	// Card pictures: crop to fill when that looks fine, otherwise show the whole picture letterboxed.
+	function fitMedia(img) {
+		var box = img.parentNode;
+		var bw = box.clientWidth, bh = box.clientHeight, nw = img.naturalWidth, nh = img.naturalHeight;
+		if (!bw || !bh || !nw || !nh) return;
+		var upscale = Math.max(bw / nw, bh / nh);
+		var mismatch = Math.abs(Math.log((nw / nh) / (bw / bh)));
+		var fit = upscale > 1.6 || mismatch > Math.log(1.7);
+		box.classList.toggle('is-fit', fit);
+		box.style.setProperty('--nw', Math.round(nw * 1.5) + 'px');
+		box.style.setProperty('--nh', Math.round(nh * 1.5) + 'px');
+	}
+	function watchMedia() {
+		document.querySelectorAll('.dm-media__img').forEach(function (img) {
+			if (img.complete && img.naturalWidth) fitMedia(img);
+			else img.addEventListener('load', function () { fitMedia(img); });
+		});
+	}
+	watchMedia();
+	var mediaQueued = false;
+	window.addEventListener('resize', function () {
+		if (mediaQueued) return;
+		mediaQueued = true;
+		requestAnimationFrame(function () {
+			mediaQueued = false;
+			document.querySelectorAll('.dm-media__img').forEach(function (img) { if (img.naturalWidth) fitMedia(img); });
+		});
+	});
+
+	// Header: links that don't fit on one line move into the "More" menu, so the bar never wraps.
+	var navList = document.querySelector('.dm-nav__links');
+	var navMore = document.querySelector('.dm-nav__more');
+	function fitNav() {
+		if (!navList || !navMore) return;
+		navList.classList.add('is-managed');
+		var items = Array.prototype.slice.call(navList.children);
+		items.forEach(function (li) { li.hidden = false; });
+		navMore.hidden = true;
+		navMore.removeAttribute('open');
+		var menu = navMore.querySelector('ul');
+		menu.textContent = '';
+		if (!navList.offsetParent || navList.scrollWidth <= navList.clientWidth) return;
+		navMore.hidden = false;
+		for (var i = items.length - 1; i > 0 && navList.scrollWidth > navList.clientWidth; i--) {
+			items[i].hidden = true;
+		}
+		var current = false;
+		items.forEach(function (li) {
+			if (!li.hidden) return;
+			menu.appendChild(li.cloneNode(true)).hidden = false;
+			if (li.querySelector('[aria-current]')) current = true;
+		});
+		navMore.classList.toggle('has-current', current);
+	}
+	var fitQueued = false;
+	window.addEventListener('resize', function () {
+		if (fitQueued) return;
+		fitQueued = true;
+		requestAnimationFrame(function () { fitQueued = false; fitNav(); });
+	});
+	fitNav();
+	if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNav);
 
 	if (media.addEventListener) media.addEventListener('change', label);
 	label();

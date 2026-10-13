@@ -169,7 +169,10 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-brand b { color: var(--dm-accent); font-weight: 600; }
 .dm-nav__links {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
 	gap: 4px 20px;
 	margin: 0;
 	padding: 0;
@@ -180,6 +183,7 @@ h1, h2, h3, h4 { text-wrap: balance; }
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
 }
+.dm-nav__links li { flex: none; white-space: nowrap; }
 .dm-nav__links a {
 	color: var(--dm-muted);
 	text-decoration: none;
@@ -207,11 +211,48 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-mode { padding: 0 14px; font: 500 0.75rem/1 var(--wp--preset--font-family--mono); letter-spacing: 0.12em; text-transform: uppercase; }
 .dm-iconbtn:hover, .dm-mode:hover { border-color: var(--dm-accent-line); color: var(--dm-accent); }
 
-@media (max-width: 1080px) {
-	.dm-nav__links li:nth-child(n + 7) { display: none; }
+/* Without JS, drop the last links on narrower screens; with JS they move into "More". */
+@media (max-width: 1100px) {
+	.dm-nav__links:not(.is-managed) li:nth-child(n + 7) { display: none; }
 }
+.dm-nav__links li[hidden] { display: none; }
+.dm-brand, .dm-nav__tools { flex: none; white-space: nowrap; }
+.dm-nav__more { position: relative; flex: none; margin-left: -8px; }
+.dm-nav__more > ul { left: auto; right: -12px; }
+.dm-nav__more > summary {
+	list-style: none;
+	cursor: pointer;
+	padding: 6px 0;
+	font: 500 0.875rem/1 var(--wp--preset--font-family--display);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--dm-muted);
+	white-space: nowrap;
+}
+.dm-nav__more > summary::-webkit-details-marker { display: none; }
+.dm-nav__more > summary::after { content: " ▾"; font-size: 0.8em; }
+.dm-nav__more > summary:hover, .dm-nav__more[open] > summary, .dm-nav__more.has-current > summary { color: var(--dm-accent); }
+.dm-nav__more > ul {
+	position: absolute;
+	top: calc(100% + 14px);
+	left: -12px;
+	min-width: 200px;
+	margin: 0;
+	padding: 8px;
+	list-style: none;
+	border: 1px solid var(--dm-line);
+	border-radius: 16px;
+	background: var(--dm-surface);
+	box-shadow: var(--dm-shadow);
+	font-family: var(--wp--preset--font-family--display);
+	font-size: 0.875rem;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+.dm-nav__more > ul a { display: block; padding: 10px 12px; border-radius: 10px; color: var(--dm-body); text-decoration: none; white-space: nowrap; }
+.dm-nav__more > ul a:hover, .dm-nav__more > ul a[aria-current="page"] { background: var(--dm-accent-soft); color: var(--dm-accent); }
 @media (max-width: 900px) {
-	.dm-nav__links { display: none; }
+	.dm-nav__links, .dm-nav__more { display: none !important; }
 	.dm-nav { height: 58px; }
 }
 
@@ -318,7 +359,29 @@ h1, h2, h3, h4 { text-wrap: balance; }
 	background: var(--dm-sunk);
 	overflow: hidden;
 }
-.dm-card__media img, .dm-related__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dm-media__img { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; }
+.dm-media__bg { display: none; }
+/* Letterboxed: small, very tall or very wide pictures sit whole on a blurred copy of themselves
+   instead of being cropped or blown up. dmdune.js decides per image. */
+.dm-media.is-fit .dm-media__bg {
+	display: block;
+	position: absolute;
+	inset: -12%;
+	width: 124%;
+	height: 124%;
+	object-fit: cover;
+	filter: blur(22px) saturate(1.15);
+	opacity: 0.6;
+}
+.dm-media.is-fit .dm-media__img {
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	width: min(100%, var(--nw, 100%));
+	height: min(100% - 16px, var(--nh, 100%));
+	object-fit: contain;
+	filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.25));
+}
 .dm-card__body { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 6px; }
 .dm-card__title {
 	margin: 0;
@@ -532,6 +595,62 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-prose td, .dm-prose th { border: 1px solid var(--dm-line); padding: 6px 10px; }
 .strike, .dm-prose del, .dm-prose s { text-decoration: line-through; text-decoration-color: var(--dm-brigade); text-decoration-thickness: 2px; color: var(--dm-muted); }
 .dm-prose::after { content: ""; display: block; clear: both; }
+
+/* Classes from the old themes, still in the posts */
+.dm-prose .red, .dm-prose font[color="red"] { color: var(--dm-brigade); }
+.dm-prose .center, .dm-prose [align="center"] { text-align: center; }
+.dm-prose img.center { display: block; margin-inline: auto; }
+.dm-prose small { font-size: 0.875em; color: var(--dm-muted); }
+.dm-prose .meaning {
+	position: relative;
+	cursor: help;
+	border-bottom: 1px dotted var(--dm-accent);
+	outline-offset: 2px;
+}
+.dm-prose .meaning[title]:hover::after, .dm-prose .meaning[title]:focus::after {
+	content: attr(title);
+	position: absolute;
+	left: 50%;
+	bottom: calc(100% + 8px);
+	transform: translateX(-50%);
+	z-index: 5;
+	width: max-content;
+	max-width: 240px;
+	padding: 6px 10px;
+	border-radius: 10px;
+	background: var(--dm-fg);
+	color: var(--dm-bg);
+	font: 0.75rem/1.4 var(--wp--preset--font-family--mono);
+	letter-spacing: 0.04em;
+	white-space: normal;
+	pointer-events: none;
+}
+/* Chapter links in the Japanese lessons: « Chapter 0 | Chapter II » */
+.dm-prose .navigation {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 0;
+	border-block: 1px solid var(--dm-line);
+	font-family: var(--wp--preset--font-family--display);
+	font-weight: 600;
+}
+.dm-prose .navigation > .alignleft, .dm-prose .navigation > .alignright { float: none; margin: 0; max-width: none; }
+.dm-prose .navigation a { text-decoration: none; }
+/* Rows of linked thumbnails (old Lightbox sets) */
+.dm-prose .thumbnails {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(30%, 140px), 1fr));
+	gap: 8px;
+}
+.dm-prose .thumbnails a { display: block; line-height: 0; }
+.dm-prose .thumbnails img { width: 100% !important; aspect-ratio: 1; object-fit: cover; border-radius: 10px; transition: transform 0.15s; }
+.dm-prose .thumbnails a:hover img { transform: scale(1.03); }
+.dm-prose a[data-dm-lightbox], .dm-prose .dm-figure a { cursor: zoom-in; }
+/* [audio:…] files */
+.dm-audio { margin-inline: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--dm-line); border-radius: 16px; background: var(--dm-surface); }
+.dm-audio audio { width: 100%; height: 40px; }
+.dm-audio figcaption { font: 0.8125rem var(--wp--preset--font-family--mono); color: var(--dm-muted); text-transform: capitalize; }
 
 /* Old <p class="caption"> images, now figures */
 .dm-figure { margin-inline: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -773,7 +892,16 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-lightbox figure { margin: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
 .dm-lightbox img { max-width: 100%; max-height: calc(100% - 60px); object-fit: contain; border-radius: 10px; }
 .dm-lightbox figcaption { color: #e9e4dc; font: 0.8125rem var(--wp--preset--font-family--mono); text-align: center; }
-.dm-lightbox button { position: fixed; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.4); color: #fff; font-size: 22px; cursor: pointer; }
+.dm-lightbox button { position: fixed; z-index: 1; width: 48px; height: 48px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; }
+.dm-lightbox button:hover { background: rgba(0, 0, 0, 0.7); border-color: #f09a4a; }
+.dm-lightbox__close { top: 16px; right: 16px; }
+.dm-lightbox__prev, .dm-lightbox__next { top: 50%; transform: translateY(-50%); }
+.dm-lightbox__prev { left: 16px; }
+.dm-lightbox__next { right: 16px; }
+.dm-lightbox figure { touch-action: pan-y; }
+@media (max-width: 560px) {
+	.dm-lightbox__prev, .dm-lightbox__next { top: auto; bottom: 18px; transform: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
 	*, *::before, *::after { transition: none !important; animation: none !important; }

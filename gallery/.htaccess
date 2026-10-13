@@ -19,6 +19,10 @@
   RewriteRule ^(.+)/image/(thumb|[0-9]+)/([^/]+)$   zp-core/i.php?a=$1&i=$3&s=$2 [L,QSA]
   # Full-size image: /<album>/image/<file>
   RewriteRule ^(.+)/image/([^/]+)$                  albums/$1/$2 [L]
+  # Cached resize hot-linked by posts: /cache/<album>/<file>_<size>.jpg. Serve the cached file if it
+  # exists, otherwise let i.php make it (it writes the same cache path).
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^cache/(.+)/([^/]+\.(?:jpe?g|png|gif))_([0-9]+)\.(?:jpe?g|png|gif)$   zp-core/i.php?a=$1&i=$2&s=$3 [L,QSA,NC]
   # --- End legacy ---
 
   RewriteCond %{REQUEST_URI} !(/$|\.)

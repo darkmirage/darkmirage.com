@@ -7,7 +7,9 @@
  * - <p class="caption"><img>text</p> becomes <figure><img><figcaption>.
  * - Flash YouTube players become click-to-play YouTube embeds; other Flash gets a notice.
  * - Images lose their fixed 400px sizes, load lazily, and links to the site go over https.
- * - Lightbox/thickbox links open in the theme's own viewer.
+ * - Lightbox/thickbox links open in the theme's own viewer, browsing each post's picture sets.
+ * - [audio:file.mp3] (Audio Player plugin) becomes a native audio player.
+ * - Old theme classes (.meaning glossary terms, .navigation chapter links, …) keep working.
  *
  * @package dmdune
  */
@@ -18,6 +20,30 @@ defined( 'ABSPATH' ) || exit;
  * Before wpautop: turn spoilers into <details> so wpautop treats them as blocks.
  */
 function dmdune_legacy_before_autop( string $content ): string {
+	if ( false !== strpos( $content, '[audio:' ) ) {
+		$content = preg_replace_callback(
+			'#(?:<p class="caption">\s*)?\[audio:([^\]]+)\](?:\s*</p>)?#i',
+			static function ( $m ) {
+				$out = '';
+				// Audio Player allowed several files separated by commas, options after a pipe.
+				foreach ( explode( ',', explode( '|', $m[1] )[0] ) as $file ) {
+					$file = trim( $file );
+					if ( '' === $file ) {
+						continue;
+					}
+					$url  = preg_match( '#^https?://#i', $file ) ? dmdune_https( $file ) : site_url( '/audio/' . rawurlencode( $file ) );
+					$name = preg_replace( '#\.\w+$#', '', str_replace( '_', ' ', basename( $file ) ) );
+					$out .= sprintf(
+						'<figure class="dm-audio"><audio controls preload="none" src="%1$s"></audio><figcaption>♪ %2$s</figcaption></figure>',
+						esc_url( $url ),
+						esc_html( $name )
+					);
+				}
+				return "\n\n" . $out . "\n\n";
+			},
+			$content
+		);
+	}
 	if ( false === stripos( $content, '<spoiler' ) ) {
 		return $content;
 	}
@@ -86,7 +112,8 @@ function dmdune_legacy_after_autop( string $content ): string {
 		'#<img\b[^>]*>#i',
 		static function ( $m ) {
 			$tag = $m[0];
-			$tag = preg_replace( '#\sstyle=(["\'])[^"\']*\1#i', '', $tag );
+			// Some old tags have no space before style= (alt="…"style="width:283px").
+			$tag = preg_replace( '#(?<=["\'\s])style=(["\'])[^"\']*\1#i', ' ', $tag );
 			$tag = preg_replace_callback(
 				'#\ssrc=(["\'])(.*?)\1#i',
 				static fn( $s ) => ' src="' . esc_url( dmdune_https( html_entity_decode( $s[2] ) ) ) . '"',
@@ -124,6 +151,10 @@ function dmdune_legacy_after_autop( string $content ): string {
 		$content
 	);
 
+	// Glossary terms (<span class="meaning" title="…">) showed their meaning on hover; make them
+	// focusable so a tap shows it too (CSS draws the tooltip from the title).
+	$content = preg_replace( '#<span\b(?=[^>]*\bclass="meaning")(?![^>]*tabindex)#i', '<span tabindex="0"', $content );
+
 	// Empty paragraphs left behind by the old editor (and by the Flash wrappers removed above).
 	$content = preg_replace( '#<p>(?:\s|&nbsp;|<br\s*/?>)*</p>#i', '', $content );
 
@@ -143,7 +174,13 @@ add_filter(
 		if ( has_excerpt( $post ) ) {
 			return $excerpt;
 		}
-		$text = preg_replace( '#<spoiler\b[^>]*>.*?</spoiler>#is', '', $post->post_content );
+		$text = $post->post_content;
+		// The author's own teaser: everything before <!--more-->.
+		if ( preg_match( '#^(.*?)<!--more(.*?)?-->#s', $text, $more ) && '' !== trim( wp_strip_all_tags( $more[1] ) ) ) {
+			$text = $more[1];
+		}
+		$text = preg_replace( '#<spoiler\b[^>]*>.*?</spoiler>#is', '', $text );
+		$text = preg_replace( '#\[audio:[^\]]*\]#i', '', $text );
 		$text = preg_replace( '#<(p|div) class="caption">.*?</\1>#is', '', $text );
 		$text = wp_strip_all_tags( strip_shortcodes( $text ) );
 		return wp_trim_words( $text, (int) apply_filters( 'excerpt_length', 34 ), '…' );

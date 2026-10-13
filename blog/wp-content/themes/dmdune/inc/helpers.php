@@ -29,8 +29,9 @@ function dmdune_first_image( WP_Post $post ): ?string {
 		return '' === $cache ? null : $cache;
 	}
 	$found = '';
-	if ( preg_match_all( '#<img\b[^>]*>#i', $post->post_content, $tags ) ) {
-		foreach ( $tags[0] as $tag ) {
+	if ( preg_match_all( '#(?:<a\b[^>]*\bhref=(["\'])([^"\']+)\1[^>]*>\s*)?(<img\b[^>]*>)#i', $post->post_content, $tags, PREG_SET_ORDER ) ) {
+		foreach ( $tags as $t ) {
+			$tag = $t[3];
 			if ( ! preg_match( '#\bsrc=(["\'])(.*?)\1#i', $tag, $m ) ) {
 				continue;
 			}
@@ -39,10 +40,23 @@ function dmdune_first_image( WP_Post $post ): ?string {
 			if ( preg_match( '#smilies|admin\.gif|googlesyndication|qrcode|creativecommons|w3\.org|/wp-content/plugins/|\.(?:svg)$#i', $src ) ) {
 				continue;
 			}
-			if ( preg_match( '#\b(?:width|height)=["\']?(\d+)#i', $tag, $d ) && (int) $d[1] < 100 ) {
-				continue;
+			$size = 0;
+			if ( preg_match( '#\b(?:width|height)\s*[=:]\s*["\']?(\d+)#i', $tag, $d ) ) {
+				$size = (int) $d[1];
+				if ( $size < 100 ) {
+					continue;
+				}
+			}
+			// A small inline thumbnail that links to the full picture: the card wants the full one.
+			$href = isset( $t[2] ) ? html_entity_decode( $t[2] ) : '';
+			$thumbish = ( $size && $size <= 200 ) || preg_match( '#[._-]thumb(?:nail)?[._-]|thumb-|/thumb/|s\.(?:jpe?g|png|gif)$#i', $src );
+			if ( $thumbish && preg_match( '#\.(?:jpe?g|png|gif|webp)$#i', $href ) ) {
+				$src = $href;
 			}
 			$found = dmdune_https( $src );
+			if ( 0 === strpos( $found, '/' ) ) {
+				$found = home_url( $found );
+			}
 			break;
 		}
 	}
@@ -96,7 +110,33 @@ function dmdune_month_counts(): array {
 	return $counts;
 }
 
+/**
+ * The rotating subtitles. From 2005 the Randomize plugin showed one of ~30 lines under the blog
+ * title on each visit; the "Taglines" post (slug: taglines) lists them in a blockquote.
+ *
+ * @return string[]
+ */
+function dmdune_taglines(): array {
+	$lines = get_transient( 'dmdune_taglines' );
+	if ( is_array( $lines ) ) {
+		return $lines;
+	}
+	$lines = array();
+	$post  = get_page_by_path( 'taglines', OBJECT, 'post' );
+	if ( $post && preg_match( '#<blockquote[^>]*>(.*?)</blockquote>#is', $post->post_content, $m ) ) {
+		foreach ( preg_split( '#<br\s*/?>|\r?\n#i', $m[1] ) as $line ) {
+			$line = trim( html_entity_decode( wp_strip_all_tags( $line ) ) );
+			if ( '' !== $line ) {
+				$lines[] = $line;
+			}
+		}
+	}
+	set_transient( 'dmdune_taglines', $lines, DAY_IN_SECONDS );
+	return $lines;
+}
+
 function dmdune_flush_counts(): void {
+	delete_transient( 'dmdune_taglines' );
 	delete_transient( 'dmdune_year_counts' );
 	delete_transient( 'dmdune_month_counts' );
 	delete_transient( 'dmdune_most_discussed' );

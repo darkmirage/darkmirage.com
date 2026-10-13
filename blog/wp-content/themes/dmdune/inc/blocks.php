@@ -72,7 +72,12 @@ function dmdune_kicker( WP_Post $post, bool $with_comments = true ): string {
 function dmdune_thumb( WP_Post $post, string $class = 'dm-thumb' ): string {
 	$src = dmdune_first_image( $post );
 	if ( $src ) {
-		return sprintf( '<div class="%s"><img src="%s" alt="" loading="lazy" decoding="async"></div>', esc_attr( $class ), esc_url( $src ) );
+		// The blurred copy only shows when the picture is letterboxed (see .is-fit and dmdune.js).
+		return sprintf(
+			'<div class="%1$s dm-media"><img class="dm-media__bg" src="%2$s" alt="" aria-hidden="true" loading="lazy" decoding="async"><img class="dm-media__img" src="%2$s" alt="" loading="lazy" decoding="async"></div>',
+			esc_attr( $class ),
+			esc_url( $src )
+		);
 	}
 	$cats = get_the_category( $post->ID );
 	$slug = $cats ? $cats[0]->slug : 'blog';
@@ -154,14 +159,15 @@ function dmdune_render_hero( array $attrs, WP_Block $block ): string {
 	}
 
 	return sprintf(
-		'<section class="dm-hero alignwide" aria-labelledby="dm-hero-title"><div class="dm-hero__stage" role="img" aria-label="%1$s">%2$s</div><div class="dm-hero__text"><p class="dm-kicker">%3$s</p><%4$s id="dm-hero-title" class="dm-hero__title">%5$s</%4$s><p class="dm-hero__tag">%6$s</p></div></section>',
+		'<section class="dm-hero alignwide" aria-labelledby="dm-hero-title"><div class="dm-hero__stage" role="img" aria-label="%1$s">%2$s</div><div class="dm-hero__text"><p class="dm-kicker">%3$s</p><%4$s id="dm-hero-title" class="dm-hero__title">%5$s</%4$s><p class="dm-hero__tag"%7$s>%6$s</p></div></section>',
 		esc_attr__( 'Kiro, a black-and-tan shiba in goggles and a DM団 armband, keeps watch over desert dunes and a distant mirage city. At night he sleeps on the dune under a crescent moon.', 'dmdune' ),
 		$layers,
 		/* translators: %s: number of posts */
 		esc_html( sprintf( __( 'Est. 2005 · %s transmissions', 'dmdune' ), number_format_i18n( $total ) ) ),
 		$tag,
 		esc_html( get_bloginfo( 'name' ) ),
-		esc_html( get_bloginfo( 'description' ) )
+		esc_html( get_bloginfo( 'description' ) ),
+		dmdune_taglines() ? ' data-taglines="' . esc_attr( wp_json_encode( dmdune_taglines() ) ) . '"' : ''
 	);
 }
 
@@ -300,7 +306,7 @@ function dmdune_render_site_header( array $attrs, WP_Block $block ): string {
 	}
 	$icon = get_template_directory_uri() . '/assets/brand/icons/';
 	return sprintf(
-		'<a class="dm-skip" href="#dm-main">%1$s</a><div class="dm-topbar"><nav class="dm-nav" aria-label="%2$s"><a class="dm-brand" href="%3$s" rel="home"><img class="is-day" src="%4$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%4$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="%7$s">%8$s</a>%9$s</div></nav></div>',
+		'<a class="dm-skip" href="#dm-main">%1$s</a><div class="dm-topbar"><nav class="dm-nav" aria-label="%2$s"><a class="dm-brand" href="%3$s" rel="home"><img class="is-day" src="%4$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%4$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>%10$s</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="%7$s">%8$s</a>%9$s</div></nav></div>',
 		esc_html__( 'Skip to content', 'dmdune' ),
 		esc_attr__( 'Main', 'dmdune' ),
 		esc_url( home_url( '/' ) ),
@@ -309,7 +315,8 @@ function dmdune_render_site_header( array $attrs, WP_Block $block ): string {
 		esc_url( home_url( '/?s=' ) ),
 		esc_attr__( 'Search', 'dmdune' ),
 		dmdune_icon( 'search', 18 ),
-		dmdune_mode_button( 'dm-mode--top' )
+		dmdune_mode_button( 'dm-mode--top' ),
+		esc_html__( 'More', 'dmdune' )
 	);
 }
 
