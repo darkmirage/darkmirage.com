@@ -360,6 +360,8 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-footer p { margin: 0; }
 .dm-footer__lineage span { color: var(--dm-line); }
 .dm-footer__lineage b { color: var(--dm-accent); font-weight: 500; }
+.dm-footer__src { white-space: nowrap; color: inherit; text-decoration: underline; text-decoration-color: var(--dm-line); text-underline-offset: 3px; }
+.dm-footer__src:hover { color: var(--dm-accent); text-decoration-color: currentColor; }
 
 .dm-tabbar { display: none; }
 @media (max-width: 900px) {

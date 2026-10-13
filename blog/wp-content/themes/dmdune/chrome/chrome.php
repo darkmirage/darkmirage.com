@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.7.3' );
+define( 'DMC_VERSION', '1.7.4' );
 
 function dmc_e( $s ): string {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
@@ -178,7 +178,7 @@ function dmc_footer_html( array $c = array() ): string {
 	$hidden = '';
 	$note  = $c['note'] ?? 'Ramblings of DarkMirage · 2005–' . date( 'Y' ) . ' · Kiro and the art: all rights reserved · Theme code: GPL-2.0';
 	return sprintf(
-		'<div class="dm-footer"><p>%1$s</p><p class="dm-footer__lineage" aria-label="This theme follows Kubrick DM, dmbrickv2 and DarkMirage Blocks">Kubrick DM <span>→</span> dmbrickv2 <span>→</span> Blocks <span>→</span> <b>Dune</b></p></div><nav class="dm-tabbar" aria-label="Main (mobile)">%2$s<details class="dm-sheet"><summary>%3$s<span>More</span></summary><div class="dm-sheet__panel"><form class="dm-search" role="search" method="get" action="%4$s"><label class="screen-reader-text" for="dm-sheet-search">Search</label>%10$s<input id="dm-sheet-search" type="search" name="%5$s" placeholder="%6$s"><button type="submit" aria-label="Search">%7$s</button></form><ul>%8$s</ul>%9$s</div></details></nav>',
+		'<div class="dm-footer"><p>%1$s</p><p class="dm-footer__lineage" aria-label="This theme follows Kubrick DM, dmbrickv2 and DarkMirage Blocks">Kubrick DM <span>→</span> dmbrickv2 <span>→</span> Blocks <span>→</span> <b>Dune</b> <span>·</span> <a class="dm-footer__src" href="https://github.com/darkmirage/darkmirage.com">Source on GitHub</a></p></div><nav class="dm-tabbar" aria-label="Main (mobile)">%2$s<details class="dm-sheet"><summary>%3$s<span>More</span></summary><div class="dm-sheet__panel"><form class="dm-search" role="search" method="get" action="%4$s"><label class="screen-reader-text" for="dm-sheet-search">Search</label>%10$s<input id="dm-sheet-search" type="search" name="%5$s" placeholder="%6$s"><button type="submit" aria-label="Search">%7$s</button></form><ul>%8$s</ul>%9$s</div></details></nav>',
 		$note,
 		implode( '', array_map( $tab, $tabs ) ),
 		dmc_icon( 'more', 22 ),
