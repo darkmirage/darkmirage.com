@@ -16,7 +16,25 @@ $desc = getImageDesc();
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<?php dmg_head($title . ' · ' . getBareAlbumTitle() . ' · DarkMirage', trim(strip_tags($desc)) ?: $title . ' from ' . getBareAlbumTitle() . ', photographed by DarkMirage.'); ?>
+<?php
+$named = !dmg_is_filename($title);
+$label = $named ? $title . ' · ' . getBareAlbumTitle() : getBareAlbumTitle() . ' · photo ' . $num . ' of ' . $total;
+$w = (int) $_zp_current_image->getWidth();
+$h = (int) $_zp_current_image->getHeight();
+$scale = ($w && $h) ? min(1, 1600 / max($w, $h)) : 1;
+dmg_head($label . ' · DarkMirage Gallery', array(
+	'title'       => $label,
+	'description' => trim(strip_tags($desc)) ?: ($named ? $title . ' · ' : 'Photo ' . $num . ' of ' . $total . ' from ') . getBareAlbumTitle() . ', taken ' . getImageDate('j F Y') . ' by DarkMirage.',
+	'url'         => dmg_abs(getImageURL()),
+	'type'        => 'article',
+	'published'   => getImageDate('c'),
+	'image'       => $is_photo ? dmg_abs(getCustomSizedImageMaxSpace(1600, 1200)) : null,
+	'image_w'     => $is_photo && $w ? (int) round($w * $scale) : null,
+	'image_h'     => $is_photo && $h ? (int) round($h * $scale) : null,
+	'image_alt'   => $label,
+	'jsonld'      => $is_photo ? array('@context' => 'https://schema.org', '@type' => 'Photograph', 'name' => $label, 'url' => dmg_abs(getImageURL()), 'image' => dmg_abs(getCustomSizedImageMaxSpace(1600, 1200)), 'dateCreated' => getImageDate('c'), 'creator' => dmc_person(dmg_chrome()), 'isPartOf' => dmg_abs(getAlbumURL())) : null,
+));
+?>
 <?php if ($prev) { ?><link rel="prev" href="<?php echo html_encode($prev); ?>"><?php } ?>
 <?php if ($next) { ?><link rel="next" href="<?php echo html_encode($next); ?>"><?php } ?>
 </head>

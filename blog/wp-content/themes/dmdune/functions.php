@@ -16,3 +16,4 @@ require __DIR__ . '/inc/setup.php';
 require __DIR__ . '/inc/legacy-content.php';
 require __DIR__ . '/inc/units.php';
 require __DIR__ . '/inc/blocks.php';
+require __DIR__ . '/inc/meta.php';

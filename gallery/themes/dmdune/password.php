@@ -4,7 +4,7 @@ if (!defined('WEBPATH')) die();
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><?php dmg_head('Password required · Gallery · DarkMirage'); ?><meta name="robots" content="noindex"></head>
+<head><?php dmg_head('Password required · Gallery · DarkMirage', array('robots' => 'noindex')); ?></head>
 <body>
 <?php dmg_body_open(); ?>
 	<header class="dmg-head">

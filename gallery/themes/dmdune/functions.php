@@ -37,18 +37,44 @@ function dmg_era(int $y): string {
 /**
  * <head> contents shared by every template.
  */
-function dmg_head(string $title, string $desc = ''): void {
+function dmg_head(string $title, array $meta = array()): void {
 	global $_zp_themeroot;
 	$c = dmg_chrome();
 	?>
 	<meta charset="<?php echo LOCAL_CHARSET; ?>">
 	<title><?php echo dmg_e($title); ?></title>
-	<?php if ($desc) { ?><meta name="description" content="<?php echo dmg_e(mb_substr(strip_tags($desc), 0, 200)); ?>"><?php } ?>
+	<?php dmc_meta($c, $meta + array('title' => $title)); ?>
 	<?php zp_apply_filter('theme_head'); ?>
 	<?php dmc_head($c); ?>
 	<link rel="stylesheet" href="<?php echo html_encode($_zp_themeroot); ?>/gallery.css?v=<?php echo DMC_VERSION; ?>">
 	<?php if (class_exists('RSS')) printRSSHeaderLink('Gallery', gettext('Gallery RSS')); ?>
 	<?php
+}
+
+/**
+ * Absolute URL on the gallery host for a root-relative Zenphoto link.
+ */
+function dmg_abs(string $url): string {
+	return 0 === strpos($url, '/') ? rtrim(dmc_config(dmg_chrome())['gallery'], '/') . $url : $url;
+}
+
+/**
+ * A 1200×630 crop of an image for share previews.
+ */
+function dmg_share_image($image, string $alt): array {
+	return array(
+		'image'     => dmg_abs($image->getCustomImage(null, 1200, 630, 1200, 630, null, null, true)),
+		'image_w'   => 1200,
+		'image_h'   => 630,
+		'image_alt' => $alt,
+	);
+}
+
+/**
+ * Camera file names ("IMG_5208") aren't titles.
+ */
+function dmg_is_filename(string $title): bool {
+	return (bool) preg_match('/^(?:IMG|DSC[NF]?|P\d|DSCF|CIMG|PICT|_MG)[_-]?\d+/i', $title) || preg_match('/^\d+$/', $title);
 }
 
 function dmg_body_open(): void {

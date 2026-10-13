@@ -114,19 +114,82 @@ function ly_spectrum( array $songs ): string {
 	return '<div class="dm-spec dm-spec--years">' . $cols . '</div>';
 }
 
+$base  = dmc_config( $chrome )['lyrics'];
 $title = 'Lyrics Translations by DarkMirage';
+$meta  = array(
+	'title'       => 'Anime & J-pop Lyrics Translations',
+	'description' => 'Anime and J-pop song lyrics in rōmaji, Japanese and English, transliterated and translated by DarkMirage since 2006. ' . count( $songs ) . ' songs from Macross Frontier, Gundam SEED Destiny, Bottle Fairy and more. Free to use with credit.',
+	'url'         => $base,
+	'jsonld'      => array( '@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'DarkMirage Lyrics', 'url' => $base, 'inLanguage' => array( 'en', 'ja' ), 'author' => dmc_person( $chrome ) ),
+);
 if ( $song ) {
-	$title = $song['title'] . ( '' !== $song['kanji'] ? ' (' . $song['kanji'] . ')' : '' ) . ' by ' . $song['artists'][0]['name'] . ' · ' . $title;
+	$artist   = implode( ' & ', array_column( $song['artists'], 'name' ) );
+	$has      = array_filter( array( 'rōmaji' => ly_lines( $song['file'], 'romaji' ), 'English translation' => ly_lines( $song['file'], 'english' ), 'Japanese' => ly_lines( $song['file'], 'kanji' ) ) );
+	$kind     = preg_match( '/^[A-Z][a-z]+$/', $song['type'] ) ? strtolower( $song['type'] ) : $song['type'];
+	$from     = 1 !== $song['series']['id'] ? ', ' . ( '' !== $song['type'] ? 'the ' . $kind . ' ' . ( preg_match( '/\b(OP|ED)\b/', $song['type'] ) ? '' : 'song ' ) . 'from ' : 'from ' ) . $song['series']['title'] : '';
+	$cover    = ly_cover( $song['file'] );
+	$title    = $song['title'] . ( '' !== $song['kanji'] ? ' (' . $song['kanji'] . ')' : '' ) . ' by ' . $artist . ' · Lyrics & Translation';
+	$meta     = array(
+		'title'       => $song['title'] . ( '' !== $song['kanji'] ? ' ' . $song['kanji'] : '' ) . ' · ' . $artist,
+		'description' => 'Lyrics to “' . $song['title'] . '”' . ( '' !== $song['kanji'] ? ' (' . $song['kanji'] . ')' : '' ) . ' by ' . $artist . $from . ', in ' . ( $has ? preg_replace( '/, ([^,]+)$/', ' and $1', implode( ', ', array_keys( $has ) ) ) : 'rōmaji' ) . '. Translated by DarkMirage.',
+		'url'         => $base . '?SongID=' . $song['id'],
+		'type'        => 'music.song',
+		'image'       => $cover ? $base . $cover : null,
+		'image_alt'   => $cover ? 'Cover art for ' . $song['title'] : null,
+		'image_w'     => $cover ? 300 : null,
+		'jsonld'      => array_filter( array(
+			'@context'      => 'https://schema.org',
+			'@type'         => 'MusicComposition',
+			'name'          => $song['title'],
+			'alternateName' => '' !== $song['kanji'] ? $song['kanji'] : null,
+			'url'           => $base . '?SongID=' . $song['id'],
+			'image'         => $cover ? $base . $cover : null,
+			'inLanguage'    => 'ja',
+			'recordedAs'    => array( '@type' => 'MusicRecording', 'name' => $song['title'], 'byArtist' => array_map( static fn( $a ) => array( '@type' => 'MusicGroup', 'name' => $a['name'] ), $song['artists'] ) ),
+			'lyrics'        => array( '@type' => 'CreativeWork', 'inLanguage' => 'en', 'translator' => dmc_person( $chrome ), 'dateCreated' => substr( $song['date'], 0, 10 ) ),
+		) ),
+	);
+	if ( '' === (string) $meta['image'] ) {
+		unset( $meta['image'], $meta['image_alt'], $meta['image_w'] );
+	}
+} elseif ( $song_id ) {
+	$title = 'Song not found · ' . $title;
+	$meta  = array( 'title' => 'Song not found', 'robots' => 'noindex' );
+} elseif ( $series_id || $artist_id ) {
+	$one = null;
+	foreach ( $songs as $s ) {
+		if ( $series_id && $s['series']['id'] === $series_id ) {
+			$one = array( $s['series']['title'], $s['series']['kanji'], 'series' );
+			break;
+		}
+		foreach ( $s['artists'] as $a ) {
+			if ( $artist_id && $a['id'] === $artist_id ) {
+				$one = array( $a['name'], $a['kanji'], 'artist' );
+				break 2;
+			}
+		}
+	}
+	if ( $one ) {
+		$label = $one[0] . ( '' !== $one[1] ? ' (' . $one[1] . ')' : '' );
+		$title = $label . ' lyrics · ' . $title;
+		$meta  = array(
+			'title'       => $label . ' lyrics',
+			'description' => 'Rōmaji, Japanese and English lyrics for songs ' . ( 'series' === $one[2] ? 'from ' : 'by ' ) . $label . ', translated by DarkMirage.',
+			'url'         => $base . '?' . ( $series_id ? 'SeriesID=' . $series_id : 'ArtistID=' . $artist_id ),
+		);
+	} else {
+		$meta = array( 'title' => 'Not found', 'robots' => 'noindex' );
+	}
 }
 ?><!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title><?php echo ly_e( $title ); ?></title>
-<meta name="description" content="<?php echo ly_e( $song ? 'Romaji, Japanese and English lyrics' . ( 1 !== $song['series']['id'] ? ' from ' . $song['series']['title'] : '' ) . '. Translated by DarkMirage.' : 'Anime and J-pop lyrics in romaji, Japanese and English, translated by DarkMirage. Free to use with credit.' ); ?>">
+<?php dmc_meta( $chrome, $meta ); ?>
 <?php dmc_head( $chrome ); ?>
 <link rel="stylesheet" href="lyrics.css?v=<?php echo ly_e( DMC_VERSION ); ?>">
-<link rel="alternate" type="application/rss+xml" title="New lyrics" href="feed.php">
+<link rel="alternate" type="application/rss+xml" title="New lyrics" href="<?php echo ly_e( $base ); ?>feed.php">
 </head>
 <body>
 <?php dmc_header( $chrome ); ?>

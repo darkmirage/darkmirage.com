@@ -12,7 +12,15 @@ $n_photos = $_zp_gallery->getNumImages(2);
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><?php dmg_head(getBareGalleryTitle() . ' · DarkMirage', 'Photos by DarkMirage from Japan, Scandinavia, Singapore and Stanford, 2006–2011.'); ?></head>
+<head><?php
+$home = dmc_config(dmg_chrome())['gallery'];
+dmg_head('Photos · DarkMirage Gallery', array(
+	'title'       => 'DarkMirage Gallery',
+	'description' => number_format($n_photos) . ' photos by DarkMirage in ' . count($albums) . ' albums, 2005–2011: trips through Japan and Scandinavia, Singapore cosplay events (Cosfest, AFA, EOY) and Stanford.',
+	'url'         => $home,
+	'jsonld'      => array('@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'DarkMirage Gallery', 'url' => $home, 'author' => dmc_person(dmg_chrome())),
+));
+?></head>
 <body>
 <?php dmg_body_open(); ?>
 	<header class="dm-archive-head">

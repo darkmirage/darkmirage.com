@@ -1,15 +1,9 @@
 User-agent: *
+# Originals and internals; resized images live in /cache/ and stay crawlable.
 Disallow: /albums/
-Allow: /cache/
-Allow: /cache_html/
-Disallow: /plugins/
-Disallow: /themes/
-Disallow: /zp-core/
 Disallow: /zp-data/
-Disallow: /page/search/
 Disallow: /uploaded/
 Disallow: /backup/
+Disallow: /page/search/
 
-# Link to the sitemap file if using teh sitemap-extended plugin.
-# Change it to your domain and uncomment the line to use it:
-# sitemap: http://www.yourdomain.com/cache_html/sitemap/sitemapindex.xml
+Sitemap: https://gallery.darkmirage.com/page/sitemap/

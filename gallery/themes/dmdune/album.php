@@ -9,7 +9,17 @@ $desc = trim(strip_tags(getAlbumDesc()));
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><?php dmg_head(getBareAlbumTitle() . ' · Gallery · DarkMirage', $desc ?: getBareAlbumTitle() . ', photos by DarkMirage.'); ?></head>
+<head><?php
+$label = getBareAlbumTitle();
+$count = $n_img ? $n_img . ($n_img === 1 ? ' photo' : ' photos') : $n_alb . ' albums';
+$parents = array_keys(dmg_parents($_zp_current_album));
+dmg_head($label . ' · DarkMirage Gallery', array(
+	'title'       => $label . ($parents ? ' · ' . end($parents) : ''),
+	'description' => ($desc ? $desc . ' · ' : '') . $count . ' by DarkMirage, ' . (preg_match('/^\d{4}$/', $stamp) ? $stamp : date('F Y', strtotime(str_replace('.', '-', $stamp)))) . '.',
+	'url'         => dmg_abs($_zp_current_album->getLink(getCurrentPage())),
+	'jsonld'      => array('@context' => 'https://schema.org', '@type' => 'ImageGallery', 'name' => $label, 'url' => dmg_abs($_zp_current_album->getLink()), 'author' => dmc_person(dmg_chrome())),
+) + dmg_share_image($_zp_current_album->getAlbumThumbImage(), $label));
+?></head>
 <body>
 <?php dmg_body_open(); ?>
 	<header class="dmg-head" data-era="<?php echo dmg_era($year); ?>">

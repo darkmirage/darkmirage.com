@@ -8,7 +8,7 @@ $n_img = getNumImages();
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><?php dmg_head(($words ? 'Search: ' . $words : 'Search') . ' · Gallery · DarkMirage'); ?><meta name="robots" content="noindex"></head>
+<head><?php dmg_head(($words ? 'Search: ' . $words : 'Search') . ' · DarkMirage Gallery', array('robots' => 'noindex, follow')); ?></head>
 <body>
 <?php dmg_body_open(); ?>
 	<header class="dmg-head">

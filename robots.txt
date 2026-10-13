@@ -6,3 +6,5 @@ Disallow: /search
 Disallow: /404
 Disallow: /403
 Disallow: /*/*/*/*/comment-page-*
+
+Sitemap: https://www.darkmirage.com/wp-sitemap.xml

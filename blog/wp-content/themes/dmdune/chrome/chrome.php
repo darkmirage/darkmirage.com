@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.7.2' );
+define( 'DMC_VERSION', '1.7.3' );
 
 function dmc_e( $s ): string {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
@@ -202,4 +202,85 @@ function dmc_hud( string $code, string $title, string $note = '' ): string {
 		dmc_e( $title ),
 		$note ? '<p class="dm-hud-note">' . dmc_e( $note ) . '</p>' : ''
 	);
+}
+
+/**
+ * Plain-text summary for meta descriptions: tags and shortcodes stripped, whitespace collapsed,
+ * cut at a word boundary.
+ */
+function dmc_summary( string $html, int $max = 160 ): string {
+	$text = html_entity_decode( strip_tags( preg_replace( '/\[[^\]]+\]/', '', $html ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+	$text = trim( preg_replace( '/\s+/u', ' ', $text ) );
+	if ( mb_strlen( $text ) <= $max ) {
+		return $text;
+	}
+	$cut = mb_substr( $text, 0, $max - 1 );
+	$sp  = mb_strrpos( $cut, ' ' );
+	return rtrim( $sp > $max * 0.6 ? mb_substr( $cut, 0, $sp ) : $cut, ' ,.;:–-' ) . '…';
+}
+
+/**
+ * Search and share metadata, the same set on all three sites: description, robots, canonical,
+ * Open Graph, Twitter/X card and optional JSON-LD. Without an image the site's 1200×630 card
+ * (assets/brand/og/<site>.jpg) is used.
+ *
+ * $m keys: title, description, url, image, image_w, image_h, image_alt, type (website, article,
+ * music.song, …), robots, published, modified, section, tags (string[]), jsonld (array or list).
+ */
+function dmc_meta( array $c, array $m ): void {
+	$c     = dmc_config( $c );
+	$names = array( 'blog' => 'Ramblings of DarkMirage', 'lyrics' => 'DarkMirage Lyrics', 'gallery' => 'DarkMirage Gallery' );
+	$site  = $names[ $c['site'] ];
+	if ( empty( $m['image'] ) ) {
+		$m['image']     = $c['assets'] . 'brand/og/' . $c['site'] . '.jpg';
+		$m['image_w']   = 1200;
+		$m['image_h']   = 630;
+		$m['image_alt'] = $site;
+	}
+	$tags = array();
+	$meta = static function ( string $attr, string $key, $value ) use ( &$tags ) {
+		if ( null !== $value && '' !== (string) $value ) {
+			$tags[] = sprintf( '<meta %s="%s" content="%s">', $attr, dmc_e( $key ), dmc_e( (string) $value ) );
+		}
+	};
+	$desc = isset( $m['description'] ) ? dmc_summary( (string) $m['description'], 200 ) : '';
+	$meta( 'name', 'description', $desc );
+	$meta( 'name', 'robots', $m['robots'] ?? null );
+	if ( ! empty( $m['url'] ) && empty( $m['robots'] ) ) {
+		$tags[] = '<link rel="canonical" href="' . dmc_e( $m['url'] ) . '">';
+	}
+	$meta( 'property', 'og:site_name', $site );
+	$meta( 'property', 'og:type', $m['type'] ?? 'website' );
+	$meta( 'property', 'og:title', $m['title'] ?? $site );
+	$meta( 'property', 'og:description', $desc );
+	$meta( 'property', 'og:url', $m['url'] ?? null );
+	$meta( 'property', 'og:locale', 'en_US' );
+	$meta( 'property', 'og:image', $m['image'] );
+	$meta( 'property', 'og:image:width', $m['image_w'] ?? null );
+	$meta( 'property', 'og:image:height', $m['image_h'] ?? null );
+	$meta( 'property', 'og:image:alt', $m['image_alt'] ?? null );
+	if ( 'article' === ( $m['type'] ?? '' ) ) {
+		$meta( 'property', 'article:published_time', $m['published'] ?? null );
+		$meta( 'property', 'article:modified_time', $m['modified'] ?? null );
+		$meta( 'property', 'article:section', $m['section'] ?? null );
+		foreach ( (array) ( $m['tags'] ?? array() ) as $t ) {
+			$meta( 'property', 'article:tag', $t );
+		}
+	}
+	$wide = empty( $m['image_w'] ) || $m['image_w'] >= 600;
+	$meta( 'name', 'twitter:card', $wide ? 'summary_large_image' : 'summary' );
+	$meta( 'name', 'twitter:site', '@DarkMirage' );
+	$meta( 'name', 'twitter:creator', '@DarkMirage' );
+	if ( ! empty( $m['jsonld'] ) ) {
+		$tags[] = '<script type="application/ld+json">' . json_encode( $m['jsonld'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG ) . '</script>';
+	}
+	echo implode( "\n", $tags ) . "\n";
+}
+
+/**
+ * The person behind all three sites, for JSON-LD.
+ */
+function dmc_person( array $c ): array {
+	$c = dmc_config( $c );
+	return array( '@type' => 'Person', 'name' => 'DarkMirage', 'url' => $c['www'], 'sameAs' => array( 'https://x.com/DarkMirage' ) );
 }
