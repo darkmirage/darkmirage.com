@@ -315,7 +315,7 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 	$first = $points[0][0];
 	$last  = end( $points )[0];
 	$note  = sprintf(
-		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><i data-era="default"></i>WP Default <i data-era="kubrick"></i>Kubrick DM · dmbrickv2 <i data-era="blocks"></i>Blocks</span>',
+		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><span><i data-era="default"></i>WP Default</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>',
 		esc_html( number_format_i18n( $total ) ),
 		esc_html__( 'transmissions', 'dmdune' ),
 		esc_html( $peak[0] ),

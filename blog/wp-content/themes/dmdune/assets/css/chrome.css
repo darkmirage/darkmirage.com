@@ -438,9 +438,9 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-hud-title { margin: 0; font: 600 30px/1.05 var(--dm-font-display); color: var(--dm-fg); letter-spacing: -0.005em; }
 .dm-hud-note { margin: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 18px; font: 500 13px var(--dm-font-body); color: var(--dm-muted); font-variant-numeric: tabular-nums; }
 .dm-hud-note b { color: var(--dm-fg); font-weight: 600; }
-.dm-legend { display: inline-flex; align-items: center; gap: 6px; }
-.dm-legend i { width: 9px; height: 9px; border-radius: 2px; background: var(--era); margin-left: 8px; }
-.dm-legend i:first-child { margin-left: 0; }
+.dm-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.dm-legend > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.dm-legend i { width: 9px; height: 9px; border-radius: 2px; background: var(--era); }
 
 /* Signal meter (shared) */
 .dm-sig { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; flex: none; }
