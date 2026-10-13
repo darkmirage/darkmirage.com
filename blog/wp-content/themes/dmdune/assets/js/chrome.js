@@ -60,14 +60,14 @@
 			return;
 		}
 		// Tapping outside an open menu closes it.
-		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) {
+		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-era[open]').forEach(function (d) {
 			if (!d.contains(e.target)) d.removeAttribute('open');
 		});
 	});
 
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape') {
-			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) { d.removeAttribute('open'); });
+			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-era[open]').forEach(function (d) { d.removeAttribute('open'); });
 		}
 	});
 

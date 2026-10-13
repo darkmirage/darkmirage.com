@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.8.0' );
+define( 'DMC_VERSION', '1.9.0' );
 
 require __DIR__ . '/skins.php';
 
@@ -85,6 +85,7 @@ function dmc_icon( string $name, int $size = 20, string $class = '' ): string {
 		'moon'    => '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
 		'sun'     => '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 		'play'    => '<path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>',
+		'clock'   => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/><path d="M3.5 5.5L6 3M20.5 5.5L18 3"/>',
 	);
 	return sprintf(
 		'<svg class="dm-icon%3$s" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="%1$d" height="%1$d" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">%2$s</svg>',
@@ -156,11 +157,11 @@ function dmc_header_html( array $c = array() ): string {
 	}
 	$icons = $c['assets'] . 'brand/icons/';
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%8$s</div></nav></div>',
+		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools">%4$s<a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%8$s</div></nav></div>',
 		dmc_e( $c['skip'] ),
 		dmc_e( $c['www'] ),
 		dmc_e( $icons ),
-		'',
+		dmc_era_menu_html(),
 		$links,
 		dmc_e( $c['search'] . array( 'blog' => '?s=', 'lyrics' => '#find', 'gallery' => '' )[ $c['site'] ] ),
 		dmc_icon( 'search', 18 ),

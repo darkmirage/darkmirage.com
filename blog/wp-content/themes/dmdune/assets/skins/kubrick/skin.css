@@ -1,0 +1,258 @@
+/* Kubrick DM (autumn 2006), rebuilt: WordPress's Kubrick in DarkMirage blue — a 760px page on grey,
+   the Haruhi "H" banner with a white title and tabs, Trebuchet headings ruled in blue, one light
+   grey sidebar on the right, and no sidebar on post pages. Reflows on phones. The 2007 skin
+   (../dmbrickv2/skin.css) imports this file and changes the frame. Banner art: all rights
+   reserved (see LICENSE.md). */
+
+:root[data-skin][data-skin] {
+	color-scheme: light;
+	--kb-blue: #325e94;
+	--kb-rule: #37506f;
+	--kb-link: #325e94;
+	--kb-link-text: #06c;
+	--kb-page: #fff;
+	--kb-side: #f4f4f4;
+	--kb-bg: #d5d6d7;
+	--kb-width: 760px;
+	--kb-side-w: 200px;
+	--kb-head: "Trebuchet MS", "Lucida Grande", Verdana, Arial, sans-serif;
+	--kb-body: "Lucida Grande", "Lucida Sans Unicode", Verdana, "Hiragino Sans", "Noto Sans JP", Arial, sans-serif;
+	--dm-bg: #fff;
+	--dm-surface: #fff;
+	--dm-sunk: #f4f4f4;
+	--dm-line: #ddd;
+	--dm-fg: #333;
+	--dm-body: #333;
+	--dm-muted: #777;
+	--dm-accent: #325e94;
+	--dm-accent-soft: rgba(50, 94, 148, 0.12);
+	--dm-font-display: var(--kb-head);
+	--dm-font-body: var(--kb-body);
+	--dm-font-mono: var(--kb-body);
+}
+
+html[data-skin] body { margin: 0; background: var(--kb-bg); color: #333; font: 400 0.8125rem/1.5 var(--kb-body); }
+html[data-skin] a { color: var(--kb-link); text-decoration: none; }
+html[data-skin] a:hover { color: #036; }
+
+/* ---------- Time machine bar ---------- */
+.dm-skinbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; padding: 5px 16px; background: #1d3456; color: #c9d6e6; font: 400 0.75rem/1.2 var(--kb-body); }
+.dm-skinbar__lead { display: inline-flex; align-items: center; gap: 6px; font: 700 0.75rem var(--kb-head); }
+.dm-skinbar__years { display: inline-flex; gap: 4px; }
+.dm-skinbar button { min-width: 46px; padding: 3px 9px; border: 1px solid #4b6a92; border-radius: 3px; background: none; color: #fff; font: 700 0.75rem/1 var(--kb-head); cursor: pointer; }
+.dm-skinbar button:hover { background: #fff; color: var(--kb-blue); }
+.dm-skinbar button[aria-pressed="true"] { background: #fff; border-color: #fff; color: var(--kb-blue); }
+
+/* ---------- Page and banner ---------- */
+.bk-shell { box-sizing: border-box; max-width: calc(var(--kb-width) + 2px); margin: 0 auto; background: var(--kb-page); border: solid #959596; border-width: 0 1px; }
+.bk-banner {
+	position: relative;
+	container-type: inline-size;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	min-height: 140px;
+	aspect-ratio: 760 / 227;
+	background: var(--kb-blue) url("banner-haruhi.webp") right top / cover no-repeat;
+	border-bottom: 1px solid #959596;
+}
+.bk-banner--lyrics { background-image: url("banner-tsuruya.webp"); }
+.bk-banner__text { position: absolute; left: 2.7%; top: 44%; max-width: 62%; }
+.bk-title { color: #fff; text-decoration: none; font: 700 clamp(1.25rem, 4.1cqw, 2rem)/1.1 var(--kb-head); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+html[data-skin] .bk-title, html[data-skin] .bk-title:hover { color: #fff; }
+.bk-tagline { margin: 4px 0 0; color: #fff; font: 400 clamp(0.6875rem, 1.6cqw, 0.8125rem)/1.3 var(--kb-body); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.bk-tabs { position: relative; z-index: 1; padding: 0 30px 0 8px; overflow-x: auto; scrollbar-width: none; }
+.bk-tabs::-webkit-scrollbar { display: none; }
+.bk-tabs ul { display: flex; margin: 0; padding: 0; list-style: none; white-space: nowrap; }
+.bk-tabs a { display: block; padding: 6px 7px 7px; font: 400 0.75rem/1 var(--kb-head); color: #fff !important; }
+.bk-tabs a:hover { background: #fff; color: var(--kb-blue) !important; }
+.bk-tabs a[aria-current] { background: #fff url("toparrow.gif") no-repeat center bottom; color: var(--kb-blue) !important; padding-bottom: 12px; }
+.bk-feed { position: absolute; right: 6px; bottom: 6px; width: 16px; height: 16px; background: url("feed.png") center / contain no-repeat; }
+.bk-feed span, .bk-block .bk-label span.screen-reader-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Main column and right sidebar */
+.bk-page { display: grid; grid-template-columns: minmax(0, 1fr) var(--kb-side-w); align-items: stretch; }
+.bk-main { min-width: 0; padding: 20px 40px 40px 45px; }
+.bk-side--left { display: none; }
+.bk-side--right { padding: 20px 14px 30px; background: var(--kb-side); }
+.single-post .bk-side--right { display: none; }
+.single-post .bk-page { grid-template-columns: minmax(0, 1fr); }
+.single-post .bk-main { padding-left: clamp(16px, 12%, 150px); padding-right: clamp(16px, 12%, 150px); }
+.bk-block--nav { display: none; }
+
+/* Sidebar blocks: right-aligned headings ruled in blue */
+.bk-block { margin-bottom: 20px; }
+.bk-block .bk-label { margin: 0 0 6px; padding: 1px; border-bottom: 1px solid var(--kb-rule); font: 700 0.8125rem var(--kb-head); color: #000; text-align: right; }
+.bk-block__body { font-size: 0.75rem; }
+.bk-block ul { margin: 0; padding: 0 0 0 10px; list-style: none; }
+.bk-block li { margin: 3px 0 0; color: #777; }
+.bk-block li a:hover { background: url("sidearrow.gif") no-repeat left center; padding-left: 8px; margin-left: -8px; }
+.bk-search { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.bk-search input { width: 130px; padding: 2px 4px; border: 1px solid var(--kb-blue); background: var(--kb-blue); color: #fff; text-align: center; font: 700 0.75rem var(--kb-head); }
+.bk-search input::placeholder { color: #fff; }
+.bk-search button { padding: 0; border: 0; background: none; color: var(--kb-blue); font: 700 1.5rem/1 var(--kb-head); cursor: pointer; }
+.bk-search button svg { display: none; }
+.bk-search button::after { content: "»"; }
+
+/* ---------- Posts ---------- */
+.kb-post { margin: 0 0 40px; }
+.kb-title, .kb-pagetitle { margin: 10px 0 0; font: 700 1.25rem/1.25 var(--kb-head); color: #333; border-bottom: 1px solid var(--kb-rule); overflow-wrap: anywhere; }
+.kb-title a { color: #333 !important; }
+.kb-title a:hover { color: var(--kb-blue) !important; }
+.kb-pagetitle { margin: 10px 0 30px; text-align: center; border: 0; }
+.kb-date { display: block; color: #777; font: 400 0.6875rem Arial, Helvetica, sans-serif; }
+.kb-entry { margin-top: 12px; text-align: justify; line-height: 1.45; overflow-wrap: anywhere; }
+.kb-entry a { color: var(--kb-link-text) !important; border-bottom: 1px dotted var(--kb-link-text); }
+.kb-entry a:visited { color: #b85b5a !important; border-color: #b85b5a; }
+.kb-entry a:hover { color: #c20 !important; border-color: #c20; }
+.kb-entry a:has(img) { border: 0; }
+.kb-entry img { max-width: 100%; height: auto; box-sizing: border-box; border: 1px solid var(--kb-blue); padding: 6px; background: #fff; }
+.kb-entry img.wp-smiley, .kb-entry img[src*="smilies"] { border: 0; padding: 0; }
+.kb-entry .caption, .kb-entry .wp-caption-text, .kb-entry figcaption { margin: 4px 0 12px; text-align: center; color: var(--kb-blue); font-size: 0.75rem; }
+.kb-entry blockquote { margin: 15px 30px 0 10px; padding-left: 20px; border-left: 5px solid var(--kb-blue); color: #124e74; }
+.kb-entry h2, .kb-entry h3 { font: 700 1rem var(--kb-head); color: #333; text-align: left; }
+.kb-entry iframe, .kb-entry video, .kb-entry .dm-media, .kb-entry figure { max-width: 100%; }
+.kb-thumb img { display: block; max-width: 180px; margin: 0 auto; }
+.kb-continue { margin: 10px 0 0; text-align: center; }
+.kb-continue a { display: inline-block; width: 125px; height: 40px; background: url("continue.gif") no-repeat; text-indent: -999px; overflow: hidden; border: 0 !important; }
+.kb-postmeta { margin: 14px 0 0; text-align: center; color: #777; font-size: 0.75rem; }
+.kb-postmeta--single { margin-top: 30px; padding: 10px; background: #f8f8f8; border: solid #ddd; border-width: 1px 0; text-align: left; }
+.kb-navigation { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 0 30px; font-size: 0.75rem; }
+.kb-navigation .current { font-weight: 700; }
+.kb-postnav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; font-size: 0.6875rem; }
+.kb-postnav__next { text-align: right; }
+.kb-center { text-align: center; }
+html[data-skin] .dm-era-post { margin: 6px 0 0; padding: 3px 9px; border: 1px dotted var(--kb-blue); border-radius: 3px; background: none; color: var(--kb-blue); font: 400 0.6875rem var(--kb-body); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+html[data-skin] .dm-era-post:hover { background: var(--kb-blue); color: #fff; }
+
+/* Comments */
+.kb-comments__title { margin: 40px 0 10px; font: 700 1rem var(--kb-head); }
+.kb-commentlist { margin: 0; padding: 0; list-style: none; text-align: justify; }
+.kb-comment { margin: 15px 0 3px; padding: 5px 10px 3px; font-size: 0.75rem; }
+.kb-comment.alt { background: #f8f8f8; border: solid #ddd; border-width: 1px 0; }
+.kb-comment cite { font-style: normal; font-weight: 700; font-size: 0.8125rem; }
+.kb-comment cite a { color: #333 !important; }
+.kb-avatar { float: left; margin: 2px 8px 4px 0; border: 1px solid #ccc; }
+.kb-comment__no { float: right; padding-left: 20px; color: var(--kb-rule); font-size: 0.9375rem; }
+.kb-comment__date a { color: #777 !important; }
+.kb-comment__text { clear: left; overflow-wrap: anywhere; }
+.kb-comment__text p { margin: 8px 5px 8px 0; line-height: 1.5; }
+.kb-flag { vertical-align: -1px; }
+.kb-respond { margin-top: 30px; }
+.kb-respond h3 { font: 700 1rem var(--kb-head); }
+.kb-respond input[type="text"], .kb-respond input[type="email"], .kb-respond input[type="url"], .kb-respond textarea { box-sizing: border-box; max-width: 100%; padding: 2px 4px; border: 1px solid var(--kb-blue); background: #f4f4f4; font: inherit; }
+.kb-respond textarea { width: 100%; }
+.kb-respond input[type="submit"] { padding: 2px 10px; border: 1px solid var(--kb-blue); background: #f4f4f4; color: var(--kb-blue); font: 700 0.75rem var(--kb-body); cursor: pointer; }
+
+.kb-archives h3 { margin: 18px 0 4px; font: 700 1rem var(--kb-head); border-bottom: 1px solid var(--kb-rule); }
+.kb-archives ul, .kb-entry .kb-links { margin: 0; padding: 0 0 0 10px; list-style: none; }
+.kb-tagcloud { text-align: justify; line-height: 1.7; }
+
+/* ---------- Footer ---------- */
+.bk-footer { padding: 18px 16px; background: var(--kb-blue); color: #fff; text-align: center; font-size: 0.75rem; }
+.bk-footer p { margin: 2px 0; }
+.bk-footer a, .bk-footer a:hover { color: #fff !important; font-weight: 700; }
+.bk-footer .dm-footer__lineage span { color: #9db3cf; }
+.bk-footer .dm-era-switch { color: #dbe5f1; }
+.bk-footer .dm-era-switch[aria-pressed="true"] { color: #fff; font-weight: 700; }
+
+html[data-skin] .dm-tabbar { background: rgba(244, 244, 244, 0.97); border-color: #959596; }
+html[data-skin] .dm-tabbar a, html[data-skin] .dm-tabbar summary { color: #555; font-family: var(--kb-head); }
+html[data-skin] .dm-tabbar a[aria-current] { color: var(--kb-blue); }
+
+/* =====================================================================================
+   Lyrics and Gallery: the Kubrick versions those sites never had
+   ===================================================================================== */
+html[data-skin] .ly-main, html[data-skin] .dmg-main { max-width: none; margin: 0; padding: 0; gap: 16px; }
+html[data-skin] .dm-hud-code { margin: 0; font: 400 0.6875rem Arial, sans-serif; letter-spacing: 0; text-transform: none; color: #777; }
+html[data-skin] .dm-meta { font-size: 0.75rem; color: #777; }
+html[data-skin] .dm-archive-head { display: block; padding: 0; border: 0; }
+html[data-skin] .dm-archive-head h1, html[data-skin] .dmg-head h1, html[data-skin] .ly-sheet h1 { margin: 2px 0 0; font: 700 1.375rem/1.25 var(--kb-head); color: #333; border-bottom: 1px solid var(--kb-rule); }
+html[data-skin] .dm-archive-head__ja { font: 400 0.6em var(--kb-body); color: #777; letter-spacing: 0; }
+html[data-skin] .dm-archive-head__spec, html[data-skin] .dm-frame__scan, html[data-skin] .dm-frame__rec { display: none; }
+
+html[data-skin] .ly-controls { gap: 8px; }
+html[data-skin] .ly-seg { padding: 0; border: 1px solid var(--kb-blue); border-radius: 0; background: #fff; }
+html[data-skin] .ly-seg a { padding: 4px 9px; border-radius: 0; font: 400 0.75rem/1.2 var(--kb-head); letter-spacing: 0; text-transform: none; color: var(--kb-blue); }
+html[data-skin] .ly-seg a[aria-current] { background: var(--kb-blue); color: #fff; }
+html[data-skin] .ly-find input, html[data-skin] .dmg-search input[type="search"] { min-height: 26px; border: 1px solid var(--kb-blue); border-radius: 0; background: #f4f4f4; box-shadow: none; font-size: 0.75rem; }
+html[data-skin] .ly-back { font: 700 0.75rem var(--kb-head); }
+
+html[data-skin] .ly-group__head { margin: 18px 0 6px; padding: 0 0 1px; border-bottom: 1px solid var(--kb-rule); font: 700 1rem/1.25 var(--kb-head); }
+html[data-skin] .ly-group__head a { color: #333 !important; }
+html[data-skin] .ly-group__n { font: 400 0.75rem var(--kb-body); color: #777; letter-spacing: 0; }
+html[data-skin] .ly-group--letter { display: block; border-top: 0; padding-top: 0; }
+html[data-skin] .ly-letter { margin: 18px 0 6px; font: 700 1rem var(--kb-head); color: #333; -webkit-text-stroke: 0; border-bottom: 1px solid var(--kb-rule); }
+html[data-skin] .ly-songs { grid-template-columns: minmax(0, 1fr); }
+html[data-skin] .ly-song { grid-template-columns: 34px minmax(0, 1fr); gap: 8px; padding: 5px 4px; border: 0; }
+html[data-skin] .ly-song:nth-child(even) { background: #f8f8f8; }
+html[data-skin] .ly-tile { border-radius: 0; border: 1px solid var(--kb-blue); box-shadow: none; background: #f4f4f4; color: var(--kb-blue); font: 700 0.5625rem var(--kb-head); letter-spacing: 0; }
+html[data-skin] .ly-song__stamp { display: none; }
+html[data-skin] .ly-song__title { font: 700 0.8125rem/1.3 var(--kb-head); }
+html[data-skin] .ly-song__title a { color: #333 !important; }
+html[data-skin] .ly-song__meta { font-size: 0.6875rem; }
+html[data-skin] .ly-type { border: 0; padding: 0; font: 400 0.6875rem var(--kb-body); color: #777; }
+html[data-skin] .ly-alt { font-family: var(--kb-body); color: #777; }
+
+html[data-skin] .ly-sheet { gap: 12px; }
+html[data-skin] .ly-sheet__head { display: block; padding: 0; border: 0; }
+html[data-skin] .ly-sheet__cover, html[data-skin] .ly-sheet__disc, html[data-skin] .ly-sheet .ly-credits { display: none; }
+html[data-skin] .ly-sheet__alt { font: 400 0.9375rem var(--kb-body); color: #555; }
+html[data-skin] .ly-tabs { border-bottom: 1px solid var(--kb-rule); }
+html[data-skin] .ly-tabs a { padding: 5px 9px 6px; border: 0; margin: 0; font: 400 0.75rem/1 var(--kb-head); letter-spacing: 0; text-transform: none; color: var(--kb-blue) !important; }
+html[data-skin] .ly-tabs a[aria-current] { background: var(--kb-blue); color: #fff !important; }
+html[data-skin] .ly-line { font: 400 0.8125rem/1.55 var(--kb-body); color: #333; }
+html[data-skin] .ly-line__e { color: var(--kb-blue); }
+html[data-skin] .ly-text--pair .ly-stanza { border-left: 5px solid var(--kb-blue); }
+html[data-skin] .ly-text--pair .ly-line:hover { background: #f4f4f4; }
+html[data-skin] .ly-credit { border-top: 1px solid #ddd; font-size: 0.6875rem; }
+html[data-skin] .ly-more .dm-hud-title { margin: 0; font: 700 1rem var(--kb-head); border-bottom: 1px solid var(--kb-rule); }
+
+/* Sidebar Current / Meta on lyrics (song) pages */
+.bk-current { display: block; width: 100%; box-sizing: border-box; border: 1px solid var(--kb-blue); padding: 4px; background: #fff; }
+.bk-meta h3 { margin: 8px 0 0; font: 700 0.75rem var(--kb-head); color: #000; }
+.bk-meta p { margin: 0 0 0 10px; color: #777; }
+
+html[data-skin] .dmg-head { padding: 0; border: 0; gap: 4px; }
+html[data-skin] .dmg-crumbs a { color: var(--kb-blue) !important; }
+html[data-skin] .dmg-albums { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px 12px; }
+html[data-skin] .dmg-album a { gap: 4px; text-align: center; color: inherit !important; }
+html[data-skin] .dmg-album__cover { border-radius: 0; border: 1px solid var(--kb-blue); box-shadow: none; padding: 4px; background: #fff; aspect-ratio: 4 / 3; }
+html[data-skin] .dmg-album__cover img { position: static; }
+html[data-skin] .dmg-album a:hover img { transform: none; }
+html[data-skin] .dmg-album__text { align-items: center; padding: 0; border: 0; }
+html[data-skin] .dmg-album__title { font: 700 0.8125rem/1.2 var(--kb-head); color: #333; }
+html[data-skin] .dmg-album__meta { font: 400 0.6875rem var(--kb-body); letter-spacing: 0; text-transform: none; color: #777; }
+html[data-skin] .dmg-grid { gap: 6px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+html[data-skin] .dmg-grid a { border-radius: 0; box-shadow: none; border: 1px solid var(--kb-blue); }
+html[data-skin] .dmg-grid a:hover img { transform: none; }
+html[data-skin] .dmg-viewer__stage { padding: 0; border-radius: 0; background: none; box-shadow: none; }
+html[data-skin] .dmg-viewer__stage img { box-sizing: border-box; border: 1px solid var(--kb-blue); padding: 6px; background: #fff; border-radius: 0; }
+html[data-skin] .dmg-viewer__rec { font: 400 0.6875rem Arial, sans-serif; letter-spacing: 0; color: #777; }
+html[data-skin] .dmg-viewer__rec::before { content: none; }
+html[data-skin] .dmg-viewer__full { font: 700 0.75rem var(--kb-head); letter-spacing: 0; text-transform: none; }
+html[data-skin] .dmg-count { font: 400 0.75rem var(--kb-body); color: #777; letter-spacing: 0; }
+html[data-skin] .dmg-count b { color: var(--kb-blue); }
+html[data-skin] .dmg-strip a { border-radius: 0; box-shadow: none; border: 1px solid var(--kb-blue); }
+html[data-skin] .dmg-strip a[aria-current] { outline: 2px solid var(--kb-blue); }
+html[data-skin] .dmg-pager { border-top: 1px solid #ddd; font: 400 0.75rem var(--kb-head); letter-spacing: 0; }
+html[data-skin] .dmg-pager__nums b { background: var(--kb-blue); color: #fff; border-radius: 0; }
+html[data-skin] .dmg-search button { border-radius: 0; background: var(--kb-blue); font: 700 0.75rem var(--kb-head); }
+
+/* ---------- Phones ---------- */
+@media (max-width: 760px) {
+	.bk-shell { border: 0; }
+	.bk-banner { aspect-ratio: auto; min-height: 150px; background-size: auto calc(100% - 31px); background-position: right top; }
+	/* The character fills a phone-width banner, so the title sits on a blue fade and the tabs get
+	   their own strip, as Kubrick's tab bar was. */
+	.bk-banner::before { content: ""; position: absolute; inset: 0 0 31px; background: linear-gradient(90deg, rgba(50, 94, 148, 0.95) 0, rgba(50, 94, 148, 0.82) 48%, rgba(50, 94, 148, 0) 78%); }
+	.bk-banner__text { top: 40px; max-width: 72%; }
+	.bk-tabs { background: var(--kb-blue); padding-top: 6px; }
+	.bk-page { grid-template-columns: minmax(0, 1fr); }
+	.bk-main, .single-post .bk-main { padding: 16px 16px 30px; }
+	.bk-side--right { display: block !important; padding: 16px; }
+	.bk-footer { padding-bottom: 96px; }
+	.kb-entry { text-align: left; font-size: 0.875rem; }
+	html[data-skin] .dmg-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	html[data-skin] .dmg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+}

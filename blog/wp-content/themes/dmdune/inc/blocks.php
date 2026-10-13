@@ -249,7 +249,8 @@ function dmdune_render_byline( array $attrs, WP_Block $block ): string {
 		/* translators: %s: number of comments */
 		$bits[] = '<a href="#comments">' . esc_html( sprintf( _n( '%s comment', '%s comments', $n, 'dmdune' ), number_format_i18n( $n ) ) ) . '</a>';
 	}
-	return '<p class="dm-meta dm-byline">' . implode( '<span class="dm-sep" aria-hidden="true">·</span>', $bits ) . '</p>';
+	$era = 'post' === $post->post_type ? dmc_era_post_link( get_the_date( 'Y-m-d', $post ) ) : '';
+	return '<div class="dm-byline-row"><p class="dm-meta dm-byline">' . implode( '<span class="dm-sep" aria-hidden="true">·</span>', $bits ) . '</p>' . $era . '</div>';
 }
 
 function dmdune_render_hero( array $attrs, WP_Block $block ): string {

@@ -43,11 +43,13 @@ html[data-skin] body {
 html[data-skin] a { color: var(--bk-red); text-decoration: none; }
 html[data-skin] a:hover { color: var(--bk-red-hover); }
 
-/* ---------- Time-machine bar ---------- */
-.dm-skinbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; padding: 6px 16px; background: #222; color: #ccc; font: 400 0.75rem/1.4 var(--bk-body); text-align: center; }
-.dm-skinbar b { color: #fff; }
-.dm-skinbar button { padding: 3px 10px; border: 1px solid #666; border-radius: 999px; background: none; color: #fff; font: inherit; cursor: pointer; }
-.dm-skinbar button:hover { border-color: #fff; }
+/* ---------- Time machine bar ---------- */
+.dm-skinbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; padding: 6px 16px; background: #222; color: #bbb; font: 400 0.75rem/1.2 var(--bk-body); }
+.dm-skinbar__lead { display: inline-flex; align-items: center; gap: 6px; font: 300 0.9375rem/1 var(--bk-label); text-transform: uppercase; letter-spacing: 0.04em; }
+.dm-skinbar__years { display: inline-flex; gap: 4px; }
+.dm-skinbar button { min-width: 48px; padding: 4px 10px; border: 1px solid #555; border-radius: 999px; background: none; color: #ddd; font: 700 0.75rem/1 var(--bk-body); cursor: pointer; }
+.dm-skinbar button:hover { border-color: #fff; color: #fff; }
+.dm-skinbar button[aria-pressed="true"] { background: #ddd; border-color: #ddd; color: #222; }
 
 /* ---------- Shell, banner ---------- */
 .bk-shell { box-sizing: border-box; max-width: 972px; margin: 0 auto; padding: 20px 16px 0; }
@@ -60,9 +62,11 @@ html[data-skin] a:hover { color: var(--bk-red-hover); }
 	box-shadow: 0 0 0 1px #2a2a2a;
 	overflow: hidden;
 }
-.bk-banner--haruhiyuki { background-image: url("banner-haruhiyuki-blank.webp"); }
-.bk-banner--kallencc { background-image: url("banner-kallencc-blank.webp"); }
-.bk-title { position: absolute; right: 43%; bottom: 13%; display: flex; flex-direction: column; align-items: flex-end; color: #fff; text-decoration: none; line-height: 0.82; }
+.bk-banner--lyrics { background-image: url("banner-haruhiyuki-blank.webp"); }
+.bk-banner--gallery { background-image: url("banner-kallencc-blank.webp"); }
+.bk-banner__text { position: absolute; right: 43%; bottom: 13%; }
+.bk-tagline, .bk-tabs, .bk-side--left { display: none; }
+.bk-title { display: flex; flex-direction: column; align-items: flex-end; color: #fff; text-decoration: none; line-height: 0.82; }
 html[data-skin] .bk-title, html[data-skin] .bk-title:hover { color: #fff; }
 .bk-title__of { font: 300 4.4cqw/1 var(--bk-label); letter-spacing: 0.02em; text-transform: uppercase; color: #ddd; margin-bottom: 0.5cqw; }
 .bk-title__name { font: 300 8cqw/0.86 var(--bk-label); letter-spacing: -0.01em; text-transform: uppercase; -webkit-box-reflect: below -0.9cqw linear-gradient(transparent 52%, rgba(255, 255, 255, 0.28)); }
@@ -287,7 +291,7 @@ html[data-skin] .dmg-grid a { border-radius: 0; box-shadow: none; border: 1px so
 html[data-skin] .dmg-grid a:hover img { transform: none; opacity: 0.8; }
 html[data-skin] .dmg-viewer { padding: 18px; border: 3px solid var(--bk-rim); border-radius: 22px; box-shadow: 0 3px 0 #d6d6d6; background: #fff; }
 html[data-skin] .dmg-viewer__stage { padding: 0; border-radius: 0; background: none; box-shadow: none; }
-html[data-skin] .dmg-viewer__stage img { border: 2px solid #555; border-radius: 0; }
+html[data-skin] .dmg-viewer__stage img { box-sizing: border-box; border: 2px solid #555; border-radius: 0; }
 html[data-skin] .dmg-viewer__rec { font: 400 0.75rem var(--bk-body); letter-spacing: 0; color: var(--bk-soft); }
 html[data-skin] .dmg-viewer__rec::before { content: none; }
 html[data-skin] .dmg-viewer__full { font: 300 1rem var(--bk-label); color: #444 !important; }
@@ -307,3 +311,7 @@ html[data-skin] .dmg-search button { border-radius: 8px; background: #444; font:
 	html[data-skin] .dmg-grid { padding: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 	html[data-skin] .dmg-viewer { padding: 8px; border-radius: 16px; }
 }
+
+/* "See this post as it looked in 2007" */
+html[data-skin] .dm-era-post { margin-top: 8px; padding: 4px 10px; border: 1px dashed #bbb; border-radius: 999px; background: none; color: var(--bk-soft); font: 400 0.75rem var(--bk-body); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+html[data-skin] .dm-era-post:hover { border-color: var(--bk-red); color: var(--bk-red); }

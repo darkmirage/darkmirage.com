@@ -1,0 +1,49 @@
+/* dmbrickv2 (2007), rebuilt: Kubrick DM's type and colours (imported) in a wider 790px page on the
+   blue stripes, with the Haruhi figure banner and three columns: categories and archives on the
+   left, search and the post's Current / Related / Random on the right. Banner art: all rights
+   reserved (see LICENSE.md). */
+
+@import url("../kubrick/skin.css");
+
+:root[data-skin][data-skin] {
+	--kb-width: 790px;
+	--kb-side-w: 170px;
+	--kb-page: #eee;
+	--kb-bg: #2f3f55;
+}
+
+html[data-skin] body { background: #2f3f55 url("stripes.gif") repeat center top; }
+.bk-shell { border: 0; }
+.bk-banner { aspect-ratio: 790 / 225; background-image: url("banner-bunny.webp"); border-bottom-color: #000; }
+.bk-banner--lyrics { background-image: url("banner-rei.webp"); background-color: #5aa5ff; }
+.bk-banner--gallery { background-image: url("banner-zettai.webp"); }
+.bk-banner__text { top: 46%; }
+.bk-title { font-size: clamp(1.25rem, 3.9cqw, 2rem); }
+
+/* Three columns: left list, white middle, right list */
+.bk-page { grid-template-columns: var(--kb-side-w) minmax(0, 1fr) var(--kb-side-w); grid-template-areas: "left main right"; }
+.bk-side--left { display: block; grid-area: left; padding: 18px 8px 30px 12px; background: #eee; }
+.bk-main { grid-area: main; padding: 20px 20px 40px; background: #fff; }
+.bk-side--right { grid-area: right; padding: 18px 10px 30px 8px; background: #eee; }
+.single-post .bk-page { grid-template-columns: var(--kb-side-w) minmax(0, 1fr) var(--kb-side-w); }
+.single-post .bk-side--right { display: block; }
+.single-post .bk-main { padding: 20px 20px 40px; }
+.bk-page:not(:has(.bk-side--left)) { grid-template-columns: minmax(0, 1fr) var(--kb-side-w); grid-template-areas: "main right"; }
+
+.bk-block--nav { display: block; }
+.bk-side--left .bk-label { text-align: left; font-size: 0.875rem; }
+.bk-side--right .bk-label { text-align: right; }
+
+.kb-current { margin: 0; font-size: 0.6875rem; }
+.kb-current dt { margin-top: 6px; font-weight: 700; color: #000; }
+.kb-current dd { margin: 0 0 0 8px; color: #777; }
+.kb-random { display: block; margin: 8px auto 0; width: 100px; }
+.kb-random img { display: block; width: 100px; height: 100px; object-fit: cover; border: 1px solid var(--kb-blue); }
+.kb-random span { display: block; font-size: 0.6875rem; text-align: center; }
+
+@media (max-width: 760px) {
+	.bk-page, .single-post .bk-page, .bk-page:not(:has(.bk-side--left)) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "right" "left"; }
+	.bk-banner { aspect-ratio: auto; background-size: auto calc(100% - 31px); }
+	.bk-side--left { padding: 16px; }
+	.bk-block--nav { display: none; }
+}
