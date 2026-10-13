@@ -5,7 +5,7 @@
 	var SSR = wp.serverSideRender;
 	var useBlockProps = wp.blockEditor.useBlockProps;
 	[
-		'site-header', 'site-footer', 'hero', 'card', 'post-meta', 'related',
+		'site-header', 'site-footer', 'hero', 'card', 'post-meta', 'byline', 'related', 'archive-head',
 		'year-strip', 'archive-index', 'most-discussed', 'not-found'
 	].forEach(function (slug) {
 		var name = 'dmdune/' + slug;

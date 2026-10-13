@@ -252,8 +252,10 @@ function dmdune_related_posts( WP_Post $post, int $limit = 3 ): array {
 			return array_slice( $candidates, 0, $limit );
 		}
 	}
-	$cats = wp_get_post_categories( $post->ID );
-	return get_posts( $args + array( 'category__in' => $cats, 'posts_per_page' => $limit ) );
+	// Not enough tag matches: fall back to the newest posts in the same category.
+	$args['posts_per_page'] = $limit;
+	$args['category__in']   = wp_get_post_categories( $post->ID );
+	return get_posts( $args );
 }
 
 /**

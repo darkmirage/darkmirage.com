@@ -23,7 +23,9 @@ add_action(
 			'site-footer'    => array( 'title' => __( 'Site footer', 'dmdune' ) ),
 			'hero'           => array( 'title' => __( 'Desert banner', 'dmdune' ) ),
 			'card'           => array( 'title' => __( 'Post card', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
-			'post-meta'      => array( 'title' => __( 'Post meta line', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
+			'post-meta'      => array( 'title' => __( 'Post categories', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
+			'byline'         => array( 'title' => __( 'Post byline', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
+			'archive-head'   => array( 'title' => __( 'Archive header', 'dmdune' ) ),
 			'related'        => array( 'title' => __( 'Related posts', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'year-strip'     => array( 'title' => __( 'Archive by year', 'dmdune' ), 'attributes' => array( 'always' => array( 'type' => 'boolean', 'default' => false ) ) ),
 			'archive-index'  => array( 'title' => __( 'Archive index', 'dmdune' ) ),
@@ -49,21 +51,51 @@ add_action(
 	}
 );
 
+function dmdune_primary_category( WP_Post $post ): ?WP_Term {
+	$cats = get_the_category( $post->ID );
+	return $cats ? $cats[0] : null;
+}
+
 /**
- * "2013.06.16 · BLOG · 12 COMMENTS"
+ * Category label with its colour dot (colours match the category plates).
  */
-function dmdune_kicker( WP_Post $post, bool $with_comments = true ): string {
-	$parts = array( get_the_date( 'Y.m.d', $post ) );
-	$cats  = get_the_category( $post->ID );
-	if ( $cats ) {
-		$parts[] = $cats[0]->name;
+function dmdune_cat_label( WP_Post $post, bool $link = false ): string {
+	$cat = dmdune_primary_category( $post );
+	if ( ! $cat ) {
+		return '';
 	}
+	$name = esc_html( $cat->name );
+	$tag  = $link ? sprintf( '<a href="%s">%s</a>', esc_url( get_category_link( $cat ) ), $name ) : $name;
+	return sprintf( '<span class="dm-cat" data-cat="%s">%s</span>', esc_attr( $cat->slug ), $tag );
+}
+
+function dmdune_time( WP_Post $post, string $format = 'j M Y' ): string {
+	return sprintf( '<time datetime="%s">%s</time>', esc_attr( get_the_date( 'c', $post ) ), esc_html( get_the_date( $format, $post ) ) );
+}
+
+/**
+ * Comment count as icon + number; the full phrase stays available to screen readers.
+ */
+function dmdune_comment_count( WP_Post $post ): string {
 	$n = (int) $post->comment_count;
-	if ( $with_comments && $n > 0 ) {
-		/* translators: %s: number of comments */
-		$parts[] = sprintf( _n( '%s comment', '%s comments', $n, 'dmdune' ), number_format_i18n( $n ) );
+	if ( $n < 1 ) {
+		return '';
 	}
-	return implode( ' · ', array_map( 'esc_html', $parts ) );
+	/* translators: %s: number of comments */
+	$label = sprintf( _n( '%s comment', '%s comments', $n, 'dmdune' ), number_format_i18n( $n ) );
+	return sprintf(
+		'<span class="dm-count" title="%1$s"><svg class="dm-icon" aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg><span aria-hidden="true">%2$s</span><span class="screen-reader-text">%1$s</span></span>',
+		esc_attr( $label ),
+		esc_html( number_format_i18n( $n ) )
+	);
+}
+
+function dmdune_reading_minutes( WP_Post $post ): int {
+	$text  = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
+	$words = str_word_count( $text );
+	// Japanese has no spaces: count its characters at ~500 a minute alongside English words at ~230.
+	$cjk = preg_match_all( '/[\x{3040}-\x{30ff}\x{4e00}-\x{9fff}]/u', $text );
+	return max( 1, (int) round( $words / 230 + $cjk / 500 ) );
 }
 
 /**
@@ -88,14 +120,18 @@ function dmdune_thumb( WP_Post $post, string $class = 'dm-thumb' ): string {
 
 function dmdune_card_html( WP_Post $post, string $heading = 'h2' ): string {
 	$title = get_the_title( $post );
+	$cat   = dmdune_primary_category( $post );
 	return sprintf(
-		'<article class="dm-card"><a class="dm-card__link" href="%1$s">%2$s<div class="dm-card__body"><p class="dm-kicker">%3$s</p><%5$s class="dm-card__title">%4$s</%5$s><p class="dm-card__excerpt">%6$s</p></div></a></article>',
+		'<article class="dm-card"%7$s><a class="dm-card__link" href="%1$s">%2$s<div class="dm-card__body"><p class="dm-card__cat">%3$s</p><%5$s class="dm-card__title">%4$s</%5$s><p class="dm-card__excerpt">%6$s</p><p class="dm-meta dm-card__meta">%8$s%9$s</p></div></a></article>',
 		esc_url( get_permalink( $post ) ),
 		dmdune_thumb( $post, 'dm-card__media' ),
-		dmdune_kicker( $post ),
+		dmdune_cat_label( $post ),
 		'' !== $title ? esc_html( wp_strip_all_tags( $title ) ) : esc_html__( '(untitled)', 'dmdune' ),
 		tag_escape( $heading ),
-		esc_html( get_the_excerpt( $post ) )
+		esc_html( get_the_excerpt( $post ) ),
+		$cat ? ' data-cat="' . esc_attr( $cat->slug ) . '"' : '',
+		dmdune_time( $post ),
+		dmdune_comment_count( $post )
 	);
 }
 
@@ -109,17 +145,29 @@ function dmdune_render_post_meta( array $attrs, WP_Block $block ): string {
 	if ( ! $post ) {
 		return '';
 	}
-	$cats = get_the_category( $post->ID );
-	$bits = array( '<time datetime="' . esc_attr( get_the_date( 'c', $post ) ) . '">' . esc_html( get_the_date( 'Y.m.d', $post ) ) . '</time>' );
-	foreach ( $cats as $c ) {
-		$bits[] = '<a href="' . esc_url( get_category_link( $c ) ) . '">' . esc_html( $c->name ) . '</a>';
+	$cats = array();
+	foreach ( get_the_category( $post->ID ) as $c ) {
+		$cats[] = sprintf( '<span class="dm-cat" data-cat="%s"><a href="%s">%s</a></span>', esc_attr( $c->slug ), esc_url( get_category_link( $c ) ), esc_html( $c->name ) );
+	}
+	return $cats ? '<p class="dm-post-cats">' . implode( '', $cats ) . '</p>' : '';
+}
+
+function dmdune_render_byline( array $attrs, WP_Block $block ): string {
+	$post = get_post( $block->context['postId'] ?? 0 );
+	if ( ! $post ) {
+		return '';
+	}
+	$bits = array( dmdune_time( $post, 'j F Y' ) );
+	if ( 'post' === $post->post_type ) {
+		/* translators: %d: minutes */
+		$bits[] = esc_html( sprintf( __( '%d min read', 'dmdune' ), dmdune_reading_minutes( $post ) ) );
 	}
 	$n = (int) $post->comment_count;
 	if ( $n > 0 ) {
 		/* translators: %s: number of comments */
 		$bits[] = '<a href="#comments">' . esc_html( sprintf( _n( '%s comment', '%s comments', $n, 'dmdune' ), number_format_i18n( $n ) ) ) . '</a>';
 	}
-	return '<p class="dm-kicker dm-post-meta">' . implode( ' · ', $bits ) . '</p>';
+	return '<p class="dm-meta dm-byline">' . implode( '<span class="dm-sep" aria-hidden="true">·</span>', $bits ) . '</p>';
 }
 
 function dmdune_render_hero( array $attrs, WP_Block $block ): string {
@@ -253,8 +301,9 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 		}
 	}
 	return sprintf(
-		'<section class="dm-discussed alignwide" aria-labelledby="dm-discussed-title"><h2 id="dm-discussed-title" class="dm-section-title">%s</h2><ul class="dm-grid">%s</ul></section>',
+		'<section class="dm-discussed alignwide" aria-labelledby="dm-discussed-title"><div class="dm-section-head"><h2 id="dm-discussed-title" class="dm-section-title">%s</h2><p class="dm-meta">%s</p></div><ul class="dm-grid">%s</ul></section>',
 		esc_html__( 'Most discussed', 'dmdune' ),
+		esc_html__( 'The posts readers argued about most', 'dmdune' ),
 		$cards
 	);
 }
@@ -266,18 +315,65 @@ function dmdune_render_related( array $attrs, WP_Block $block ): string {
 	}
 	$items = '';
 	foreach ( dmdune_related_posts( $post ) as $r ) {
-		$items .= sprintf(
-			'<li><a href="%s">%s<span><span class="dm-kicker">%s</span><strong>%s</strong></span></a></li>',
-			esc_url( get_permalink( $r ) ),
-			dmdune_thumb( $r, 'dm-related__thumb' ),
-			dmdune_kicker( $r, false ),
-			esc_html( wp_strip_all_tags( get_the_title( $r ) ) )
-		);
+		$items .= '<li>' . dmdune_card_html( $r, 'h3' ) . '</li>';
 	}
 	if ( '' === $items ) {
 		return '';
 	}
-	return sprintf( '<nav class="dm-related" aria-labelledby="dm-related-title"><h2 id="dm-related-title" class="dm-label">%s</h2><ul>%s</ul></nav>', esc_html__( 'Related', 'dmdune' ), $items );
+	return sprintf(
+		'<nav class="dm-related" aria-labelledby="dm-related-title"><div class="dm-section-head"><h2 id="dm-related-title" class="dm-section-title">%s</h2></div><ul class="dm-grid dm-grid--related">%s</ul></nav>',
+		esc_html__( 'Keep reading', 'dmdune' ),
+		$items
+	);
+}
+
+/**
+ * Header for archive, category, tag and search pages: what kind of list this is, its name, and
+ * how many posts it holds.
+ */
+function dmdune_render_archive_head( array $attrs, WP_Block $block ): string {
+	global $wp_query;
+	$count = (int) $wp_query->found_posts;
+	$desc  = '';
+	if ( is_search() ) {
+		$kind  = __( 'Search', 'dmdune' );
+		/* translators: %s: search terms */
+		$title = sprintf( __( '“%s”', 'dmdune' ), get_search_query() );
+	} elseif ( is_category() ) {
+		$kind  = __( 'Category', 'dmdune' );
+		$title = single_cat_title( '', false );
+		$desc  = category_description();
+	} elseif ( is_tag() ) {
+		$kind  = __( 'Tag', 'dmdune' );
+		$title = single_tag_title( '', false );
+		// Tags were typed in lowercase; give them a title's capitalisation, leave mixed-case ones alone.
+		if ( $title === mb_strtolower( $title ) ) {
+			$title = mb_convert_case( $title, MB_CASE_TITLE );
+		}
+	} elseif ( is_year() ) {
+		$kind  = __( 'Archive', 'dmdune' );
+		$title = get_the_date( 'Y' );
+	} elseif ( is_month() ) {
+		$kind  = __( 'Archive', 'dmdune' );
+		$title = get_the_date( 'F Y' );
+	} elseif ( is_day() ) {
+		$kind  = __( 'Archive', 'dmdune' );
+		$title = get_the_date( 'j F Y' );
+	} else {
+		$kind  = __( 'Archive', 'dmdune' );
+		$title = wp_strip_all_tags( get_the_archive_title() );
+	}
+	/* translators: %s: number of posts */
+	$n    = sprintf( _n( '%s post', '%s posts', $count, 'dmdune' ), number_format_i18n( $count ) );
+	$desc = trim( wp_strip_all_tags( (string) $desc ) );
+	return sprintf(
+		'<header class="dm-archive-head alignwide"><p class="dm-eyebrow">%1$s</p><h1>%2$s</h1><p class="dm-meta">%3$s%4$s</p>%5$s</header>',
+		esc_html( $kind ),
+		esc_html( $title ),
+		esc_html( $n ),
+		$desc ? '<span class="dm-sep" aria-hidden="true">·</span><span lang="ja">' . esc_html( $desc ) . '</span>' : '',
+		is_search() ? get_search_form( array( 'echo' => false ) ) : ''
+	);
 }
 
 function dmdune_mode_button( string $class ): string {

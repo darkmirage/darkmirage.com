@@ -98,3 +98,9 @@ add_filter(
 	10,
 	3
 );
+
+/**
+ * Long threads open on their first page and read top to bottom; the WordPress default jumps to the
+ * newest page, which for a 2011 post means landing mid-argument.
+ */
+add_filter( 'option_default_comments_page', static fn() => 'oldest' );
