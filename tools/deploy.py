@@ -124,7 +124,8 @@ def main():
         server = remote_md5s(changed + removed)
         for p in changed + removed:
             expected = md5_at(base, p)
-            if server.get(p) != expected:
+            # Already at the target version means an earlier run got partway; not a conflict.
+            if server.get(p) not in (expected, md5_at(head, p)):
                 conflicts.append((p, expected, server.get(p)))
     if conflicts:
         print("\nABORT: these server files changed since the last deploy (or exist untracked):")
