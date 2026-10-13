@@ -1,244 +1,203 @@
 <?php
+
 /**
  * i.php: Zenphoto image processor
  * All *uncached* image requests go through this file
  * (As of 1.0.8 images are requested directly from the cache if they exist)
- *******************************************************************************
+ * ******************************************************************************
  * URI Parameters:
  *   s  - size (logical): Based on config, makes an image of "size s."
- *   h  - height (explicit): Image is always h pixels high, w is calculated.
- *   w  - width (explicit): Image is always w pixels wide, h is calculated.
+ *   h  - height (explicit): Image will be resized to h pixels high, w is calculated.
+ *   w  - width (explicit): Image will resized to w pixels wide, h is calculated.
  *   cw - crop width: crops the image to cw pixels wide.
  *   ch - crop height: crops the image to ch pixels high.
  *   cx - crop x position: the x (horizontal) position of the crop area.
  *   cy - crop y position: the y (vertical) position of the crop area.
  *   q  - JPEG quality (1-100): sets the quality of the resulting image.
- *   t  - Set for custom images if used as thumbs (no watermarking.)
+ *   t  - Set for custom images if used as thumbs.
+ *   wmk - the watermark image to overlay
+ *   gray - grayscale the image
+ *   admin - request is from the back-end
  *
- * - cx and cy are measured from the top-left corner of the _scaled_ image.
+ * 	 Cropping is performed on the original image before resizing is done.
+ * - cx and cy are measured from the top-left corner of the image.
  * - One of s, h, or w _must_ be specified; the others are optional.
  * - If more than one of s, h, or w are specified, s takes priority, then w+h:
- * - If both w and h are given, the image is resized to shortest side, then
- *     cropped on the remaining dimension. Image output will always be WxH.
  * - If none of s, h, or w are specified, the original image is returned.
- *******************************************************************************
- * @package core
+ * ******************************************************************************
+ * @package zpcore
  */
+// force UTF-8 Ø
 
-define('OFFSET_PATH', 1);
-require_once('functions.php');
-require_once('functions-image.php');
 
-// Set the memory limit higher just in case -- supress errors if user doesn't have control.
-// 100663296 bytes = 96M
-if (ini_get('memory_limit') && parse_size(ini_get('memory_limit')) < 100663296) {
-	@ini_set('memory_limit','96M');
-}
+if (!defined('OFFSET_PATH'))
+	define('OFFSET_PATH', 2);
+require_once(dirname(__FILE__) . '/functions/functions-basic.php');
+require_once(dirname(__FILE__) . '/functions/functions-image.php');
 
 $debug = isset($_GET['debug']);
+$returnmode = isset($_GET['returnmode']);
 
 // Check for minimum parameters.
 if (!isset($_GET['a']) || !isset($_GET['i'])) {
-	header("HTTP/1.0 404 Not Found");
-	imageError(gettext("Too few arguments! Image not found."), 'err-imagenotfound.gif');
-}
-$allowWatermark = true;
-if (isset($_GET['t'])) {
-	$allowWatermark = !$_GET['t'];
-} else {
-	if (isset($_GET['s'])) {
-		$allowWatermark = $_GET['s'] != 'thumb';
+	if (TEST_RELEASE) {
+		debugLogVar('i.php too few arguments _GET', $_GET);
+		debugLogVar('i.php too few arguments _SERVER', $_SERVER);
 	}
+	imageError('404 Not Found', gettext("Too few arguments! Image not found."), 'err-imagenotfound.png');
 }
 
 // Fix special characters in the album and image names if mod_rewrite is on:
-// URL looks like: "/album1/subalbum/image/picture.jpg"
+// URL looks like: "/album1/subalbum/picture.jpg"
 
 list($ralbum, $rimage) = rewrite_get_album_image('a', 'i');
-$album = str_replace('..','', sanitize($ralbum, 0));
-$image = str_replace(array('/',"\\"),'', sanitize($rimage, 0));
-$theme = themeSetup($album); // loads the theme based image options.
-
-// Disallow abusive size requests.
-if ( (isset($_GET['s']) && abs($_GET['s']) < MAX_SIZE)
-|| (isset($_GET['w']) && abs($_GET['w']) < MAX_SIZE)
-|| (isset($_GET['h']) && abs($_GET['h']) < MAX_SIZE)) {
-
-	// Extract the image parameters from the input variables
-	// This validates the input as well.
-	$args = array();
-	if (isset($_GET['s'])) {
-		$args[] = $_GET['s'];
-	} else {
-		$args[] = NULL;
+$ralbum = internalToFilesystem($ralbum);
+$rimage = internalToFilesystem($rimage);
+$album = sanitize_path($ralbum);
+$image = sanitize_path($rimage);
+$theme = themeSetup(filesystemToInternal($album)); // loads the theme based image options.
+if (getOption('secure_image_processor')) {
+	require_once(dirname(__FILE__) . '/functions/functions.php');
+	$albumobj = AlbumBase::newAlbum(filesystemToInternal($album));
+	if (!$albumobj->checkAccess()) {
+		imageError('403 Forbidden', gettext("Forbidden(1)"), 'err-imagegeneral.png', $image, $album);
 	}
-	if (isset($_GET['w'])) {
-		$args[] = $_GET['w'];
-	} else {
-		$args[] = NULL;
-	}
-		if (isset($_GET['h'])) {
-		$args[] = $_GET['h'];
-	} else {
-		$args[] = NULL;
-	}
-		if (isset($_GET['cw'])) {
-		$args[] = $_GET['cw'];
-	} else {
-		$args[] = NULL;
-	}
-		if (isset($_GET['ch'])) {
-		$args[] = $_GET['ch'];
-	} else {
-		$args[] = NULL;
-	}
-		if (isset($_GET['cx'])) {
-		$args[] = $_GET['cx'];
-	} else {
-		$args[] = NULL;
-	}
-		if (isset($_GET['cy'])) {
-		$args[] = $_GET['cy'];
-	} else {
-		$args[] = NULL;
-	}
-		if (isset($_GET['q'])) {
-		$args[] = $_GET['q'];
-	} else {
-		$args[] = NULL;
-	}
-	$args = getImageParameters($args);
-	list($size, $width, $height, $cw, $ch, $cx, $cy, $quality, $thumb, $crop) = $args;
-
-  if ($debug) echo "Album: [ " . $album . " ], Image: [ " . $image . " ]<br/><br/>";
-  if ($debug) imageDebug($args);
-	
-} else {
-	// No image parameters specified or are out of bounds; return the original image.
-	//TODO: this will fail when the album folder is external to zp. Maybe should force the sizes within bounds.
-	header("Location: " . getAlbumFolder(FULLWEBPATH) . pathurlencode($album) . "/" . rawurlencode($image));
-	return;
 }
+
+$args = getImageArgs($_GET);
+$adminrequest = $args[12];
+
+if ($forbidden = getOption('image_processor_flooding_protection') && (!isset($_GET['check']) || $_GET['check'] != sha1(HASH_SEED . serialize($args)))) {
+	// maybe it was from the tinyZenpage javascript which does not know better!
+	zp_session_start();
+	$forbidden = !isset($_SESSION['adminRequest']) || $_SESSION['adminRequest'] != @$_COOKIE['zpcms_auth_user'];
+}
+
+if (!isset($_GET['s']) && !isset($_GET['w']) && !isset($_GET['h'])) {
+	// No image parameters specified
+	if (getOption('album_folder_class') !== 'external') {
+		redirectURL(getAlbumFolder(FULLWEBPATH) . pathurlencode(filesystemToInternal($album)) . "/" . rawurlencode(filesystemToInternal($image)));
+	}
+}
+
+$args = getImageParameters($args, filesystemToInternal($album));
+
+list($size, $width, $height, $cw, $ch, $cx, $cy, $quality, $thumb, $crop, $thumbstandin, $passedWM, $adminrequest, $effects) = $args;
+if (DEBUG_IMAGE)
+	debugLog("i.php($ralbum, $rimage): \$size=$size, \$width=$width, \$height=$height, \$cw=$cw, \$ch=$ch, \$cx=$cx, \$cy=$cy, \$quality=$quality, \$thumb=$thumb, \$crop=$crop, \$thumbstandin=$thumbstandin, \$passedWM=$passedWM, \$adminrequest=$adminrequest, \$effects=$effects");
+$allowWatermark = !$thumb && !$adminrequest;
 
 // Construct the filename to save the cached image.
-$newfilename = getImageCacheFilename($album, $image, $args);
+$newfilename = getImageCacheFilename(filesystemToInternal($album), filesystemToInternal($image), $args);
 $newfile = SERVERCACHE . $newfilename;
-if (trim($album)=='') {
-	$imgfile = getAlbumFolder() . $image;
+if (trim($album) == '') {
+	$imgfile = ALBUM_FOLDER_SERVERPATH . $image;
 } else {
-	$imgfile = getAlbumFolder() . "$album/$image";
+	$imgfile = ALBUM_FOLDER_SERVERPATH . $album . '/' . $image;
 }
+
+if ($debug)
+	imageDebug($album, $image, $args, $imgfile);
+
 
 /** Check for possible problems ***********
- ******************************************/
+ * **************************************** */
 // Make sure the cache directory is writable, attempt to fix. Issue a warning if not fixable.
 if (!is_dir(SERVERCACHE)) {
-	@mkdir(SERVERCACHE, CHMOD_VALUE);
-	@chmod(SERVERCACHE, CHMOD_VALUE);
+	@mkdir(SERVERCACHE, FOLDER_MOD);
+	@chmod(SERVERCACHE, FOLDER_MOD);
 	if (!is_dir(SERVERCACHE))
-		imageError(gettext("The cache directory does not exist. Please create it and set the permissions to 0777."), 'err-cachewrite.gif');
+		imageError('404 Not Found', gettext("The cache directory does not exist. Please create it and set the permissions to 0777."), 'err-cachewrite.png', $image, $album, $newfilename);
 }
 if (!is_writable(SERVERCACHE)) {
-	@chmod(SERVERCACHE, CHMOD_VALUE);
+	@chmod(SERVERCACHE, FOLDER_MOD);
 	if (!is_writable(SERVERCACHE))
-		imageError(gettext("The cache directory is not writable! Attempts to chmod didn't work."), 'err-cachewrite.gif');
+		imageError('404 Not Found', gettext("The cache directory is not writable! Attempts to chmod did not work."), 'err-cachewrite.png', $image, $album, $newfilename);
 }
 if (!file_exists($imgfile)) {
-	$imgfile = $rimage; // undo the sanitize
-	// then check to see if it is a transient image
-	$i = strpos($imgfile, '_{');
-	if ($i !== false) {
-		$j = strpos($imgfile, '}_');
-		$source = substr($imgfile, $i+2, $j-$i-2);
-		$imgfile = substr($imgfile, $j+1);
-		$i = strpos($imgfile, '_{');
-		if ($i !== false) {
-			$j = strpos($imgfile, '}_');
-			$source2 = '/'.substr($imgfile, $i+2, $j-$i-2);
-			$imgfile = substr($imgfile, $j+2);
-		} else {
-			$source2 = '';
-		}
-
-		if ($source != ZENFOLDER) {
-			$source = THEMEFOLDER.'/'.$source;
-		}
-		$imgfile = SERVERPATH.'/'.$source.$source2.'/'.$imgfile;
-	} 
-	if (!file_exists($imgfile)) {	
-		header("HTTP/1.0 404 Not Found");
-		imageError(gettext("Image not found; file does not exist."), 'err-imagenotfound.gif');
+	if (isset($_GET['z'])) { //	flagged as a special image
+		$args[3] = $args[4] = 0;
+		$args[5] = 1; // full crops for these default images
+		$args[9] = NULL;
+		if (DEBUG_IMAGE)
+			debugLog("Transient image:$rimage=>$newfile");
+		$imgfile = SERVERPATH . '/' . sanitize_path($_GET['z']);
+	}
+	if (!file_exists($imgfile)) {
+		if (DEBUG_IMAGE)
+			debugLogVar('image not found', $args);
+		imageError('404 Not Found', sprintf(gettext("Image not found; file %s does not exist."), filesystemToInternal($image)), 'err-imagenotfound.png', $image, $album, $newfilename);
 	}
 }
 
 // Make the directories for the albums in the cache, recursively.
-// Skip this for safe_mode, where we can't write to directories we create!
-if (!ini_get("safe_mode")) {
-	$albumdirs = getAlbumArray($album, true);
-	foreach($albumdirs as $dir) {
-		$dir = SERVERCACHE . '/' . $dir;
-		if (!is_dir($dir)) {
-			@mkdir($dir, CHMOD_VALUE);
-			chmod($dir, CHMOD_VALUE);
-		} else if (!is_writable($dir)) {
-			chmod($dir, CHMOD_VALUE);
-		}
-	}
-}
 $process = true;
 // If the file exists, check its modification time and update as needed.
 $fmt = filemtime($imgfile);
-if (file_exists($newfile)) {
-	if ($fmt = filemtime($newfile) < filemtime($imgfile)) {
-		$process = true;
-	} else {
+if (file_exists($newfile) & !$adminrequest) {
+	if (filemtime($newfile) >= filemtime($imgfile)) {
 		$process = false;
+		if (DEBUG_IMAGE)
+			debugLog("Cache file valid");
 	}
 }
-// If the file hasn't been cached yet, create it.
-if ($process) {
-	// setup standard image options from the album theme if it exists
-	cacheImage($newfilename, $imgfile, $args, $allowWatermark, false, $theme);
-}
-if (!$debug) {
-	// ... and redirect the browser to it.
-	header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $fmt).' GMT');
-	header('Content-Type: image/jpeg');
-	header('Location: ' . FULLWEBPATH . substr(CACHEFOLDER, 0, -1) . pathurlencode($newfilename), true, 301);
-	exit();
 
+if ($process) { // If the file hasn't been cached yet, create it.
+	if ($forbidden) {
+		imageError('403 Forbidden', gettext("Forbidden(2)"), 'err-imagegeneral.png', $image, $album, $newfilename);
+	}
+
+	$iMutex = new zpMutex('i', getOption('imageProcessorConcurrency'));
+	$iMutex->lock();
+	$result = cacheImage($newfilename, $imgfile, $args, $allowWatermark, $theme, $album);
+	$iMutex->unlock();
+
+	if (!$result) {
+		imageError('404 Not Found', sprintf(gettext('Image processing of %s resulted in a fatal error.'), filesystemToInternal($image)), 'err-imagegeneral.png', $image, $album, $newfilename);
+	}
+	$fmt = filemtime($newfile);
+}
+$protocol = FULLWEBPATH;
+$path = $protocol . '/' . CACHEFOLDER . pathurlencode(imgSrcURI($newfilename));
+
+if ($returnmode) {
+	echo $path;
 } else {
 
-	echo "\n<p>Image: <img src=\"" . FULLWEBPATH . substr(CACHEFOLDER, 0, -1) . pathurlencode($newfilename) ."\" /></p>";
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-function themeSetup($album) {
-	// a real hack--but we need to conserve memory in i.php so loading the classes is out of the question.
-	$theme = getOption('current_theme');
-	$folders = explode('/', str_replace('\\', '/', $album));
-	if (isset($_GET['album'])) { //it is an album thumb
-		if (count($folders) <= 1) { // and the album is in the gallery
-			return $theme;
+	if (!$debug) {
+		// ... and redirect the browser to it.
+		$suffix = getSuffix($newfilename);
+		switch ($suffix) {
+			case 'wbmp':
+				$suffix = 'wbmp';
+				break;
+			case 'jpg':
+				$suffix = 'jpeg';
+				break;
+			case 'png':
+			case 'gif':
+			case 'jpeg':
+			case 'webp':
+				break;
+			default:
+				imageError('405 Method Not Allowed', sprintf(gettext("Suffix Not Allowed: %s"), filesystemToInternal(basename($newfilename))), 'err-imagegeneral.png', $image, $album, $newfilename);
 		}
-	}
-	$uralbum = $folders[0];
-	$sql = 'SELECT `id`, `album_theme` FROM '.prefix('albums').' WHERE `folder`="'.$uralbum.'"';
-	$result = query_single_row($sql);
-	if (!empty($result['album_theme'])) {
-		$theme = $result['album_theme'];
-		//load the album theme options
-		$sql = "SELECT `name`, `value` FROM ".prefix('options').' WHERE `ownerid`='.$result['id'];
-		$optionlist = query_full_array($sql, true);
-		if ($optionlist !== false) {
-			foreach($optionlist as $option) {
-				setOption($option['name'], $option['value'], false);
-			}
+		if (OPEN_IMAGE_CACHE) {
+			header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $fmt) . ' GMT');
+			header('Content-Type: image/' . $suffix);
+			header('Location: ' . $path, true, 301);
+		} else {
+			$fp = fopen($newfile, 'rb');
+			// send the right headers
+			header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+			header("Content-Type: image/$suffix");
+			header("Content-Length: " . filesize($newfile));
+			// dump the picture and stop the script
+			fpassthru($fp);
+			fclose($fp);
 		}
+	} else {
+		echo "\n<p>Image: <img src=\"" . $path . "\" /></p>";
 	}
-	return $theme;
 }
-
 ?>

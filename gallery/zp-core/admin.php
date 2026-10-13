@@ -1,1229 +1,738 @@
 <?php
 /**
  * admin.php is the main script for administrative functions.
- * @package admin
+ * @package zpcore\admin
  */
-
 // force UTF-8 Ø
 
 /* Don't put anything before this line! */
 define('OFFSET_PATH', 1);
-require_once('admin-functions.php');
-require_once("admin-sortable.php");
 
-if (getOption('zenphoto_release') != ZENPHOTO_RELEASE) {
-	header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/setup.php");
+require_once(dirname(__FILE__) . '/admin-globals.php');
+require_once(SERVERPATH . '/' . ZENFOLDER . '/functions/functions-reconfigure.php');
+
+ignoreSetupRunRequest();
+
+if (isset($_GET['_zp_login_error'])) {
+	$_zp_login_error = sanitize($_GET['_zp_login_error']);
+}
+
+if (!isset($_GET['action']) || (isset($_GET['action']) && sanitize($_GET['action']) != 'ignore_setup')) {
+	checkInstall();
+}
+if(!getOption('setup_unprotected_by_adminrequest')) {
+	protectSetupFiles();
+}
+if (time() > getOption('last_garbage_collect') + 864000) {
+	$_zp_gallery->garbageCollect();
+}
+if (isset($_GET['report'])) {
+	$class = 'messagebox';
+	$msg = sanitize($_GET['report']);
+} else {
+	$msg = '';
+}
+if (extensionEnabled('zenpage')) {
+	require_once(dirname(__FILE__) . '/' . PLUGIN_FOLDER . '/zenpage/zenpage-admin-functions.php');
+}
+$redirected_from = NULL;
+if (zp_loggedin() && !empty($_zp_admin_menu)) {
+	if (!$_zp_current_admin_obj->getID() || empty($msg) && !zp_loggedin(OVERVIEW_RIGHTS)) {
+		// admin access without overview rights, redirect to first tab
+		$tab = array_shift($_zp_admin_menu);
+		$link = $tab['link'];
+		redirectURL($link);
+	}
+} else {
+	if (isset($_GET['from'])) {
+		$redirected_from = sanitizeRedirect($_GET['from']);
+	} else {
+		$redirected_from = urldecode(currentRelativeURL());
+	}
 }
 
 if (zp_loggedin()) { /* Display the admin pages. Do action handling first. */
-	if (($_zp_null_account = ($_zp_loggedin == ADMIN_RIGHTS)) || ($_zp_loggedin == NO_RIGHTS)) { // user/password set required.
-		header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin-options.php");
-	}
-
-	$tagsort = getTagOrder();
-	//check for security incursions
-	if (isset($_GET['album'])) {
-		if (!($_zp_loggedin & ADMIN_RIGHTS)) {
-			if (!isMyAlbum(urldecode(strip($_GET['album'])), $_zp_loggedin)) {
-				unset($_GET['album']);
-				unset($_GET['page']);
-				$page = '';
-			}
-		}
-	}
-
-	$mcr_errors = array();
-
-
-	$gallery = new Gallery();
-	$gallery->garbageCollect();
 	if (isset($_GET['action'])) {
-		$action = $_GET['action'];
-		/** reorder the tag list ******************************************************/
-		/******************************************************************************/
-		if ($action == 'sorttags') {
-			if (isset($_GET['subpage'])) {
-				$pg = '&subpage='.$_GET['subpage'];
-				$tab = '#tab_imageinfo';
-			} else {
-				$pg = '';
-				$tab = '';
-			}
-			header('Location: ' . FULLWEBPATH . '/' . ZENFOLDER . '/admin.php?page=edit&album='.$_GET['album'].$pg.'&tagsort='.$tagsort.$tab);
+		$action = sanitize($_GET['action']);
+		if ($action == 'external') {
+			$needs = ALL_RIGHTS;
+		} else {
+			$needs = ADMIN_RIGHTS;
 		}
+		if (zp_loggedin($needs)) {
+			switch ($action) {
+				/** clear the image cache **************************************************** */
+				/*				 * *************************************************************************** */
+				case "clear_cache":
+					XSRFdefender('clear_cache');
+					Gallery::clearCache();
+					$class = 'messagebox';
+					$msg = gettext('Image cache cleared.');
+					break;
 
-		/** clear the cache ***********************************************************/
-		/******************************************************************************/
-		if ($action == "clear_cache") {
-			$gallery->clearCache();
-		}
-
-		/** Publish album  ************************************************************/
-		/******************************************************************************/
-		if ($action == "publish") {
-			$folder = urldecode(strip($_GET['album']));
-			$album = new Album($gallery, $folder);
-			$album->setShow($_GET['value']);
-			$album->save();
-			header('Location: ' . FULLWEBPATH . '/' . ZENFOLDER . '/admin.php?page=edit');
-			exit();
-
-			/** Reset hitcounters ***********************************************************/
-			/********************************************************************************/
-		} else if ($action == "reset_hitcounters") {
-			if (isset($_GET['albumid'])) $id = $_GET['albumid'];
-			if (isset($_POST['albumid'])) $id = $_POST['albumid'];
-			if(isset($id)) {
-				$where = ' WHERE `id`='.$id;
-				$imgwhere = ' WHERE `albumid`='.$id;
-				$return = '?page=edit';
-				if (isset($_GET['return'])) $rt = $_GET['return'];
-				if (isset($_POST['return'])) $rt = $_POST['return'];
-				if (isset($rt)) {
-					$return .= '&album=' . $rt .'&counters_reset';
-				}
-			} else {
-				$where = '';
-				$imgwhere = '';
-				$return = '?counters_reset';
-			}
-			query("UPDATE " . prefix('albums') . " SET `hitcounter`= 0" . $where);
-			query("UPDATE " . prefix('images') . " SET `hitcounter`= 0" . $imgwhere);
-			header('Location: ' . FULLWEBPATH . '/' . ZENFOLDER . '/admin.php' . $return);
-			exit();
-
-			/** SAVE **********************************************************************/
-			/******************************************************************************/
-		} else if ($action == "save") {
-			$returntab = '';
-
-			/** SAVE A SINGLE ALBUM *******************************************************/
-			if ($_POST['album']) {
-
-				$folder = urldecode(strip($_POST['album']));
-				$album = new Album($gallery, $folder);
-				$notify = '';
-				if (isset($_POST['savealbuminfo'])) {
-					$notify = processAlbumEdit(0, $album);
-					$returntab = '&tagsort='.$tagsort.'#tab_albuminfo';
-				}
-
-				if (isset($_POST['totalimages'])) {
-					$returntab = '&tagsort='.$tagsort.'#tab_imageinfo';
-					if (isset($_POST['thumb'])) {
-						$thumbnail = sanitize_numeric($_POST['thumb']);
-					} else {
-						$thumbnail = -1;
+				/** clear the RSScache ********************************************************** */
+				/*				 * *************************************************************************** */
+				case "clear_rss_cache":
+					if (class_exists('RSS')) {
+						XSRFdefender('clear_cache');
+						$RSS = new RSS(array('rss' => 'null'));
+						$RSS->clearCache();
+						$class = 'messagebox';
+						$msg = gettext('RSS cache cleared.');
 					}
-					$oldsort = sanitize($_POST['oldalbumimagesort'], 3);
-					$newsort = sanitize($_POST['albumimagesort'],3);
-					if ($oldsort == $newsort) {
-						setOption('albumimagedirection', isset($_POST['albumimagedirection'])?"DESC":"");
-						for ($i = 0; $i < $_POST['totalimages']; $i++) {
-							$filename = strip($_POST["$i-filename"]);
+					break;
 
-							// The file might no longer exist
-							$image = newImage($album, $filename);
-							if ($image->exists) {
-								if (isset($_POST[$i.'-MoveCopyRename'])) {
-									$movecopyrename_action = $_POST[$i.'-MoveCopyRename'];
-								} else {
-									$movecopyrename_action = '';
-								}
-								if ($movecopyrename_action == 'delete') {
-									$image->deleteImage(true);
-								} else {
-									if ($thumbnail == $i) { //selected as album thumb
-										$album = $image->getAlbum();
-										$album->setAlbumThumb($image->filename);
-										$album->save();
-									}
-									if (isset($_POST[$i.'-reset_rating'])) {
-										$image->set('total_value', 0);
-										$image->set('total_votes', 0);
-										$image->set('used_ips', 0);
-									}
-									$image->setTitle(process_language_string_save("$i-title", 2));
-									$image->setDesc(process_language_string_save("$i-desc", 1));
-									$image->setLocation(process_language_string_save("$i-location", 3));
-									$image->setCity(process_language_string_save("$i-city", 3));
-									$image->setState(process_language_string_save("$i-state", 3));
-									$image->setCountry(process_language_string_save("$i-country", 3));
-									$image->setCredit(process_language_string_save("$i-credit", 1));
-									$image->setCopyright(process_language_string_save("$i-copyright", 1));
+				/** clear the HTMLcache ****************************************************** */
+				/*				 * *************************************************************************** */
+				case 'clear_html_cache':
+					XSRFdefender('ClearHTMLCache');
+					require_once(SERVERPATH . '/' . ZENFOLDER . '/' . PLUGIN_FOLDER . '/static_html_cache.php');
+					static_html_cache::clearHTMLCache();
+					$class = 'messagebox';
+					$msg = gettext('HTML cache cleared.');
+					break;
+					/** clear the search cache ****************************************************** */
+				/*				 * *************************************************************************** */
+				case 'clear_search_cache':
+					XSRFdefender('ClearSearchCache');
+					SearchEngine::clearSearchCache();
+					$class = 'messagebox';
+					$msg = gettext('Search cache cleared.');
+					break;
+				/** restore the setup files ************************************************** */
+				/*				 * *************************************************************************** */
+				case 'restore_setup':
+					XSRFdefender('restore_setup');
+					unprotectSetupFiles();
+					zp_apply_filter('log_setup', true, 'protect', gettext('enabled'));
+					setOption('setup_unprotected_by_adminrequest', 1, true, null);
+					$class = 'messagebox';
+					$msg = gettext('Setup files restored.');
+					break;
 
-									$tagsprefix = 'tags_'.$i.'-';
-									$tags = array();
-									for ($j=0; $j<4; $j++) {
-										if (isset($_POST[$tagsprefix.'new_tag_value_'.$j])) {
-											$tag = trim(strip($_POST[$tagsprefix.'new_tag_value_'.$j]));
-											unset($_POST[$tagsprefix.'new_tag_value_'.$j]);
-											if (!empty($tag)) {
-												$tags[] = $tag;
-											}
-										}
-									}
-									$l = strlen($tagsprefix);
-									foreach ($_POST as $key => $value) {
-										$key = postIndexDecode($key);
-										if (substr($key, 0, $l) == $tagsprefix) {
-											if ($value) {
-												$tags[] = substr($key, $l);
-											}
-										}
-									}
-									$tags = array_unique($tags);
-									$image->setTags(sanitize($tags, 3));
+				/** protect the setup files ************************************************** */
+				/*				 * *************************************************************************** */
+				case 'protect_setup':
+					XSRFdefender('protect_setup');
+					protectSetupFiles();
+					setOption('setup_unprotected_by_adminrequest', 0, true, null);
+					$class = 'messagebox';
+					$msg = gettext('Setup files protected.');
+					break;
 
-
-									$image->setDateTime(strip($_POST["$i-date"]));
-									$image->setShow(isset($_POST["$i-Visible"]));
-									$image->setCommentsAllowed(strip($_POST["$i-allowcomments"]));
-									if (isset($_POST["$i-reset_hitcounter"])) {
-										$image->set('hitcounter', 0);
-									}
-									$image->setCustomData(process_language_string_save("$i-custom_data", 1));
-									$image->save();
-
-									// Process move/copy/rename
-									if ($movecopyrename_action == 'move') {
-										$dest = $_POST[$i.'-albumselect'];
-										if ($dest && $dest != $folder) {
-											if (!$image->moveImage($dest)) {
-												$notify = "&mcrerr=1";
-											}
-										} else {
-											// Cannot move image to same album.
-										}
-									} else if ($movecopyrename_action == 'copy') {
-										$dest = $_POST[$i.'-albumselect'];
-										if ($dest && $dest != $folder) {
-											if(!$image->copyImage($dest)) {
-												$notify = "&mcrerr=1";
-											}
-										} else {
-											// Cannot copy image to existing album.
-											// Or, copy with rename?
-										}
-									} else if ($movecopyrename_action == 'rename') {
-										$renameto = $_POST[$i.'-renameto'];
-										$image->renameImage($renameto);
-									}
-								}
-							}
+				/** external script return *************************************************** */
+				/*				 * *************************************************************************** */
+				case 'external':
+					if (isset($_GET['error'])) {
+						$class = sanitize($_GET['error']);
+						if (empty($class)) {
+							$class = 'errorbox';
 						}
 					} else {
-						setOption('albumimagesort', $newsort);
-						setOption('albumimagedirection', isset($_POST['albumimagedirection'])?"DESC":"");
-						$notify = '&';
+						$class = 'messagebox';
 					}
-				}
-
-				/** SAVE MULTIPLE ALBUMS ******************************************************/
-			} else if ($_POST['totalalbums']) {
-				for ($i = 1; $i <= $_POST['totalalbums']; $i++) {
-					$folder = urldecode(strip($_POST["$i-folder"]));
-					$album = new Album($gallery, $folder);
-					$rslt = processAlbumEdit($i, $album);
-					if (!empty($rslt)) { $notify = $rslt; }
-				}
+					if (isset($_GET['msg'])) {
+						$msg = sanitize($_GET['msg']);
+					} else {
+						$msg = '';
+					}
+					break;
 			}
-			// Redirect to the same album we saved.
-			$qs_albumsuffix = "&massedit";
-			if ($_GET['album']) {
-				$folder = urldecode(strip($_GET['album']));
-				$qs_albumsuffix = '&album='.urlencode($folder);
-			}
-			if (isset($_POST['subpage'])) {
-				$pg = '&subpage='.$_POST['subpage'];
+		} else {
+			$class = 'errorbox';
+			$actions = array(
+					'clear_cache' => gettext('purge Image cache'),
+					'clear_rss_cache' => gettext('purge RSS cache'),
+					'reset_hitcounters' => gettext('reset all hitcounters'),
+					'clear_search_cache' => gettext('purge search cache')
+			);
+			if (array_key_exists($action, $actions)) {
+				$msg = $actions[$action];
 			} else {
-				$pg = '';
+				$msg = '<em>' . html_encode($action) . '</em>';
 			}
-			if ($notify == '&') {
-				$notify = '';
-			} else {
-				$notify .= '&saved';
-			}
-			header('Location: '.FULLWEBPATH.'/'.ZENFOLDER.'/admin.php?page=edit'.$qs_albumsuffix.$notify.$pg.$returntab);
-			exit();
-
-			/** DELETION ******************************************************************/
-			/*****************************************************************************/
-		} else if ($action == "deletealbum") {
-			$albumdir = "";
-			if ($_GET['album']) {
-				$folder = urldecode(strip($_GET['album']));
-				$album = new Album($gallery, $folder);
-				if ($album->deleteAlbum()) {
-					$nd = 3;
-				} else {
-					$nd = 4;
-				}
-				$pieces = explode('/', $folder);
-				if (($i = count($pieces)) > 1) {
-					unset($pieces[$i-1]);
-					$albumdir = "&album=" . urlencode(implode('/', $pieces));
-				}
-			}
-			header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin.php?page=edit" . $albumdir . "&ndeleted=".$nd);
-			exit();
+			$msg = sprintf(gettext('You do not have proper rights to %s.'), $msg);
+		}
+	} else {
+		if (!is_null($redirected_from)) {
+			$class = 'errorbox';
+			$msg = sprintf(gettext('You do not have proper rights to access %s.'), html_encode(sanitize($redirected_from)));
 		}
 	}
 
-
-	if (isset($_GET['page'])) {
-		$page = $_GET['page'];
-	} else if (empty($page)) {
-		$page = "home";
-	}
-
-	switch ($page) {
-		case 'comments':
-			if (!($_zp_loggedin & (ADMIN_RIGHTS | COMMENT_RIGHTS))) $page = '';
-			break;
-		case 'upload':
-			if (!($_zp_loggedin & (ADMIN_RIGHTS | UPLOAD_RIGHTS))) $page = '';
-			break;
-		case 'edit':
-			if (!($_zp_loggedin & (ADMIN_RIGHTS | EDIT_RIGHTS))) $page = '';
-			break;
-		case 'themes':
-			if (!($_zp_loggedin & (ADMIN_RIGHTS | THEMES_RIGHTS))) $page = '';
-			break;
-		case 'plugins':
-			if (!($_zp_loggedin & (ADMIN_RIGHTS | ADMIN_RIGHTS))) $page = '';
-			break;
-		case 'home':
-			if (!($_zp_loggedin & (ADMIN_RIGHTS | MAIN_RIGHTS))) {
-				$page='options';
-			}
-			break;
-	}
-
-
-	/* TODO: 	This should not be necessary if all the references really got changed on the restructure.
-						Only the redirect to the options page should be required--for no-rights admin users as
-						they can only view/change their credentials.
-  */
-	$q = '?page='.$page;
-	foreach ($_GET as $opt=>$value) {
-		if ($opt != 'page') {
-			$q .= '&'.$opt.'='.$value;
-		}
-	}
-	switch ($page) {
-		case 'editcomment':
-		case 'comments':
-			header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin-comments.php".$q);
-			exit();
-		case 'upload':
-			header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin-upload.php".$q);
-			exit();
-		case 'themes':
-			header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin-themes.php".$q);
-			exit();
-		case 'plugins':
-			header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin-plugins.php".$q);
-			exit();
-		case 'options':
-			header("Location: " . FULLWEBPATH . "/" . ZENFOLDER . "/admin-options.php".$q);
-			exit();
-		default:
-	}
-}
-
-/* NO Admin-only content between this and the next check. */
-
-/************************************************************************************/
-/** End Action Handling *************************************************************/
-/************************************************************************************/
-
-if (issetPage('edit')) {
-	zenSortablesPostHandler('albumOrder', 'albumList', 'albums');
+	/*	 * ********************************************************************************* */
+	/** End Action Handling ************************************************************ */
+	/*	 * ********************************************************************************* */
 }
 
 // Print our header
-printAdminHeader();
-
-if (issetPage('edit')) {
-	zenSortablesHeader('albumList','albumOrder','div', "handle:'handle'");
-}
-echo "\n</head>";
+printAdminHeader('overview');
 ?>
-
-<body>
-
+<script src="<?php echo WEBPATH . '/' . ZENFOLDER; ?>/js/jquery.masonry.min.js"></script>
+<script>
+	$(function() {
+		$('#overviewboxes').masonry({
+			// options
+			itemSelector: '.overview-utility',
+			columnWidth: 520
+		});
+	});
+</script>
 <?php
-// If they are not logged in, display the login form and exit
-
+echo "\n</head>";
 if (!zp_loggedin()) {
-	printLoginForm();
-	echo "\n</body>";
+	// If they are not logged in, display the login form and exit
+	?>
+	<body style="background-image: none">
+		<?php $_zp_authority->printLoginForm($redirected_from); ?>
+	</body>
+	<?php
 	echo "\n</html>";
-	exit();
-
-} else { /* Admin-only content safe from here on. */
+	exitZP();
+}
+?>
+<body>
+	<?php
+	/* Admin-only content safe from here on. */
 	printLogoAndLinks();
 	?>
-<div id="main">
-<?php printTabs($page); ?>
-<div id="content">
-<?php
-
-/** EDIT ****************************************************************************/
-/************************************************************************************/
-
-if ($page == "edit") {
-
-/** SINGLE ALBUM ********************************************************************/
-define('IMAGES_PER_PAGE', 10);
-
-if (isset($_GET['album']) && !isset($_GET['massedit'])) {
-	$oldalbumimagesort = getOption('albumimagesort');
-	$direction = getOption('albumimagedirection');
-	$folder = strip($_GET['album']);
-	$album = new Album($gallery, $folder);
-	if ($album->isDynamic()) {
-		$subalbums = array();
-		$allimages = array();
-	} else {
-		$subalbums = $album->getSubAlbums();
-		$allimages = $album->getImages(0, 0, $oldalbumimagesort, $direction);
-	}
-	$allimagecount = count($allimages);
-	if (isset($_GET['subpage'])) {
-		$pagenum = max(intval($_GET['subpage']),1);
-		if (($pagenum-1) * IMAGES_PER_PAGE >= $allimagecount) $pagenum --;
-	} else {
-		$pagenum = 1;
-	}
-	$images = array_slice($allimages, ($pagenum-1)*IMAGES_PER_PAGE, IMAGES_PER_PAGE);
-
-	$totalimages = count($images);
-	$albumdir = "";
-
-	$albumdir = dirname($folder);
-	if (($albumdir == '/') || ($albumdir == '.')) {
-		$albumdir = '';
-	} else {
-		$albumdir = "&album=" . urlencode($albumdir);
-	}
-	if (isset($_GET['subalbumsaved'])) {
-		$album->setSubalbumSortType('Manual');
-		$album->setSortDirection('album', 0);
-		$album->save();
-		echo '<div class="messagebox" id="fade-message">';
-		echo  "<h2>".gettext("Subalbum order saved")."</h2>";
-		echo '</div>';
-	}
-
-	?>
-<h1><?php echo gettext("Edit Album:");?> <em><?php echo $album->name; ?></em></h1>
-<p><?php printAdminLinks('edit' . $albumdir, "&laquo; ".gettext("Back"), gettext("Back to the list of albums (go up one level)"));?>
- | <?php if (!$album->isDynamic() && $album->getNumImages() > 1) {
-   printSortLink($album, gettext("Sort Album"), gettext("Sort Album"));
-   echo ' | '; }?>
-<?php printViewLink($album, gettext("View Album"), gettext("View Album")); ?>
-</p>
-
-
-	<?php displayDeleted(); /* Display a message if needed. Fade out and hide after 2 seconds. */ ?>
-	<?php
-	if (isset($_GET['saved'])) {
-		if (isset($_GET['mismatch'])) {
-			?>
-			<div class="errorbox" id="fade-message">
-			<?php if ($_GET['mismatch'] == 'user') {
-				echo '<h2>'.gettext("You must supply a  password.").'</h2>';
-			} else {
-				echo '<h2>'.gettext("Your passwords did not match.").'</h2>';
-			}
-			?>
-
-			</div>
-		<?php
-		} else {
-		?>
-			<div class="messagebox" id="fade-message">
-			<h2><?php echo gettext("Changes saved"); ?></h2>
-			</div>
-		<?php
-		}
-		if (isset($_GET['mcrerr'])) {
-			echo '<div class="errorbox" id="fade-message2">';
-			echo  "<h2>".gettext("There was an error with a move, copy, or rename operation.")."</h2>";
-			echo '</div>';
-		}
-		?>
-	<?php
-	}
-	if (isset($_GET['uploaded'])) {
-		echo '<div class="messagebox" id="fade-message">';
-		echo  "<h2>".gettext("Images uploaded")."</h2>";
-		echo '</div>';
-	}
-
-	echo '<div id="mainmenu">';
-	echo '<ul>';
-	echo '<li><a href="#tab_albuminfo"><span>'.gettext("Album").'</span></a></li>';
-	if (count($subalbums) > 0) {
-		echo '<li><a href="#tab_subalbuminfo"><span>'.gettext("Subalbums").'</span></a></li>';
-	} if ($allimagecount) {
-		echo '<li><a href="#tab_imageinfo"><span>'.gettext("Images").'</span></a></li>';
-	}
-	echo '</ul>';
-	echo '</div>'."\n";
-	?>
-<!-- Album info box -->
-<div id="tab_albuminfo">
-<form name="albumedit1"
-	action="?page=edit&action=save<?php echo "&album=" . urlencode($album->name); ?>"	method="post">
-	<input type="hidden" name="album"	value="<?php echo $album->name; ?>" />
-	<input type="hidden"	name="savealbuminfo" value="1" />
-	<?php printAlbumEditForm(0, $album); ?>
-</form>
-<br />
-<?php printAlbumButtons($album) ?> <?php if (!$album->isDynamic())  {?>
-<br />
-</div>
-<!-- Subalbum list goes here -->
-<div id="tab_subalbuminfo">
-<?php
-if (count($subalbums) > 0) {
-?>
-<table class="bordered" width="100%">
-	<input type="hidden" name="subalbumsortby" value="Manual" />
-	<tr>
-		<th colspan="8">
-		<h2 class="subheadline"><?php echo gettext("Albums"); ?></h2>
-		</th>
-	</tr>
-	<tr>
-		<td colspan="8">
-		<?php
-			$sorttype = $album->getSubalbumSortType();
-			if ($sorttype != 'Manual') {
-				if ($album->getSortDirection('album')) {
-					$dir = gettext(' descending');
-				} else {
-					$dir = '';
-				}
-				$sortNames = array_flip($sortby);
-				$sorttype = $sortNames[$sorttype];
-			} else {
-				$dir = '';
-			}
-			printf(gettext('Current sort: %1$s%2$s. '), $sorttype, $dir);
-			echo gettext('Drag the albums into the order you wish them displayed.').' ';
-			echo gettext("Select an album to edit its description and data, or");
-		?>
-		<a href="?page=edit&album=<?php echo urlencode($album->name)?>&massedit"><?php echo gettext("mass-edit all album data"); ?></a>.</td>
-	</tr>
-	<tr>
-		<td style="padding: 0px 0px;" colspan="8">
-		<div id="albumList" class="albumList"><?php
-		foreach ($subalbums as $folder) {
-			$subalbum = new Album($album, $folder);
-			printAlbumEditRow($subalbum);
-		}
-		?></div>
-	</tr>
-</table>
-		<ul class="iconlegend">
-		<li><img src="images/lock.png" alt="Protected" /><?php echo gettext("Has Password"); ?></li>
-		<li><img src="images/pass.png" alt="Published" /><img src="images/action.png" alt="Unpublished" /><?php echo gettext("Published/Unpublished"); ?></li>
-		<li><img src="images/cache.png" alt="Cache the album" /><?php echo gettext("Cache	the album"); ?></li>
-		<li><img src="images/warn.png" alt="Refresh image metadata" /><?php echo gettext("Refresh image metadata"); ?></li>
-		<li><img src="images/reset.png" alt="Reset hitcounters" /><?php echo gettext("Reset	hitcounters"); ?></li>
-		<li><img src="images/fail.png" alt="Delete" /><?php echo gettext("Delete"); ?></li>
-		</ul>
-	<?php
-			zenSortablesSaveButton("?page=edit&album=" . urlencode($album->name) . "&subalbumsaved#tab_subalbuminfo", gettext("Save Order"));
-			?>
-
-<br />
-<?php
-} ?>
-</div>
-<!-- Images List -->
-<div id="tab_imageinfo">
-<?php
-if ($allimagecount) {
-	?>
-<form name="albumedit2"	action="?page=edit&action=save<?php echo "&album=" . urlencode($album->name); ?>"	method="post">
-	<input type="hidden" name="album"	value="<?php echo $album->name; ?>" />
-	<input type="hidden" name="totalimages" value="<?php echo $totalimages; ?>" />
-	<input type="hidden" name="subpage" value="<?php echo $pagenum; ?>" />
-	<input type="hidden" name="tagsort" value=<?php echo $tagsort ?> />
-	<input type="hidden" name="oldalbumimagesort" value=<?php echo $oldalbumimagesort; ?> />
-
-<?php	$totalpages = ceil(($allimagecount / IMAGES_PER_PAGE));	?>
-<table class="bordered">
-	<tr>
-		<th>
-			<h2 class="subheadline"><?php echo gettext("Images"); ?></h2>
-		</th>
-		<th><?php echo gettext("Click the images for a larger version"); ?>	</th>
-		<th>
-			<a href="javascript:toggleExtraInfo('','image',true);"><?php echo gettext('expand all fields');?></a>
-			| <a href="javascript:toggleExtraInfo('','image',false);"><?php echo gettext('collapse all fields');?></a>
-		</th>
-		<th align="right"><?php
-			echo gettext("Display images by:");
-			echo '<select id="albumimagesort" name="albumimagesort" onchange="this.form.submit()">';
-			generateListFromArray(array($oldalbumimagesort), $sortby);
-			echo '</select>';
-			?> <input type="checkbox" id="albumimagedirection"
-			name="albumimagedirection" value="DESC"
-			<?php if ($direction) { echo " CHECKED"; } ?> /><?php echo gettext("Descending");?>
-		</th>
-	</tr>
-	<?php
-	if ($allimagecount != $totalimages) { // need pagination links
-	?>
-	<tr>
-		<td colspan="4" class="bordered" id="imagenav"><?php adminPageNav($pagenum,$totalpages,'admin.php','?page=edit&amp;album='.urlencode($album->name),'#tab_imageinfo'); ?>
-		</td>
-	</tr>
-	<?php
-	}
- ?>
-	<tr>
-		<td colspan="4">
-		<input type="submit" value="<?php echo gettext('save changes'); ?>" />
-		</td>
-	</tr>
-	<?php
-	$mcr_albumlist = array();
-	genAlbumUploadList($mcr_albumlist);
-	$bglevels = array('#fff','#f8f8f8','#efefef','#e8e8e8','#dfdfdf','#d8d8d8','#cfcfcf','#c8c8c8');
-
-	$currentimage = 0;
-	foreach ($images as $filename) {
-		$image = newImage($album, $filename);
-		?>
-
-	<tr <?php echo ($currentimage % 2 == 0) ?  "class=\"alt\"" : ""; ?>>
-		<td colspan="4">
-		<input type="hidden" name="<?php echo $currentimage; ?>-filename"	value="<?php echo $image->filename; ?>" />
-		<table border="0" class="formlayout"
-			id="image-<?php echo $currentimage; ?>">
-			<tr>
-				<td valign="top" width="150" rowspan="14"><img
-					id="thumb-<?php echo $currentimage; ?>"
-					src="<?php echo $image->getThumb();?>"
-					alt="<?php echo $image->filename;?>"
-					onclick="toggleBigImage('thumb-<?php echo $currentimage; ?>', '<?php echo $image->getSizedImage(getOption('image_size')); ?>');" />
-				<p><strong><?php echo $image->filename; ?></strong></p>
-				<p><label for="<?php echo $currentimage; ?>-thumb"><input
-					type="radio" id="<?php echo $currentimage; ?>-thumb" name="thumb"
-					value="<?php echo $currentimage ?>" /> <?php echo ' '.gettext("Select as album thumbnail."); ?>
-				</label></p>
-				</td>
-				<td align="right" valign="top" width="100"><?php echo gettext("Title:"); ?></td>
-				<td><?php print_language_string_list($image->get('title'), $currentimage.'-title', false); ?>
-				</td>
-				<td style="padding-left: 1em; text-align: left;" valign="top"
-					colspan="1"><label for="<?php echo $currentimage; ?>-allowcomments">
-				<input type="checkbox"
-					id="<?php echo $currentimage; ?>-allowcomments"
-					name="<?php echo $currentimage; ?>-allowcomments" value="1"
-					<?php if ($image->getCommentsAllowed()) { echo "checked=\"checked\""; } ?> />
-				<?php echo gettext("Allow Comments"); ?></label> &nbsp; &nbsp; <label
-					for="<?php echo $currentimage; ?>-Visible"> <input type="checkbox"
-					id="<?php echo $currentimage; ?>-Visible"
-					name="<?php echo $currentimage; ?>-Visible" value="1"
-					<?php if ($image->getShow()) { echo "checked=\"checked\""; } ?> />
-				<?php echo gettext("Visible"); ?></label></td>
-			</tr>
-
-			<tr>
-				<td align="right" valign="top"><?php echo gettext("Description:"); ?></td>
-				<td><?php print_language_string_list($image->get('desc'), $currentimage.'-desc', true, NULL, 'texteditor'); ?>
-				</td>
-				<td style="padding-left: 1em;">
-				<p style="margin-top: 0; margin-bottom: 1em;"><?php
-							$hc = $image->get('hitcounter');
-							if (empty($hc)) { $hc = '0'; }
-							printf( gettext("Hit counter: <strong>%u</strong>"),$hc)." <label for=\"$currentimage-reset_hitcounter\"><input type=\"checkbox\" id=\"$currentimage-reset_hitcounter\" name=\"$currentimage-reset_hitcounter\" value=1> ".gettext("Reset")."</label> ";
-							$tv = $image->get('total_value');
-							$tc = $image->get('total_votes');
-							echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-							if ($tc > 0) {
-								$hc = $tv/$tc;
-								printf(gettext('Rating: <strong>%u</strong>'),$hc)." <label for=\"$currentimage-reset_rating\"><input type=\"checkbox\" id=\"$currentimage-reset_rating\" name=\"$currentimage-reset_rating\" value=1> ".gettext("Reset")."</label> ";
-							} else {
-								echo ' '.gettext("Rating: Unrated");
-							}
-							?></p>
-
-				<!-- Move/Copy/Rename this image --> <label
-					for="<?php echo $currentimage; ?>-move" style="padding-right: .5em">
-				<input type="radio" id="<?php echo $currentimage; ?>-move"
-					name="<?php echo $currentimage; ?>-MoveCopyRename" value="move"
-					onclick="toggleMoveCopyRename('<?php echo $currentimage; ?>', 'movecopy');" />
-				<?php echo gettext("Move");?> </label> <label
-					for="<?php echo $currentimage; ?>-copy" style="padding-right: .5em">
-				<input type="radio" id="<?php echo $currentimage; ?>-copy"
-					name="<?php echo $currentimage; ?>-MoveCopyRename" value="copy"
-					onclick="toggleMoveCopyRename('<?php echo $currentimage; ?>', 'movecopy');" />
-				<?php echo gettext("Copy");?> </label> <label
-					for="<?php echo $currentimage; ?>-rename"
-					style="padding-right: .5em"> <input type="radio"
-					id="<?php echo $currentimage; ?>-rename"
-					name="<?php echo $currentimage; ?>-MoveCopyRename" value="rename"
-					onclick="toggleMoveCopyRename('<?php echo $currentimage; ?>', 'rename');" />
-				<?php echo gettext("Rename File");?> </label> <label
-					for="<?php echo $currentimage; ?>-Delete"> <input type="radio"
-					id="<?php echo $currentimage; ?>-Delete"
-					name="<?php echo $currentimage; ?>-MoveCopyRename" value="delete"
-					onclick="image_deleteconfirm(this, '<?php echo $currentimage; ?>','<?php echo gettext("Are you sure you want to select this image for deletion?"); ?>')" />
-				<?php echo ' '.gettext("Delete image.") ?> </label>
-				<div id="<?php echo $currentimage; ?>-movecopydiv"
-					style="padding-top: .5em; padding-left: .5em; display: none;"><?php echo gettext("to"); ?>:
-				<select id="<?php echo $currentimage; ?>-albumselectmenu"
-					name="<?php echo $currentimage; ?>-albumselect" onChange="">
-					<?php
-									foreach ($mcr_albumlist as $fullfolder => $albumtitle) {
-										$singlefolder = $fullfolder;
-										$saprefix = "";
-										$salevel = 0;
-										$selected = "";
-										if ($album->name == $fullfolder) {
-											$selected = " SELECTED=\"true\" ";
-										}
-										// Get rid of the slashes in the subalbum, while also making a subalbum prefix for the menu.
-										while (strstr($singlefolder, '/') !== false) {
-											$singlefolder = substr(strstr($singlefolder, '/'), 1);
-											$saprefix = "&nbsp; &nbsp;&nbsp;" . $saprefix;
-											$salevel++;
-										}
-										echo '<option value="' . $fullfolder . '"' . ($salevel > 0 ? ' style="background-color: '.$bglevels[$salevel].';"' : '')
-										. "$selected>". $saprefix . $singlefolder ."</option>\n";
-									}
-								?>
-				</select>
-				<p style="text-align: right;"><a
-					href="javascript:toggleMoveCopyRename('<?php echo $currentimage; ?>', '');"><?php echo gettext("Cancel");?></a>
-				</p>
+	<div id="main">
+		<?php printTabs(); ?>
+		<div id="content">
+			<?php
+			/*			 * * HOME ************************************************************************** */
+			/*			 * ********************************************************************************* */
+			if (!empty($msg)) {
+				?>
+				<div class="<?php echo html_encode($class); ?> fade-message">
+					<h2><?php echo html_encode($msg); ?></h2>
 				</div>
-				<div id="<?php echo $currentimage; ?>-renamediv"
-					style="padding-top: .5em; padding-left: .5em; display: none;"><?php echo gettext("to"); ?>:
-				<input name="<?php echo $currentimage; ?>-renameto" type="text"
-					size="35" value="<?php echo $image->filename;?>" /><br />
-				<p style="text-align: right; padding: .25em 0px;"><a
-					href="javascript:toggleMoveCopyRename('<?php echo $currentimage; ?>', '');"><?php echo gettext("Cancel");?></a>
-				</p>
-				</div>
-				<div id="deletemsg<?php echo $currentimage; ?>"
-					style="padding-top: .5em; padding-left: .5em; color: red; display: none">
-				<?php echo gettext('Image will be deleted when changes are saved.'); ?>
-				<p style="text-align: right; padding: .25em 0px;"><a
-					href="javascript:toggleMoveCopyRename('<?php echo $currentimage; ?>', '');"><?php echo gettext("Cancel");?></a>
-				</p>
-				</div>
-				</td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("Location:"); ?></td>
-				<td><?php print_language_string_list($image->get('location'), $currentimage.'-location', false); ?>
-				</td>
-				<td rowspan="10" style="padding-left: 1em;">
-				<p style="padding: 0px 0px .5em; margin: 0px;">Tags</p>
 				<?php
-							tagSelector($image, 'tags_'.$currentimage.'-', false, $tagsort);
-						?></td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("City:"); ?></td>
-				<td><?php print_language_string_list($image->get('city'), $currentimage.'-city', false); ?>
-				</td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("State:"); ?></td>
-				<td><?php print_language_string_list($image->get('state'), $currentimage.'-state', false); ?>
-				</td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("Country:"); ?></td>
-				<td><?php print_language_string_list($image->get('country'), $currentimage.'-country', false); ?>
-				</td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("Credit:"); ?></td>
-				<td><?php print_language_string_list($image->get('credit'), $currentimage.'-credit', false); ?>
-				</td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("Copyright:"); ?></td>
-				<td><?php print_language_string_list($image->get('copyright'), $currentimage.'-copyright', false); ?>
-				</td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("Date:"); ?></td>
-				<td><input type="text" size="48" name="<?php echo $currentimage; ?>-date"
-					value="<?php $d=$image->getDateTime(); if ($d!='0000-00-00 00:00:00') { echo $d; } ?>" /></td>
-			</tr>
-
-			<tr class="imageextrainfo" style="display: none;">
-				<td align="right" valign="top"><?php echo gettext("Custom data:"); ?></td>
-				<td><?php print_language_string_list($image->get('custom_data'), $currentimage.'-custom_data', true); ?>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="4"><span class="imageextrashow"><a
-					href="javascript:toggleExtraInfo('<?php echo $currentimage;?>', 'image', true);"><?php echo gettext('show more fields');?></a></span>
-				<span style="display: none;" class="imageextrahide"><a
-					href="javascript:toggleExtraInfo('<?php echo $currentimage;?>', 'image', false);"><?php echo gettext('show fewer fields');?></a></span>
-				</td>
-			</tr>
-
-
-		</table>
-		</td>
-	</tr>
-
-	<?php
-	$currentimage++;
-}
-?>
-	<tr>
-		<td colspan="4"><input type="submit"
-			value="<?php echo gettext('save changes'); ?>" /></td>
-	</tr>
-<?php
-if ($allimagecount != $totalimages) { // need pagination links
-	?>
-	<tr>
-		<td colspan="4" class="bordered" id="imagenavb"><?php adminPageNav($pagenum,$totalpages,'admin.php','?page=edit&amp;album='.urlencode($album->name),'#tab_imageinfo'); ?>
-		</td>
-	</tr>
-	<?php
-	}
- ?>
-
-</table>
-
-</form>
-
-<?php
-	}
-}?>
-</div>
-<!-- page trailer -->
-<p><a href="?page=edit<?php echo $albumdir ?>"
-	title="<?php echo gettext('Back to the list of albums (go up one level)'); ?>">&laquo; <?php echo gettext("Back"); ?></a></p>
-
-
-<?php
-
-/*** MULTI-ALBUM ***************************************************************************/
-
-} else if (isset($_GET['massedit'])) {
-	if (isset($_GET['saved'])) {
-		if (isset($_GET['mismatch'])) {
-			echo "\n<div class=\"errorbox\" id=\"fade-message\">";
-			echo "\n<h2>".gettext("Your passwords did not match")."</h2>";
-			echo "\n</div>";
-		} else {
-			echo "\n<div class=\"messagebox\" id=\"fade-message\">";
-			echo "\n<h2>".gettext("Save Successful")."</h2>";
-			echo "\n</div>";
-		}
-	}
-	$albumdir = "";
-	if (isset($_GET['album'])) {
-		$folder = strip($_GET['album']);
-		if (isMyAlbum($folder, EDIT_RIGHTS)) {
-			$album = new Album($gallery, $folder);
-			$albums = $album->getSubAlbums();
-			$pieces = explode('/', $folder);
-			if (($i = count($pieces)) > 1) {
-				unset($pieces[$i-1]);
-				$albumdir = "&album=" . urlencode(implode('/', $pieces));
-			} else {
-				$albumdir = "";
 			}
-		} else {
-			$albums = array();
-		}
-	} else {
-		$albumsprime = $gallery->getAlbums();
-		$albums = array();
-		foreach ($albumsprime as $album) { // check for rights
-			if (isMyAlbum($album, EDIT_RIGHTS)) {
-				$albums[] = $album;
-			}
-		}
-	}
-	?>
-<h1><?php echo gettext("Edit All Albums in"); ?> <?php if (!isset($_GET['album'])) { echo gettext("Gallery");} else {echo "<em>" . $album->name . "</em>";}?></h1>
-<p><a href="?page=edit<?php echo $albumdir ?>"
-	title="<?php gettext('Back to the list of albums (go up a level)'); ?>">&laquo; <?php echo gettext("Back"); ?></a></p>
-<div class="box" style="padding: 15px;">
+			update::printNotice();
+			zp_apply_filter('admin_note', 'Overview', NULL);
+			$buttonlist = array();
 
-<form name="albumedit"
-	action="?page=edit&action=save<?php echo $albumdir ?>" method="POST"><input
-	type="hidden" name="totalalbums" value="<?php echo sizeof($albums); ?>" />
-<?php
-	$currentalbum = 0;
-	foreach ($albums as $folder) {
-		$currentalbum++;
-		$album = new Album($gallery, $folder);
-		$images = $album->getImages();
-		echo "\n<!-- " . $album->name . " -->\n";
-		printAlbumEditForm($currentalbum, $album);
-	}
-	?></form>
-
-</div>
-<?php
-
-/*** EDIT ALBUM SELECTION *********************************************************************/
-
-} else { /* Display a list of albums to edit. */ ?>
-<h1><?php echo gettext("Edit Gallery"); ?></h1>
-<?php
-	displayDeleted(); /* Display a message if needed. Fade out and hide after 2 seconds. */
-	if (isset($_GET['saved'])) {
-		setOption('gallery_sorttype', 'Manual');
-		setOption('gallery_sortdirection', 0);
-		echo '<div class="messagebox" id="fade-message">';
-		echo  "<h2>".gettext("Album order saved")."</h2>";
-		echo '</div>';
-	}
-	$albumsprime = $gallery->getAlbums();
-	$albums = array();
-	foreach ($albumsprime as $album) { // check for rights
-		if (isMyAlbum($album, EDIT_RIGHTS)) {
-			$albums[] = $album;
-		}
-	}
-	?>
-<p><?php
-	if (count($albums) > 0) {
-		if (($_zp_loggedin & ADMIN_RIGHTS) && (count($albums)) > 1) {
-			$sorttype = getOption('gallery_sorttype');
-			if ($sorttype != 'Manual') {
-				if (getOption('gallery_sortdirection')) {
-					$dir = gettext(' descending');
-				} else {
-					$dir = '';
-				}
-				$sortNames = array_flip($sortby);
-				$sorttype = $sortNames[$sorttype];
-			} else {
-				$dir = '';
-			}
-			printf(gettext('Current sort: %1$s%2$s. '), $sorttype, $dir);
-			echo gettext('Drag the albums into the order you wish them displayed.').' ';
-		}
-		echo gettext('Select an album to edit its description and data, or');
-	?><a href="?page=edit&massedit"> <?php echo gettext('mass-edit all album data'); ?></a>.</p>
-
-<table class="bordered" width="100%">
-	<tr>
-		<th style="text-align: left;"><?php echo gettext("Edit this album"); ?></th>
-	</tr>
-	<tr>
-		<td style="padding: 0px 0px;" colspan="2">
-		<div id="albumList" class="albumList"><?php
-		if (count($albums) > 0) {
-			foreach ($albums as $folder) {
-				$album = new Album($gallery, $folder);
-				printAlbumEditRow($album);
-			}
-		}
-		?></div>
-		</td>
-	</tr>
-</table>
-<div>
-<ul class="iconlegend">
-		<li><img src="images/lock.png" alt="Protected" /><?php echo gettext("Has Password"); ?></li>
-		<li><img src="images/pass.png" alt="Published" /><img src="images/action.png" alt="Unpublished" /><?php echo gettext("Published/Unpublished"); ?></li>
-		<li><img src="images/cache.png" alt="Cache the album" /><?php echo gettext("Cache	the album"); ?></li>
-		<li><img src="images/warn.png" alt="Refresh image metadata" /><?php echo gettext("Refresh image metadata"); ?></li>
-		<li><img src="images/reset.png" alt="Reset hitcounters" /><?php echo gettext("Reset	hitcounters"); ?></li>
-		<li><img src="images/fail.png" alt="Delete" /><?php echo gettext("Delete"); ?></li>
-		</ul>
-<?php
-  if ($_zp_loggedin & (ADMIN_RIGHTS | ALL_ALBUMS_RIGHTS)) {
-		zenSortablesSaveButton("?page=edit&saved", gettext("Save Order"));
-  }
-	?>
-</div>
-<?php
-	} else {
-		echo gettext("There are no albums for you to edit.");
-	}
-}
-/*** HOME ***************************************************************************/
-/************************************************************************************/
-} else {
-$page = "home"; ?>
-<h1><?php echo gettext("zenphoto Administration"); ?></h1>
-<?php
-	if (isset($_GET['check_for_update'])) {
-		$v = checkForUpdate();
-		if (!empty($v)) {
-			if ($v == 'X') {
-				echo "\n<div style=\"font-size:150%;color:#ff0000;text-align:right;\">".gettext("Could not connect to  <a href=\"http://www.zenphoto.org\">zenphoto.org</a>")."</div>\n";
-			} else {
-				echo "\n<div style=\"font-size:150%;text-align:right;\"><a href=\"http://www.zenphoto.org\">". sprinf(gettext("zenphoto version %s is available."), $v)."</a></div>\n";
-			}
-		} else {
-			echo "\n<div style=\"font-size:150%;color:#33cc33;text-align:right;\">".gettext("You are running the latest zenphoto version.")."</div>\n";
-		}
-	} else {
-		echo "\n<div style=\"text-align:right;color:#0000ff;\"><a href=\"?check_for_update\">".gettext("Check for zenphoto update.")."</a></div>\n";
-	}
-	$msg = '';
-	if (isset($_GET['action']) && $_GET['action'] == 'clear_cache') {
-		$msg = gettext("Cache has been purged");
-	}
-	if (isset($_GET['counters_reset'])) {
-		$msg = gettext("Hitcounters have been reset");
-	}
-	?>
-<ul id="home-actions">
-	<?php if ($_zp_loggedin & (ADMIN_RIGHTS | UPLOAD_RIGHTS))  { ?>
-	<li><a href="admin-upload.php"> &raquo; <?php echo gettext("<strong>Upload</strong> pictures."); ?></a></li>
-	<?php } if ($_zp_loggedin & (ADMIN_RIGHTS | EDIT_RIGHTS))  { ?>
-	<li><a href="?page=edit"> &raquo; <?php echo gettext("<strong>Edit</strong> titles, descriptions, and other metadata."); ?></a></li>
-	<?php } if ($_zp_loggedin & (ADMIN_RIGHTS | COMMENT_RIGHTS))  { ?>
-	<li><a href="admin-comments.php"> &raquo; <?php echo gettext("Edit or delete <strong>comments</strong>."); ?></a></li>
-	<?php } ?>
-	<li><a href="../"> &raquo; <?php echo gettext("Browse your <strong>gallery</strong> and edit on the go."); ?></a></li>
-</ul>
-<?php
-	if (!empty($msg)) {
-		echo '<div class="messagebox" id="fade-message">';
-		echo  "<h2>$msg</h2>";
-		echo '</div>';
-	}
-?>
-
-<hr />
-
-<div class="box" id="overview-comments">
-<h2><?php echo gettext("10 Most Recent Comments"); ?></h2>
-<ul>
-	<?php
-$comments = fetchComments(10);
-foreach ($comments as $comment) {
-	$id = $comment['id'];
-	$author = $comment['name'];
-	$email = $comment['email'];
-		if(getOption("zp_plugin_zenpage")) {
-			require_once("plugins/zenpage/zenpage-class.php");
-			$zenpage = new Zenpage("","");
-		}
-		// ZENPAGE: switch added for zenpage comment support
-		switch ($comment['type']) {
-			case "images":
-				$imagedata = query_full_array("SELECT `title`, `filename`, `albumid` FROM ". prefix('images') .
- 										" WHERE `id`=" . $comment['ownerid']);
-				if ($imagedata) {
-					$imgdata = $imagedata[0];
-					$image = $imgdata['filename'];
-					if ($imgdata['title'] == "") $title = $image; else $title = get_language_string($imgdata['title']);
-					$title = '/ ' . $title;
-					$albmdata = query_full_array("SELECT `folder`, `title` FROM ". prefix('albums') .
- 											" WHERE `id`=" . $imgdata['albumid']);
-					if ($albmdata) {
-						$albumdata = $albmdata[0];
-						$album = $albumdata['folder'];
-						$albumtitle = get_language_string($albumdata['title']);
-						$link = "<a href=\"".rewrite_path("/$album/$image","/index.php?album=".urlencode($album).	"&amp;image=".urlencode($image))."\">".$albumtitle.$title."</a>";
-						if (empty($albumtitle)) $albumtitle = $album;
-					} else {
-						$title = gettext('database error');
-					}
-				} else {
-					$title = gettext('database error');
-				}
-				break;
-			case "albums":
-				$image = '';
-				$title = '';
-				$albmdata = query_full_array("SELECT `title`, `folder` FROM ". prefix('albums') .
- 										" WHERE `id`=" . $comment['ownerid']);
-				if ($albmdata) {
-					$albumdata = $albmdata[0];
-					$album = $albumdata['folder'];
-					$albumtitle = get_language_string($albumdata['title']);
-					$link = "<a href=\"".rewrite_path("/$album","/index.php?album=".urlencode($album))."\">".$albumtitle.$title."</a>";
-					if (empty($albumtitle)) $albumtitle = $album;
-				} else {
-					$title = gettext('database error');
-				}
-				break;
-			case "news": // ZENPAGE: if plugin is installed
-				if(getOption("zp_plugin_zenpage")) {
-					$titlelink = '';
-					$title = '';
-					$newsdata = query_full_array("SELECT `title`, `titlelink` FROM ". prefix('zenpage_news') .
- 										" WHERE `id`=" . $comment['ownerid']);
-					if ($newsdata) {
-						$newsdata = $newsdata[0];
-						$titlelink = $newsdata['titlelink'];
-						$title = get_language_string($newsdata['title']);
-				  $link = "<a href=\"".rewrite_path("/".ZENPAGE_NEWS."/".$titlelink,"/index.php?p=".ZENPAGE_NEWS."&amp;title=".urlencode($titlelink))."\">".$title."</a> ".gettext("[news]");
-					} else {
-						$title = gettext('database error');
+			$curdir = getcwd();
+			chdir(SERVERPATH . "/" . ZENFOLDER . '/' . UTILITIES_FOLDER . '/');
+			$filelist = safe_glob('*' . 'php');
+			sortArray($filelist);
+			foreach ($filelist as $utility) {
+				$utilityStream = file_get_contents($utility);
+				$s = strpos($utilityStream, '$buttonlist');
+				if ($s !== false) {
+					$e = strpos($utilityStream, ';', $s);
+					if ($e) {
+						$str = substr($utilityStream, $s, $e - $s) . ';';
+						eval($str);
 					}
 				}
-				break;
-			case "pages": // ZENPAGE: if plugin is installed
-				if(getOption("zp_plugin_zenpage")) {
-					$image = '';
-					$title = '';
-					$pagesdata = query_full_array("SELECT `title`, `titlelink` FROM ". prefix('zenpage_pages') .
- 										" WHERE `id`=" . $comment['ownerid']);
-					if ($pagesdata) {
-						$pagesdata = $pagesdata[0];
-						$titlelink = $pagesdata['titlelink'];
-						$title = get_language_string($pagesdata['title']);
-						$link = "<a href=\"".rewrite_path("/".ZENPAGE_PAGES."/".$titlelink,"/index.php?p=".ZENPAGE_PAGES."&amp;title=".urlencode($titlelink))."\">".$title."</a> ".gettext("[page]");
-					} else {
-						$title = gettext('database error');
+			}
+			$buttonlist = zp_apply_filter('admin_utilities_buttons', $buttonlist);
+			foreach ($buttonlist as $key => $button) {
+				if (zp_loggedin($button['rights'])) {
+					if (!array_key_exists('category', $button)) {
+						$buttonlist[$key]['category'] = gettext('Misc');
 					}
+				} else {
+					unset($buttonlist[$key]);
 				}
-				break;
+			}
+			if (hasPrimaryScripts() && zp_loggedin(ADMIN_RIGHTS)) {
+				//	button to restore setup files if needed
+				if (isSetupProtected()) {
+					$buttonlist[] = array(
+							'XSRFTag' => 'restore_setup',
+							'category' => gettext('Admin'),
+							'enable' => true,
+							'button_text' => gettext('Setup » restore scripts'),
+							'formname' => 'restore_setup',
+							'action' => FULLWEBPATH . '/' . ZENFOLDER . '/admin.php?action=restore_setup',
+							'icon' => FULLWEBPATH . '/' . ZENFOLDER . '/images/lock_open.png',
+							'alt' => '',
+							'title' => gettext('Restores setup files so setup can be run.'),
+							'hidden' => '<input type="hidden" name="action" value="restore_setup" />',
+							'rights' => ADMIN_RIGHTS
+					);
+					
+				} else {
+					$buttonlist[] = array(
+							'XSRFTag' => 'protect_setup',
+							'category' => gettext('Admin'),
+							'enable' => true,
+							'button_text' => gettext('Setup » protect scripts'),
+							'formname' => 'restore_setup',
+							'action' => FULLWEBPATH . '/' . ZENFOLDER . '/admin.php?action=protect_setup',
+							'icon' => FULLWEBPATH . '/' . ZENFOLDER . '/images/lock_2.png',
+							'alt' => '',
+							'title' => gettext('Protects setup files so setup cannot be run.'),
+							'hidden' => '<input type="hidden" name="action" value="protect_setup" />',
+							'rights' => ADMIN_RIGHTS
+					);
+					
+				}
+			}
+			if (zp_loggedin(ADMIN_RIGHTS)) {
+				$buttonlist[] = array(
+						'category' => gettext('Admin'),
+						'enable' => true,
+						'button_text' => gettext('Run setup'),
+						'formname' => 'run_setup',
+						'action' => FULLWEBPATH . '/' . ZENFOLDER . '/setup.php',
+						'icon' => FULLWEBPATH . '/' . ZENFOLDER . '/images/Zp.png',
+						'alt' => '',
+						'title' => gettext('Run the setup script.'),
+						'hidden' => '',
+						'rights' => ADMIN_RIGHTS
+				);
+			}
+
+
+			$buttonlist = sortMultiArray($buttonlist, array('category', 'button_text'), false);
+															
+			if (zp_loggedin(OVERVIEW_RIGHTS)) {
+				if ((zp_loggedin(ADMIN_RIGHTS)) && !isSetupProtected()) {
+					?>
+					<div class="warningbox">
+							<h2><?php echo gettext('Your Setup scripts are not protected.'); ?></h2>
+							<?php echo gettext('The Setup environment is not totally secure, you should protect the scripts to thwart hackers. Use the <strong>Setup » protect scripts</strong> button in the <em>Admin</em> section of the <em>Utility functions</em>.'); ?>
+						</div>
+					<?php 
+				} ?>
+				<div id="overviewboxes">
+
+					<?php
+					if (zp_loggedin(ADMIN_RIGHTS)) {
+						?>
+						<div class="box overview-utility overview-install-info">
+							<h2 class="h2_bordered"><?php echo gettext("Installation information"); ?></h2>
+							<ul>
+								<?php
+								if (hasPrimaryScripts()) {
+									$source = '';
+								} else {
+									$clone = clonedFrom();
+									$official .= ' <em>' . gettext('clone') . '<em>';
+									$base = substr(SERVERPATH, 0, -strlen(WEBPATH));
+									if (strpos($base, $clone) == 0) {
+										$base = substr($clone, strlen($base));
+										$link = $base . '/' . ZENFOLDER . '/admin.php';
+										$source = '<a href="' . $link . '">' . $clone . '</a>';
+									} else {
+										$source = $clone;
+									}
+									$source = '<br />&nbsp;&nbsp;&nbsp;' . sprintf(gettext('source: %s'), $source);
+								}
+
+								$graphics_lib = $_zp_graphics->graphicsLibInfo();
+								?>
+								<li>
+									<?php
+									printf(gettext('Zenphoto version <strong>%1$s</strong>'), ZENPHOTO_VERSION);
+									echo $source;
+									if (PRE_RELEASE) {
+										?>
+										<p class="warningbox">
+											<a href="https://github.com/zenphoto/zenphoto/commits/master/" target="_blank" rel="noreferrer noopener">
+												<?php echo gettext('This is a pre-release version. Review changes on GitHub.'); ?>
+											</a>
+										</p>
+										<?php
+									}
+									?>
+								</li>
+								<li>
+									<?php
+									if (ZENPHOTO_LOCALE) {
+										printf(gettext('Current locale setting: <strong>%1$s</strong>'), ZENPHOTO_LOCALE);
+									} else {
+										echo gettext('<strong>Locale setting has failed</strong>');
+									}
+									?>
+								</li>
+								<li>
+									<?php echo gettext('Server path:') . ' <strong>' . SERVERPATH . '</strong>' ?>
+								</li>
+								<li>
+									<?php echo gettext('WEB path:') . ' <strong>' . WEBPATH . '</strong>' ?>
+								</li>
+								<li>
+									<?php echo gettext('PHP Session path:') . ' <strong>' . session_save_path() . '</strong>' ?>
+								</li>
+								<li>
+									<?php
+									$themes = $_zp_gallery->getThemes();
+									$currenttheme = $_zp_gallery->getCurrentTheme();
+									if (array_key_exists($currenttheme, $themes) && isset($themes[$currenttheme]['name'])) {
+										$currenttheme = $themes[$currenttheme]['name'];
+									}
+									printf(gettext('Current gallery theme: <strong>%1$s</strong>'), $currenttheme);
+									?>
+								</li>
+								<li><?php printf(gettext('Server software: <strong>%1$s</strong>'), html_encode($_SERVER['SERVER_SOFTWARE'])); ?></li>
+								<li><?php printf(gettext('PHP version: <strong>%1$s</strong>'), phpversion()); ?></li>
+								<?php
+								$debugmodes_text = array(
+												'DEBUG_LOGIN' => DEBUG_LOGIN,
+												'DEBUG_ERROR' => DEBUG_ERROR,
+												'DEBUG_IMAGE' => DEBUG_IMAGE,
+												'DEBUG_IMAGE_ERR' => DEBUG_IMAGE_ERR,
+												'DEBUG_404' => DEBUG_404 ,
+												'DEBUG_EXIF' => DEBUG_EXIF ,
+												'DEBUG_PLUGINS' => DEBUG_PLUGINS,
+												'DEBUG_FILTER' => DEBUG_FILTERS,
+												'EXPLAIN_SELECTS' => EXPLAIN_SELECTS,
+												'DEBUG_LOCALE' => DEBUG_LOCALE,
+										);
+								$debugmodes_active = array();
+								foreach (	$debugmodes_text as $debugmodename => $debugmode_on) {
+									if ($debugmode_on) {
+										$debugmodes_active[] = $debugmodename;
+									}
+								}
+								if ($debugmodes_active) {
+									?>
+									<li>
+										<p class="notebox">
+										<?php 
+										$debugmodes_enabled = implode(', ', $debugmodes_active);
+										if (TEST_RELEASE) {
+											printf(gettext('TEST_RELEASE mode (%s) enabled'), $debugmodes_enabled);
+										} else {
+											printf(gettext('Debug modes enabled: <strong>%s</strong>'), $debugmodes_enabled); 
+										}
+										?>
+										</p>
+									</li>
+									<?php
+								}
+								if (TEST_RELEASE) {
+									?>
+									<li>
+										<?php
+										$erToTxt = array(
+														E_ERROR						 => 'E_ERROR',
+														E_WARNING					 => 'E_WARNING',
+														E_PARSE						 => 'E_PARSE',
+														E_NOTICE					 => 'E_NOTICE',
+														E_CORE_ERROR			 => 'E_CORE_ERROR',
+														E_CORE_WARNING		 => 'E_CORE_WARNING',
+														E_COMPILE_ERROR		 => 'E_COMPILE_ERROR',
+														E_COMPILE_WARNING	 => 'E_COMPILE_WARNING',
+														E_USER_ERROR			 => 'E_USER_ERROR',
+														E_USER_NOTICE			 => 'E_USER_NOTICE',
+														E_USER_WARNING		 => 'E_USER_WARNING',
+														E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR',
+														E_DEPRECATED => 'E_DEPRECATED',
+														E_USER_DEPRECATED => 'E_USER_DEPRECATED'				 
+										);
+										if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+											$erToText[E_STRICT] =  'E_STRICT'; // equals E_NOTICE level since PHP 8 and deprecated in PHP 8.4+
+										}
+										$reporting = error_reporting();
+										$text = array();
+										if (($reporting & E_ALL) == E_ALL) {
+											$text[] = 'E_ALL';
+										}
+										if ((($reporting | E_NOTICE) & E_ALL) == E_ALL) {
+											$t = 'E_ALL';
+											if ($reporting & E_NOTICE) {
+												$t .= ' ^ E_NOTICE';
+												$reporting = $reporting ^ E_NOTICE;
+											}
+											$text[] = $t;
+										}
+										foreach ($erToTxt as $er => $name) {
+											if ($reporting & $er) {
+												$text[] = $name;
+											}
+										}
+										printf(gettext('PHP Error reporting: <strong>%s</strong>'), implode(' | ', $text));
+										?>
+									</li>
+									<?php
+									if (@ini_get('display_errors')) {
+										?>
+										<li><p class="warningbox"><?php echo gettext('<em>display_errors</em> is <strong>On</strong>: PHP error messages may be displayed on WEB pages. This may disclose site sensitive information.'); ?></p></li>
+										<?php
+									} else {
+										?>
+										<li><?php echo gettext('<em>display_errors</em> is <strong>Off</strong>') ?></li>
+										<?php
+									}
+								}
+								?>
+								<li>
+									<?php printf(gettext("Graphics support: <strong>%s</strong>"), $graphics_lib['Library_desc']); ?>
+									<br />&nbsp;&nbsp;&nbsp;
+									<?php
+									unset($graphics_lib['Library']);
+									unset($graphics_lib['Library_desc']);
+									foreach ($graphics_lib as $key => $type) {
+										if (!$type) {
+											unset($graphics_lib[$key]);
+										}
+									}
+									printf(gettext('supporting: %s'), '<em>' . strtolower(implode(', ', array_keys($graphics_lib))) . '</em>');
+									?>
+								</li>
+								<li><?php printf(gettext('PHP memory limit: <strong>%1$s</strong> (Note: Your server might allocate less!)'), INI_GET('memory_limit')); ?></li>
+								<li><?php printf(gettext('Database: <strong>%1$s %2$s</strong>'), $_zp_db->getType(), $_zp_db->getVersion()); ?></li>
+								<li><?php printf(gettext('Database handler: <strong>%1$s</strong>'), DATABASE_SOFTWARE); ?></li>
+								<li><?php printf(gettext('Database client: <strong>%1$s</strong>'), $_zp_db->getClientInfo()); ?></li>									
+								<li><?php printf(gettext('Database name: <strong>%1$s</strong>'), $_zp_db->getDBName()); ?></li>
+								<li><?php echo sprintf(gettext('Database table prefix: <strong>%1$s</strong>'), $_zp_db->getPrefix()); ?></li>
+								<li>
+									<?php
+									if (isset($_zp_spamFilter)) {
+										$filter = $_zp_spamFilter->displayName();
+									} else {
+										$filter = gettext('No spam filter configured');
+									}
+									printf(gettext('Spam filter: <strong>%s</strong>'), $filter)
+									?>
+								</li>
+								<?php
+								if ($_zp_captcha) {
+									?>
+									<li><?php printf(gettext('CAPTCHA generator: <strong>%s</strong>'), $_zp_captcha->name) ?></li>
+									<?php
+								}
+								zp_apply_filter('installation_information');
+								if (!zp_has_filter('sendmail')) {
+									?>
+									<li style="color:RED"><?php echo gettext('There is no mail handler configured!'); ?></li>
+									<?php
+								}
+								?>
+							</ul>
+
+							<?php
+							require_once(SERVERPATH . '/' . ZENFOLDER . '/template-filters.php');
+							$plugins = array_keys(getEnabledPlugins());
+							$filters = $_zp_filters;
+							$c = count($plugins);
+							?>
+							<h3><a href="javascript:toggle('plugins_hide');toggle('plugins_show');" ><?php printf(ngettext("%u active plugin:", "%u active plugins:", $c), $c); ?></a></h3>
+							<div id="plugins_hide" style="display:none">
+								<ul class="plugins">
+									<?php
+									if ($c > 0) {
+										sortArray($plugins);
+										foreach ($plugins as $extension) {
+											$pluginStream = file_get_contents(getPlugin($extension . '.php'));
+											$plugin_version = '';
+											if ($str = isolate('$plugin_version', $pluginStream)) {
+												@eval($str);
+											}
+											if ($plugin_version) {
+												$version = ' v' . $plugin_version;
+											} else {
+												$version = '';
+											}
+											$plugin_is_filter = 1;
+											if ($str = isolate('$plugin_is_filter', $pluginStream)) {
+												@eval($str);
+											}
+											echo "<li>" . $extension . $version . "</li>";
+											preg_match_all('|zp_register_filter\s*\((.+?)\)\s*?;|', $pluginStream, $matches);
+											foreach ($matches[1] as $paramsstr) {
+												$params = explode(',', $paramsstr);
+												if (array_key_exists(2, $params)) {
+													$priority = (int) $params[2];
+												} else {
+													$priority = $plugin_is_filter & PLUGIN_PRIORITY;
+												}
+												$filter = unQuote(trim($params[0]));
+												$function = unQuote(trim($params[1]));
+												$filters[$filter][$priority][$function] = array('function' => $function, 'script' => $extension . '.php');
+											}
+										}
+									} else {
+										echo '<li>' . gettext('<em>none</em>') . '</li>';
+									}
+									?>
+								</ul>
+							</div><!-- plugins_hide -->
+							<div id="plugins_show">
+								<br />
+							</div><!-- plugins_show -->
+							<?php
+							$c = count($filters);
+							?>
+							<h3><a href="javascript:toggle('filters_hide');toggle('filters_show');" ><?php printf(ngettext("%u active filter:", "%u active filters:", $c), $c); ?></a></h3>
+							<div id="filters_hide" style="display:none">
+								<ul class="plugins">
+									<?php
+									if ($c > 0) {
+										ksort($filters, SORT_LOCALE_STRING);
+										foreach ($filters as $filter => $array_of_priority) {
+											krsort($array_of_priority);
+											?>
+											<li>
+												<em><?php echo $filter; ?></em>
+												<ul class="filters">
+													<?php
+													foreach ($array_of_priority as $priority => $array_of_filters) {
+														foreach ($array_of_filters as $data) {
+															?>
+															<li><em><?php echo $priority; ?></em>: <?php echo $data['script'] ?> =&gt; <?php echo $data['function'] ?></li>
+															<?php
+														}
+													}
+													?>
+												</ul>
+											</li>
+											<?php
+										}
+									} else {
+										?>
+										<li><?php echo gettext('<em>none</em>'); ?></li>
+										<?php
+									}
+									?>
+								</ul>
+							</div><!-- filters_hide -->
+							<div id="filters_show">
+								<br />
+							</div><!-- filters_show -->
+
+						</div><!-- overview-info -->
+						<?php
+					}
+					?>
+					<div class="box overview-utility">
+						<h2 class="h2_bordered"><?php echo gettext("Utility functions"); ?></h2>
+						<?php
+						$category = '';
+						foreach ($buttonlist as $button) {
+							$button_category = $button['category'];
+							$button_icon = $button['icon'];
+							if ($category != $button_category) {
+								if ($category) {
+									?>
+									</fieldset>
+									<?php
+								}
+								$category = $button_category;
+								?>
+								<fieldset class="utility_buttons_field"><legend><?php echo $category; ?></legend>
+									<?php
+								}
+								?>
+								<form name="<?php echo $button['formname']; ?>"	action="<?php echo $button['action']; ?>" class="overview_utility_buttons">
+									<?php if (isset($button['XSRFTag']) && $button['XSRFTag']) XSRFToken($button['XSRFTag']); ?>
+									<?php echo $button['hidden']; ?>
+									<div class="buttons tooltip" title="<?php echo html_encode($button['title']); ?>">
+										<button class="fixedwidth <?php echo $button['formname']; ?>" type="submit"<?php if (!$button['enable']) echo 'disabled="disabled"'; ?>>
+											<?php
+											if (!empty($button_icon)) {
+												?>
+												<img src="<?php echo $button_icon; ?>" alt="<?php echo html_encode($button['alt']); ?>" />
+												<?php
+											}
+											echo html_encode($button['button_text']);
+											?>
+										</button>
+									</div><!--buttons -->
+									<?php if (isset($button['confirmclick']) && !empty($button['confirmclick'])) { ?>
+										<script>
+											$( document ).ready(function() {
+												var element = 'button.<?php echo $button['formname']; ?>';
+												var message = '<?php echo js_encode($button['confirmclick']); ?>';
+												confirmClick(element, message );
+											});
+										</script>
+									<?php } ?>
+								</form>
+								<?php
+							}
+							if ($category) {
+								?>
+							</fieldset>
+							<?php
+						}
+						?>
+					</div><!-- overview-utility -->
+
+					<div class="box overview-utility overiew-gallery-stats">
+						<h2 class="h2_bordered"><?php echo gettext("Gallery Stats"); ?></h2>
+						<ul>
+							<li>
+								<?php
+								$t = $_zp_gallery->getNumImages();
+								$c = $t - $_zp_gallery->getNumImages(true);
+								if ($c > 0) {
+									printf(ngettext('<strong>%1$u</strong> Image (%2$u un-published)', '<strong>%1$u</strong> Images (<strong>%2$u</strong> un-published)', $t), $t, $c);
+								} else {
+									printf(ngettext('<strong>%u</strong> Image', '<strong>%u</strong> Images', $t), $t);
+								}
+								?>
+							</li>
+							<li>
+								<?php
+								$t = $_zp_gallery->getNumAlbums(true);
+								$c = $t - $_zp_gallery->getNumAlbums(true, true);
+								if ($c > 0) {
+									printf(ngettext('<strong>%1$u</strong> Album (%2$u un-published)', '<strong>%1$u</strong> Albums (<strong>%2$u</strong> un-published)', $t), $t, $c);
+								} else {
+									printf(ngettext('<strong>%u</strong> Album', '<strong>%u</strong> Albums', $t), $t);
+								}
+								?>
+							</li>
+							<?php if(extensionEnabled('comment_form')) { ?>
+								<li>
+									<?php
+									$t = $_zp_gallery->getNumComments(true);
+									$c = $t - $_zp_gallery->getNumComments(false);
+									if ($c > 0) {
+										printf(ngettext('<strong>%1$u</strong> Comment (%2$u in moderation)', '<strong>%1$u</strong> Comments (<strong>%2$u</strong> in moderation)', $t), $t, $c);
+									} else {
+										printf(ngettext('<strong>%u</strong> Comment', '<strong>%u</strong> Comments', $t), $t);
+									}
+									?>
+								</li>
+							<?php
+							}
+							if (extensionEnabled('zenpage')) {
+								?>
+								<li>
+									<?php printPagesStatistic(); ?>
+								</li>
+								<li>
+									<?php printNewsStatistic(); ?>
+								</li>
+								<li>
+									<?php printCategoriesStatistic(); ?>
+								</li>
+								<?php
+							}
+							?>
+						</ul>
+					</div><!-- overview-gallerystats -->
+
+					<?php
+					zp_apply_filter('admin_overview');
+					?>
+
+				</div><!-- boxouter -->
+			</div><!-- content -->
+			<br class="clearall" />
+			<?php
+		} else {
+			?>
+			<div class="errorbox">
+				<?php echo gettext('Your user rights do not allow access to administrative functions.'); ?>
+			</div>
+			<?php
 		}
-		$date  = myts_date('%m/%d/%Y %I:%M %p', $comment['date']);
-		$website = $comment['website'];
-		$comment = truncate_string($comment['comment'], 123);
-		$inmoderation = $comment['inmoderation'];
-		$private = $comment['private'];
-		$anon = $comment['anon'];
-	echo "<li><div class=\"commentmeta\">".sprintf(gettext('%1$s commented on %2$s:'),$author,$link)."</div><div class=\"commentbody\">$comment</div></li>";
-}
-?>
-</ul>
-</div>
-
-
-<div class="box" id="overview-stats">
-<h2 class="boxtitle"><?php echo gettext("Gallery Maintenance"); ?></h2>
-<p>
-<?php echo gettext("Your database is"); ?>: '<strong><?php echo getOption('mysql_database'); ?>'</strong><br />
-<?php echo gettext("Tables are prefixed by"); ?> <strong>'<?php echo getOption('mysql_prefix'); ?>'</strong>
-</p>
-<p>
-<br />
-</p>
-<br />
-<?php if ($_zp_loggedin & ADMIN_RIGHTS) { ?>
-<form name="prune_gallery" action="admin-refresh-metadata.php?prune">
-	<input type="hidden" name="prune" value="true">
-	<div class="buttons pad_button" id="home_dbrefresh">
-	<button class="tooltip" type="submit" title="<?php echo gettext("Cleans the database and removes any orphan entries for comments, images, and albums."); ?>"><img src="images/refresh.png" alt="" /> <?php echo gettext("Refresh the Database"); ?></button>
+		printAdminFooter();
+		/* No admin-only content allowed after point! */
+		?>
 	</div>
-	<br clear="all" />
-	<br clear="all" />
-</form>
-
-<form name="clear_cache" action="admin.php?action=clear_cache=true"><input
-		type="hidden" name="action" value="clear_cache">
-	<div class="buttons" id="home_refresh">
-	<button class="tooltip" type="submit" title="<?php echo gettext("Clears the image cache. Images will be re-cached as they are viewed. To clear the cache and renew it, use the <em>Pre-Cache Images</em> button below."); ?>"><img src="images/burst.png" alt="" /> <?php echo gettext("Purge Cache"); ?></button>
-	</div>
-	<br clear="all" />
-	<br clear="all" />
-</form>
-
-<form name="cache_images" action="admin-cache-images.php">
-	<div class="buttons" id="home_cache">
-	<button class="tooltip" type="submit" title="<?php echo gettext("Finds newly uploaded images that have not been cached and creates the cached version. It also refreshes the numbers above. If you have a large number of images in your gallery you might consider using the <em>pre-cache image</em> link for each album to avoid swamping your browser."); ?>"><img src="images/cache.png" title="<?php echo gettext('Pre-Cache Images'); ?>" alt="" /> <?php echo gettext("Pre-Cache Images"); ?></button>
-	</div>
-	<input type="checkbox" name="clear" checked="checked" /> <?php echo gettext("Clear"); ?><br clear="all" />
-	<br clear="all" />
-</form>
-
-<form name="refresh_metadata" action="admin-refresh-metadata.php">
-	<div class="buttons" id="home_exif">
-	<button class="tooltip" type="submit" title="<?php echo gettext("Forces a refresh of the EXIF and IPTC data for all images."); ?>"><img src="images/warn.png" alt="" /> <?php echo gettext("Refresh Metadata"); ?></button>
-	</div>
-	<br clear="all" />
-	<br clear="all" />
-</form>
-
-<form name="reset_hitcounters"
-		action="admin.php?action=reset_hitcounters=true"><input type="hidden"
-		name="action" value="reset_hitcounters">
-	<div class="buttons" id="home_refresh">
-	<button class="tooltip" type="submit" title="<?php echo gettext("Sets all album and image hitcounters to zero."); ?>"><img src="images/reset.png" alt="" /> <?php echo gettext("Reset hitcounters"); ?></button>
-	</div>
-	<br clear="all" />
-	<br clear="all" />
-</form>
-
-<?php
-}
-?>
-</div>
-
-
-<div class="box" id="overview-suggest">
-<h2 class="boxtitle"><?php echo gettext("Gallery Stats"); ?></h2>
-<p>
-<?php
-$t = $gallery->getNumImages();
-$c = $t-$gallery->getNumImages(true);
-if ($c > 0) {
-	printf(gettext('<strong>%1$u</strong> images (%2$u not visible)'),$t, $c);
-} else {
-	printf(gettext('<strong>%u</strong> images'),$t);
-}
-?>
-</p>
-<p>
-<?php
-$t = $gallery->getNumAlbums(true);
-$c = $t-$gallery->getNumAlbums(true,true);
-if ($c > 0) {
-	printf(gettext('<strong>%1$u</strong> albums (%2$u not published)'),$t, $c);
-} else {
-	printf(gettext('<strong>%u</strong> albums'),$t);
-}
-?>
-</p>
-
-<p>
-<?php $t = $gallery->getNumComments(true);
-$c = $t - $gallery->getNumComments(false);
-if ($c > 0) {
-	printf(gettext('<strong>%1$u</strong> comments (%2$u in moderation)'),$t, $c);
-} else {
-	printf(gettext('<strong>%u</strong> comments'),$t);
-}
-?>
-</p>
-</div>
-<p style="clear: both;"></p>
-<?php
-}
-?>
-</div>
-<!-- content --> <?php
-printAdminFooter();
-if (issetPage('edit') &&
-	((isset($albums) && count($albums) > 0)
-		|| (isset($subalbums) && count($subalbums) > 0))) {
-	zenSortablesFooter();
-}
-} /* No admin-only content allowed after this bracket! */ ?></div>
-<!-- main -->
+	<!-- main -->
 </body>
-<?php // to fool the validator
+<?php
+// to fool the validator
 echo "\n</html>";
 ?>

@@ -4,6 +4,8 @@ error_log
 *.log
 /blog/wp-content/cache/
 /gallery/cache/
+/gallery/cache_html/
+/gallery/uploaded/
 # Crash dumps (a bare `core` would also skip directories named core)
 /core
 .htaccess.phpupgrader*

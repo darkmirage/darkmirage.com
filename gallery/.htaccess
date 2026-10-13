@@ -1,110 +1,33 @@
-# htaccess file version 1.2.1.3
+# htaccess file version 1.4.12;
+# Zenphoto 1.6.8 for gallery.darkmirage.com (subdomain docroot, so RewriteBase /).
+# Rewrite rules are handled by Zenphoto's PHP code (zp-core/rewrite-rules.txt);
+# these rules send everything that isn't a real file to index.php.
+#
+# The "Legacy" block keeps Zenphoto 1.2 URLs working; ~1,200 blog posts embed them.
 
-# Update the above and the define in setup.php when you make changes to the rewrite rules!
-
-# NOTE: Change the RewriteBase below to the absolute path to your zenphoto directory. (Or let setup.php do it for you!)
-
-
-
+<IfModule mod_autoindex.c>
+	IndexIgnore *
+</IfModule>
 <IfModule mod_rewrite.c>
-
   RewriteEngine On
-
-  
-
-  #### !!! Change this to the web path (eg: http://www.yourwebsite.com/photos --> /photos) !!!
-
   RewriteBase /
-  ####
 
-  
+  # --- Legacy Zenphoto 1.2 URLs ---
+  # Resized image: /<album>/image/<400|800|thumb>/<file>
+  RewriteRule ^(.+)/image/(thumb|[0-9]+)/([^/]+)$   zp-core/i.php?a=$1&i=$3&s=$2 [L,QSA]
+  # Full-size image: /<album>/image/<file>
+  RewriteRule ^(.+)/image/([^/]+)$                  albums/$1/$2 [L]
+  # Image page: /<album>/<file>.jpg (1.6 adds a suffix by default)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.+)/([^/]+\.(jpe?g|png|gif))$       index.php?album=$1&image=$2 [L,QSA,NC]
+  # --- End legacy ---
 
-  RewriteRule	^admin/?$                       zp-core/admin.php [R,L]
-
-  
-
-  RewriteCond %{REQUEST_FILENAME} -d
-
-  RewriteRule ^albums/?(.+/?)?$ $1 [R=301,L] 
-
-
-
+  RewriteCond %{REQUEST_URI} !(/$|\.)
+  RewriteRule (.*) %{REQUEST_URI}/ [R=301,L]
   RewriteCond %{REQUEST_FILENAME} -f [OR]
-
   RewriteCond %{REQUEST_FILENAME} -d
-
   RewriteRule ^.*$ - [L]
-
-  
-
-  RewriteRule index\.php$                     index.php [L,QSA]
-
-  RewriteRule ^page/([0-9]+)/?$               index.php?page=$1 [L,QSA]
-
-  RewriteRule ^page/([A-Za-z0-9\-_]+)/?$      index.php?p=$1 [L,QSA]
-
- 	RewriteRule ^page/([A-Za-z0-9\-_]+)/([0-9]+)/?$      index.php?p=$1&page=$2 [L,QSA]
-
-  RewriteRule ^(.*)/page/([0-9]+)/?$          index.php?album=$1&page=$2 [L,QSA]
-
-  RewriteRule ^(.*)/page/([A-Za-z0-9\-_]+)/?$      index.php?album=$1&p=$2 [L,QSA]
-
-   
-
-  #### Rewrite rule addition for search
-
-  RewriteRule ^page/search/fields([0-9]+)/(.*)/([0-9]+)/?$      index.php?p=search&searchfields=$1&words=$2&page=$2 [L,QSA]
-
-  RewriteRule ^page/search/fields([0-9]+)/(.*)/?$      index.php?p=search&searchfields=$1&words=$2 [L,QSA]
-
-  RewriteRule ^page/search/archive/(.*)/([0-9]+)/?$      index.php?p=search&date=$1&page=$2 [L,QSA]
-
-  RewriteRule ^page/search/archive/(.*)/?$      index.php?p=search&date=$1 [L,QSA]
-
-  RewriteRule ^page/search/tags/(.*)/([0-9]+)/?$  index.php?p=search&searchfields=4&words=$1&page=$2 [L,QSA]
-
-  RewriteRule ^page/search/tags/(.*)/?$ 					 index.php?p=search&searchfields=4&words=$1 [L,QSA]
-
-  RewriteRule ^page/search/(.*)/([0-9]+)/?$      index.php?p=search&words=$1&page=$2 [L,QSA]
-
-  RewriteRule ^page/search/(.*)/?$      index.php?p=search&words=$1 [L,QSA]
-
-  #### Rewrite additions for zenpage	
-
-	RewriteRule ^pages/?$      index.php?p=pages [L,QSA]
-
-  RewriteRule ^pages/(.*)/?$                   index.php?p=pages&title=$1 [L,QSA]
-
-  RewriteRule ^news/?$      		       index.php?p=news [L,QSA]
-
-  RewriteRule ^news/([0-9]+)/?$                index.php?p=news&page=$1 [L,QSA]
-
-  RewriteRule ^news/category/(.*)/([0-9]+)/?$  index.php?p=news&category=$1&page=$2 [L,QSA]
-
-  RewriteRule ^news/category/(.*)/?$           index.php?p=news&category=$1 [L,QSA] 
-
-  RewriteRule ^news/archive/(.*)/([0-9]+)/?$   index.php?p=news&date=$1&page=$2 [L,QSA]
-
-  RewriteRule ^news/archive/(.*)/?$            index.php?p=news&date=$1 [L,QSA]
-
-  RewriteRule ^news/(.*)/?$                    index.php?p=news&title=$1 [L,QSA] 
-
-   
-
-  RewriteRule ^(.*)/image/(thumb|[0-9]{1,4})/([^/\\]+)$    zp-core/i.php?a=$1&i=$3&s=$2 [L,QSA]
-
-  RewriteRule ^(.*)/image/([^/\\]+)$          zp-core/i.php?a=$1&i=$2 [L,QSA]
-
-  RewriteRule ^(.*)/album/(thumb|[0-9]{1,4})/([^/\\]+)$    zp-core/i.php?a=$1&i=$3&s=$2&album=true [L,QSA]
-
-  ####
-
-   
-
-  # Catch-all - everything else gets handled in PHP for compatibility.
-
-  RewriteRule ^(.*)/?$                        index.php?album=$1 [L,QSA]
-
+  RewriteRule ^.*/?$                        index.php [L,QSA]
 </IfModule>
 
 # php -- BEGIN cPanel-generated handler, do not edit

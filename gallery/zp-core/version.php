@@ -1,5 +1,6 @@
-<?php // This file contains version info only and is automatically updated. DO NOT EDIT.
-define('ZENPHOTO_VERSION', '1.2.1');
-define('ZENPHOTO_RELEASE', 2635);
-define("RELEASE", true);
-?>
+<?php 
+/**
+ * Defines the Zenphoto version
+ * @package zpcore
+ */
+define('ZENPHOTO_VERSION', '1.6.8');

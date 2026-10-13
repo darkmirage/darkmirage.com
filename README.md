@@ -6,7 +6,7 @@ Code for the active darkmirage.com sites on HostGator. The repo root maps 1:1 to
 |---|---|
 | `blog/` + root `index.php`, `.htaccess` | www.darkmirage.com (WordPress core only) |
 | `lyrics/` | lyrics.darkmirage.com (PHP + MySQL) |
-| `gallery/` | gallery.darkmirage.com (Zenphoto) |
+| `gallery/` | gallery.darkmirage.com (Zenphoto 1.6.8) |
 | `fansub-faq/` | fansub-faq.darkmirage.com |
 
 ## What is *not* in git
@@ -47,7 +47,7 @@ Never `rsync --delete` into the server's `public_html`.
 GPL-2.0-or-later (see `LICENSE`). This matches the bundled third-party code, which keeps its own copyright and license terms:
 
 - WordPress core (`blog/`): GPLv2 or later. See `blog/license.txt`.
-- Zenphoto (`gallery/`): GPLv2, with some bundled libraries under their own licenses. See `gallery/License.txt` and the license files under `gallery/zp-core*/`.
+- Zenphoto 1.6.8 (`gallery/`): GPLv2, with some bundled libraries under their own licenses. See `gallery/LICENSE` and the license files under `gallery/zp-core/`.
 
 The original code here (`lyrics/` PHP, `tools/`) is released under the same license.
 

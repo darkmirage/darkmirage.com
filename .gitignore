@@ -44,6 +44,9 @@ error_log
 # Only the real cache dirs: a bare `cache/` also hides library code dirs named Cache/ (macOS is case-insensitive)
 /blog/wp-content/cache/
 /gallery/cache/
+/gallery/cache_html/
+/gallery/uploaded/
+/gallery/zp-data/
 .htaccess.phpupgrader*
 .htaccess.no_htaccess.phpupgrader
 php.ini.bak.migration
@@ -91,3 +94,10 @@ Thumbs.db
 /blog/wp-content/*.jpeg
 /blog/wp-content/*.png
 /blog/wp-content/*.gif
+
+# Zenphoto ships these as part of its code; don't let the generic rules above drop them
+!/gallery/zp-core/**/*.sql
+!/gallery/zp-core/**/*.wav
+!/gallery/zp-core/**/*.mp3
+!/gallery/zp-core/**/*.zip
+!/gallery/zp-core/**/*.gz
