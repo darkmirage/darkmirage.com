@@ -75,7 +75,7 @@ html[data-skin] .bk-title, html[data-skin] .bk-title:hover { color: #fff; }
 
 /* ---------- Page: main column + 160px sidebar ---------- */
 .bk-page { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 10px 14px; margin-top: 14px; align-items: start; }
-.bk-main { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+html[data-skin] .bk-page > main { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 
 /* Labels: thin uppercase, as the 2008 GIF tabs */
 .bk-label { margin: 0; font: 300 1.125rem/1 var(--bk-label); letter-spacing: 0.02em; text-transform: uppercase; color: #444; }
@@ -236,7 +236,7 @@ html[data-skin] .ly-find .dm-icon, html[data-skin] .dmg-search .dm-icon { top: a
 html[data-skin] .ly-back { font: 300 1rem var(--bk-label); text-transform: uppercase; color: #444 !important; }
 
 /* Song lists: each group is a rounded white card, songs alternate grey */
-html[data-skin] .ly-groups { gap: 16px; }
+html[data-skin] .ly-groups, html[data-skin] .ly-view:not([hidden]) { display: flex; flex-direction: column; gap: 16px; }
 html[data-skin] .ly-group { padding: 10px 16px 14px; border: 3px solid var(--bk-rim); border-radius: 20px; box-shadow: 0 3px 0 #d6d6d6; background: #fff; }
 html[data-skin] .ly-group__head { margin: 0 0 6px; padding: 0; border: 0; font: 300 1.25rem/1.1 var(--bk-label); text-transform: uppercase; }
 html[data-skin] .ly-group__head a { color: #444 !important; }
@@ -246,7 +246,8 @@ html[data-skin] .ly-group--letter { grid-template-columns: 56px minmax(0, 1fr); 
 html[data-skin] .ly-letter { font: 300 44px/1 var(--bk-label); color: #444; -webkit-text-stroke: 0; }
 html[data-skin] .ly-songs { gap: 0 12px; }
 html[data-skin] .ly-song { grid-template-columns: 46px minmax(0, 1fr); gap: 10px; padding: 8px; border: 0; border-radius: 8px; }
-html[data-skin] .ly-song:nth-child(even) { background: var(--bk-grey); }
+html[data-skin] .ly-song { border-bottom: 1px solid var(--bk-grey); }
+html[data-skin] .ly-song:hover { background: var(--bk-grey); }
 html[data-skin] .ly-tile { border-radius: 0; box-shadow: none; border: 1px solid #555; background: #ddd; color: #555; font: 300 0.8125rem var(--bk-label); }
 html[data-skin] .ly-song__stamp { font: 400 0.6875rem var(--bk-body); letter-spacing: 0; color: var(--bk-faint); }
 html[data-skin] .ly-song__stamp span { color: var(--bk-faint); }

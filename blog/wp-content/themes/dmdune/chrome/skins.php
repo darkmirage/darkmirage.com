@@ -75,7 +75,7 @@ function dmc_era_buttons(): string {
  */
 function dmc_era_menu_html(): string {
 	return sprintf(
-		'<details class="dm-era"><summary aria-label="Time machine: see the site as it looked in earlier years">%s<span>Time machine</span></summary><div class="dm-era__panel"><p>See DarkMirage as it looked back then</p><div class="dm-era__years">%s</div></div></details>',
+		'<details class="dm-era"><summary aria-label="Time machine: see the site as it looked in earlier years">%s<span class="dm-era__label">Time machine</span></summary><div class="dm-era__panel"><p>See DarkMirage as it looked back then</p><div class="dm-era__years">%s</div></div></details>',
 		dmc_icon( 'clock', 18 ),
 		dmc_era_buttons()
 	);

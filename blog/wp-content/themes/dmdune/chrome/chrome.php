@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.9.0' );
+define( 'DMC_VERSION', '1.9.1' );
 
 require __DIR__ . '/skins.php';
 
@@ -61,7 +61,7 @@ function dmc_nav( array $c ): array {
 		'japanese' => array( '日本語', $w . 'beginners-japanese-lessons-by-darkmirage/', 'kana' ),
 		'lyrics'   => array( 'Lyrics', $c['lyrics'], 'music' ),
 		'gallery'  => array( 'Gallery', $c['gallery'], 'camera' ),
-		'capsule'  => array( 'Time Capsule', $w . 'haruhiism-time-capsule-project/', 'capsule' ),
+		'capsule'  => array( 'Capsule', $w . 'haruhiism-time-capsule-project/', 'capsule' ),
 		'contact'  => array( 'Contact', $w . 'contact/', 'mail' ),
 	);
 }
@@ -157,7 +157,7 @@ function dmc_header_html( array $c = array() ): string {
 	}
 	$icons = $c['assets'] . 'brand/icons/';
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools">%4$s<a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%8$s</div></nav></div>',
+		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%4$s%8$s</div></nav></div>',
 		dmc_e( $c['skip'] ),
 		dmc_e( $c['www'] ),
 		dmc_e( $icons ),

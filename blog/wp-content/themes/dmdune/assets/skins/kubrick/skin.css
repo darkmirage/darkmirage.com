@@ -72,12 +72,12 @@ html[data-skin] .bk-title, html[data-skin] .bk-title:hover { color: #fff; }
 
 /* Main column and right sidebar */
 .bk-page { display: grid; grid-template-columns: minmax(0, 1fr) var(--kb-side-w); align-items: stretch; }
-.bk-main { min-width: 0; padding: 20px 40px 40px 45px; }
+html[data-skin] .bk-page > main { min-width: 0; padding: 20px 40px 40px 45px; }
 .bk-side--left { display: none; }
 .bk-side--right { padding: 20px 14px 30px; background: var(--kb-side); }
 .single-post .bk-side--right { display: none; }
 .single-post .bk-page { grid-template-columns: minmax(0, 1fr); }
-.single-post .bk-main { padding-left: clamp(16px, 12%, 150px); padding-right: clamp(16px, 12%, 150px); }
+html[data-skin] .single-post .bk-page > main { padding-left: clamp(16px, 12%, 150px); padding-right: clamp(16px, 12%, 150px); }
 .bk-block--nav { display: none; }
 
 /* Sidebar blocks: right-aligned headings ruled in blue */
@@ -177,6 +177,9 @@ html[data-skin] .ly-seg a { padding: 4px 9px; border-radius: 0; font: 400 0.75re
 html[data-skin] .ly-seg a[aria-current] { background: var(--kb-blue); color: #fff; }
 html[data-skin] .ly-find input, html[data-skin] .dmg-search input[type="search"] { min-height: 26px; border: 1px solid var(--kb-blue); border-radius: 0; background: #f4f4f4; box-shadow: none; font-size: 0.75rem; }
 html[data-skin] .ly-back { font: 700 0.75rem var(--kb-head); }
+html[data-skin] .ly-find { margin-left: 0; flex: 1 1 220px; max-width: 320px; min-width: 0; }
+html[data-skin] .ly-find .dm-icon { left: 8px; }
+html[data-skin] .ly-find input { padding-left: 28px; }
 
 html[data-skin] .ly-group__head { margin: 18px 0 6px; padding: 0 0 1px; border-bottom: 1px solid var(--kb-rule); font: 700 1rem/1.25 var(--kb-head); }
 html[data-skin] .ly-group__head a { color: #333 !important; }
@@ -249,7 +252,7 @@ html[data-skin] .dmg-search button { border-radius: 0; background: var(--kb-blue
 	.bk-banner__text { top: 40px; max-width: 72%; }
 	.bk-tabs { background: var(--kb-blue); padding-top: 6px; }
 	.bk-page { grid-template-columns: minmax(0, 1fr); }
-	.bk-main, .single-post .bk-main { padding: 16px 16px 30px; }
+	html[data-skin] .bk-page > main, html[data-skin] .single-post .bk-page > main { padding: 16px 16px 30px; }
 	.bk-side--right { display: block !important; padding: 16px; }
 	.bk-footer { padding-bottom: 96px; }
 	.kb-entry { text-align: left; font-size: 0.875rem; }
