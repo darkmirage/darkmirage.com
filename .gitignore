@@ -59,7 +59,9 @@ php.ini.bak.migration
 # Themes and plugins are managed on the server (WP admin / WP-CLI), not in git.
 # Copies: ../backups/public_html_2026-10-12/blog/wp-content/. Note: lyrics.darkmirage.com
 # loads CSS and header art from themes/default2, so don't remove that theme on the server.
-/blog/wp-content/themes/
+/blog/wp-content/themes/*
+# ...except the site's own theme, which lives here (code GPL-2.0-or-later, brand art all rights reserved).
+!/blog/wp-content/themes/dmdune/
 /blog/wp-content/plugins/
 /gallery/albums/
 # Lyric text + cover art: content managed on the server (metadata lives in MySQL)
