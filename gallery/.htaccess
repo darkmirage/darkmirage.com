@@ -3,7 +3,9 @@
 # Rewrite rules are handled by Zenphoto's PHP code (zp-core/rewrite-rules.txt);
 # these rules send everything that isn't a real file to index.php.
 #
-# The "Legacy" block keeps Zenphoto 1.2 URLs working; ~1,200 blog posts embed them.
+# The "Legacy" block keeps Zenphoto 1.2 image URLs working; ~1,200 blog posts embed them.
+# Image pages (/<album>/<file>.jpg) need no rule: Zenphoto serves them natively because
+# the mod_rewrite image suffix option is empty. Keep it empty.
 
 <IfModule mod_autoindex.c>
 	IndexIgnore *
@@ -17,9 +19,6 @@
   RewriteRule ^(.+)/image/(thumb|[0-9]+)/([^/]+)$   zp-core/i.php?a=$1&i=$3&s=$2 [L,QSA]
   # Full-size image: /<album>/image/<file>
   RewriteRule ^(.+)/image/([^/]+)$                  albums/$1/$2 [L]
-  # Image page: /<album>/<file>.jpg (1.6 adds a suffix by default)
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^(.+)/([^/]+\.(jpe?g|png|gif))$       index.php?album=$1&image=$2 [L,QSA,NC]
   # --- End legacy ---
 
   RewriteCond %{REQUEST_URI} !(/$|\.)
