@@ -127,3 +127,12 @@ a { color: var(--dm-accent); }
 	.ly-sheet__cover, .ly-sheet__disc { width: 140px; }
 	.ly-credits div { grid-template-columns: 64px minmax(0, 1fr); }
 }
+
+/* Series / Artists / A–Z: each song slides to its new place. Rows change shape between groupings
+   (the series or artist line drops out), so the old and new pictures swap quickly and the move
+   reads as one row sliding rather than two ghosting. */
+.ly-view[hidden] { display: none; }
+::view-transition-group(*) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+::view-transition-old(*) { animation-duration: 0.12s; }
+::view-transition-new(*) { animation-duration: 0.2s; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.25s; }

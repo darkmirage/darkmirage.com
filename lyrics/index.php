@@ -71,7 +71,7 @@ function ly_row( array $s, bool $ja, string $lang, string $hide = '' ): string {
 		array_column( $s['artists'], 'kanji' )
 	) ) );
 	return sprintf(
-		'<li class="ly-song" data-era="%1$s" data-find="%2$s">%3$s<div class="ly-song__body"><p class="ly-song__stamp"><span>LY·%4$03d</span><time datetime="%5$s">%6$s</time></p><h3 class="ly-song__title"><a href="%7$s">%8$s</a>%9$s</h3><p class="ly-song__meta">%10$s</p></div></li>',
+		'<li class="ly-song" data-song="%4$d" data-era="%1$s" data-find="%2$s">%3$s<div class="ly-song__body"><p class="ly-song__stamp"><span>LY·%4$03d</span><time datetime="%5$s">%6$s</time></p><h3 class="ly-song__title"><a href="%7$s">%8$s</a>%9$s</h3><p class="ly-song__meta">%10$s</p></div></li>',
 		ly_e( ly_era( ly_year( $s ) ) ),
 		ly_e( $find ),
 		$tile,
@@ -188,7 +188,7 @@ if ( $song ) {
 <title><?php echo ly_e( $title ); ?></title>
 <?php dmc_meta( $chrome, $meta ); ?>
 <?php dmc_head( $chrome ); ?>
-<link rel="stylesheet" href="lyrics.css?v=<?php echo ly_e( DMC_VERSION ); ?>">
+<link rel="stylesheet" href="lyrics.css?v=<?php echo (int) filemtime( __DIR__ . '/lyrics.css' ); ?>">
 <link rel="alternate" type="application/rss+xml" title="New lyrics" href="<?php echo ly_e( $base ); ?>feed.php">
 </head>
 <body>
@@ -358,49 +358,60 @@ if ( $song ) {
 	</div>
 
 	<?php
-	$groups = array();
-	if ( $filtered ) {
-		$groups[''] = array( 'label' => '', 'alt' => '', 'url' => '', 'songs' => $list );
-	} elseif ( 'title' === $view ) {
-		uasort( $list, static fn( $a, $b ) => strcasecmp( ly_pick( $a['title'], $a['kanji'], $ja ), ly_pick( $b['title'], $b['kanji'], $ja ) ) );
-		foreach ( $list as $s ) {
-			$first = mb_strtoupper( mb_substr( ly_pick( $s['title'], $s['kanji'], $ja ), 0, 1 ) );
-			$key   = preg_match( '/[A-Z]/', $first ) ? $first : ( $ja ? $first : '#' );
-			$groups[ $key ]['label']   = $key;
-			$groups[ $key ]['letter']  = true;
-			$groups[ $key ]['songs'][] = $s;
-		}
-	} elseif ( 'artist' === $view ) {
-		foreach ( $list as $s ) {
-			foreach ( $s['artists'] as $a ) {
-				$groups[ $a['id'] ]['label']   = ly_pick( $a['name'], $a['kanji'], $ja );
-				$groups[ $a['id'] ]['alt']     = ly_alt( $a['name'], $a['kanji'], $ja );
-				$groups[ $a['id'] ]['url']     = ly_url( array( 'lang' => $lang, 'ArtistID' => $a['id'] ) );
-				$groups[ $a['id'] ]['songs'][] = $s;
+	// Every grouping is rendered up front so the Series / Artists / A–Z switch happens in place,
+	// with the songs animating to their new spots (see the script below), instead of a reload.
+	$build = static function ( string $by ) use ( $list, $ja, $lang, $filtered ): array {
+		$groups = array();
+		if ( $filtered ) {
+			$groups[''] = array( 'label' => '', 'alt' => '', 'url' => '', 'songs' => $list );
+		} elseif ( 'title' === $by ) {
+			$sorted = $list;
+			uasort( $sorted, static fn( $a, $b ) => strcasecmp( ly_pick( $a['title'], $a['kanji'], $ja ), ly_pick( $b['title'], $b['kanji'], $ja ) ) );
+			foreach ( $sorted as $s ) {
+				$first = mb_strtoupper( mb_substr( ly_pick( $s['title'], $s['kanji'], $ja ), 0, 1 ) );
+				$key   = preg_match( '/[A-Z]/', $first ) ? $first : ( $ja ? $first : '#' );
+				$groups[ $key ]['label']   = $key;
+				$groups[ $key ]['letter']  = true;
+				$groups[ $key ]['songs'][] = $s;
 			}
+		} elseif ( 'artist' === $by ) {
+			foreach ( $list as $s ) {
+				foreach ( $s['artists'] as $a ) {
+					$groups[ $a['id'] ]['label']   = ly_pick( $a['name'], $a['kanji'], $ja );
+					$groups[ $a['id'] ]['alt']     = ly_alt( $a['name'], $a['kanji'], $ja );
+					$groups[ $a['id'] ]['url']     = ly_url( array( 'lang' => $lang, 'ArtistID' => $a['id'] ) );
+					$groups[ $a['id'] ]['songs'][] = $s;
+				}
+			}
+			uasort( $groups, static fn( $a, $b ) => strcasecmp( $a['label'], $b['label'] ) );
+		} else {
+			foreach ( $list as $s ) {
+				$sid                       = $s['series']['id'];
+				$groups[ $sid ]['label']   = 1 === $sid ? 'J-pop and others' : ly_pick( $s['series']['title'], $s['series']['kanji'], $ja );
+				$groups[ $sid ]['alt']     = 1 === $sid ? '' : ly_alt( $s['series']['title'], $s['series']['kanji'], $ja );
+				$groups[ $sid ]['url']     = ly_url( array( 'lang' => $lang, 'SeriesID' => $sid ) );
+				$groups[ $sid ]['songs'][] = $s;
+			}
+			uasort( $groups, static fn( $a, $b ) => ( 'J-pop and others' === $a['label'] ) <=> ( 'J-pop and others' === $b['label'] ) ?: strcasecmp( $a['label'], $b['label'] ) );
 		}
-		uasort( $groups, static fn( $a, $b ) => strcasecmp( $a['label'], $b['label'] ) );
-	} else {
-		foreach ( $list as $s ) {
-			$sid                      = $s['series']['id'];
-			$groups[ $sid ]['label']   = 1 === $sid ? 'J-pop and others' : ly_pick( $s['series']['title'], $s['series']['kanji'], $ja );
-			$groups[ $sid ]['alt']     = 1 === $sid ? '' : ly_alt( $s['series']['title'], $s['series']['kanji'], $ja );
-			$groups[ $sid ]['url']     = ly_url( array( 'lang' => $lang, 'SeriesID' => $sid ) );
-			$groups[ $sid ]['songs'][] = $s;
-		}
-		uasort( $groups, static fn( $a, $b ) => ( 'J-pop and others' === $a['label'] ) <=> ( 'J-pop and others' === $b['label'] ) ?: strcasecmp( $a['label'], $b['label'] ) );
-	}
+		return $groups;
+	};
+	$views = $filtered ? array( $view ) : array( 'series', 'artist', 'title' );
 	?>
 	<div class="ly-groups" id="ly-groups">
-		<?php foreach ( $groups as $g ) : ?>
-			<section class="ly-group<?php echo ! empty( $g['letter'] ) ? ' ly-group--letter' : ''; ?>">
-				<?php if ( ! empty( $g['letter'] ) ) : ?>
-					<h2 class="ly-letter"><?php echo ly_e( $g['label'] ); ?></h2>
-				<?php elseif ( '' !== $g['label'] ) : ?>
-					<h2 class="ly-group__head"><a href="<?php echo ly_e( $g['url'] ); ?>"><?php echo ly_e( $g['label'] ); ?></a><?php if ( ! empty( $g['alt'] ) ) : ?> <span class="ly-alt"><?php echo ly_e( $g['alt'] ); ?></span><?php endif; ?><span class="ly-group__n"><?php echo count( $g['songs'] ); ?></span></h2>
-				<?php endif; ?>
-				<ul class="ly-songs"><?php foreach ( $g['songs'] as $s ) { echo ly_row( $s, $ja, $lang, 'series' === $view && ! $filtered ? 'series' : ( 'artist' === $view && ! $filtered ? 'artist' : $hide ) ); } ?></ul>
-			</section>
+		<?php foreach ( $views as $by ) : ?>
+			<div class="ly-view" data-view="<?php echo ly_e( $by ); ?>"<?php echo $by === $view ? '' : ' hidden'; ?>>
+				<?php foreach ( $build( $by ) as $g ) : ?>
+					<section class="ly-group<?php echo ! empty( $g['letter'] ) ? ' ly-group--letter' : ''; ?>">
+						<?php if ( ! empty( $g['letter'] ) ) : ?>
+							<h2 class="ly-letter"><?php echo ly_e( $g['label'] ); ?></h2>
+						<?php elseif ( '' !== $g['label'] ) : ?>
+							<h2 class="ly-group__head"><a href="<?php echo ly_e( $g['url'] ); ?>"><?php echo ly_e( $g['label'] ); ?></a><?php if ( ! empty( $g['alt'] ) ) : ?> <span class="ly-alt"><?php echo ly_e( $g['alt'] ); ?></span><?php endif; ?><span class="ly-group__n"><?php echo count( $g['songs'] ); ?></span></h2>
+						<?php endif; ?>
+						<ul class="ly-songs"><?php foreach ( $g['songs'] as $s ) { echo ly_row( $s, $ja, $lang, $filtered ? $hide : ( 'series' === $by ? 'series' : ( 'artist' === $by ? 'artist' : '' ) ) ); } ?></ul>
+					</section>
+				<?php endforeach; ?>
+			</div>
 		<?php endforeach; ?>
 		<p class="ly-none" hidden>No songs match. Try a romaji or Japanese name.</p>
 	</div>
@@ -411,24 +422,79 @@ if ( $song ) {
 (function () {
 	var input = document.getElementById('find');
 	if (!input) return;
-	var rows = document.querySelectorAll('.ly-song');
-	var groups = document.querySelectorAll('.ly-group');
 	var none = document.querySelector('.ly-none');
+	function active() { return document.querySelector('.ly-view:not([hidden])'); }
 	function apply() {
 		var words = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
 		var shown = 0;
-		rows.forEach(function (r) {
+		document.querySelectorAll('.ly-song').forEach(function (r) {
 			var hay = r.getAttribute('data-find');
 			var ok = words.every(function (w) { return hay.indexOf(w) !== -1; });
 			r.hidden = !ok;
-			if (ok) shown++;
+			if (ok && active().contains(r)) shown++;
 		});
-		groups.forEach(function (g) { g.hidden = !g.querySelector('.ly-song:not([hidden])'); });
+		document.querySelectorAll('.ly-group').forEach(function (g) { g.hidden = !g.querySelector('.ly-song:not([hidden])'); });
 		if (none) none.hidden = shown > 0;
 	}
 	input.addEventListener('input', apply);
 	if (location.hash === '#find') input.focus();
 	if (input.value) apply();
+
+	// Series / Artists / A–Z swap the pre-rendered grouping in place. Each song carries a
+	// view-transition-name, so where the browser supports it the rows glide to their new places.
+	var seg = document.querySelector('.ly-seg[aria-label="Group songs by"]');
+	if (!seg) return;
+	var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+	function name(view) {
+		var seen = {};
+		document.querySelectorAll('.ly-view').forEach(function (v) {
+			var here = v.getAttribute('data-view') === view;
+			v.querySelectorAll('.ly-song').forEach(function (r) {
+				var id = r.getAttribute('data-song');
+				var on = here && !seen[id];
+				if (on) seen[id] = true;
+				r.style.viewTransitionName = on ? 'ly-song-' + id : '';
+			});
+		});
+	}
+	function show(view, push) {
+		var current = active();
+		if (!current || current.getAttribute('data-view') === view) return;
+		var swap = function () {
+			document.querySelectorAll('.ly-view').forEach(function (v) { v.hidden = v.getAttribute('data-view') !== view; });
+			seg.querySelectorAll('a').forEach(function (a) {
+				if (new URL(a.href).searchParams.get('view') === view) a.setAttribute('aria-current', 'page');
+				else a.removeAttribute('aria-current');
+			});
+			document.querySelectorAll('.ly-seg--lang a').forEach(function (a) {
+				var u = new URL(a.href);
+				u.searchParams.set('view', view);
+				a.href = u.pathname + u.search;
+			});
+			name(view);
+			apply();
+		};
+		if (push) {
+			var url = new URL(location.href);
+			url.searchParams.set('view', view);
+			history.pushState({ view: view }, '', url.pathname + url.search);
+		}
+		if (document.startViewTransition && !reduce.matches) {
+			name(current.getAttribute('data-view'));
+			document.startViewTransition(swap);
+		} else {
+			swap();
+		}
+	}
+	seg.addEventListener('click', function (e) {
+		var a = e.target.closest('a');
+		if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+		e.preventDefault();
+		show(new URL(a.href).searchParams.get('view') || 'series', true);
+	});
+	window.addEventListener('popstate', function () {
+		show(new URL(location.href).searchParams.get('view') || 'series', false);
+	});
 })();
 </script>
 </body>
