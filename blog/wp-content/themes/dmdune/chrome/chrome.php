@@ -17,7 +17,9 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.7.4' );
+define( 'DMC_VERSION', '1.8.0' );
+
+require __DIR__ . '/skins.php';
 
 function dmc_e( $s ): string {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
@@ -105,6 +107,9 @@ function dmc_head( array $c = array() ): void {
 	printf( '<link rel="icon" href="%s" sizes="32x32">' . "\n", dmc_e( $a . 'brand/icons/site-icon-32.png' ) );
 	printf( '<link rel="apple-touch-icon" href="%s">' . "\n", dmc_e( $a . 'brand/icons/site-icon-180.png' ) );
 	printf( '<link rel="stylesheet" href="%s">' . "\n", dmc_e( $a . 'css/chrome.css?v=' . DMC_VERSION ) );
+	if ( dmc_skin_css( $c ) ) {
+		printf( '<link rel="stylesheet" href="%s">' . "\n", dmc_e( dmc_skin_css( $c ) ) );
+	}
 	printf( '<script src="%s" defer></script>' . "\n", dmc_e( $a . 'js/chrome.js?v=' . DMC_VERSION ) );
 }
 
@@ -113,6 +118,11 @@ function dmc_head( array $c = array() ): void {
  * sites; without one, the OS setting applies.
  */
 function dmc_head_early(): void {
+	if ( dmc_skin() ) {
+		// Era skins are single-scheme, as the originals were.
+		printf( "<meta name=\"color-scheme\" content=\"light\">\n<script>document.documentElement.setAttribute('data-skin','%s');</script>\n", dmc_skin() );
+		return;
+	}
 	echo '<meta name="color-scheme" content="light dark">' . "\n";
 	echo '<meta name="theme-color" content="#f2efe9" media="(prefers-color-scheme: light)">' . "\n";
 	echo '<meta name="theme-color" content="#0d1017" media="(prefers-color-scheme: dark)">' . "\n";
@@ -136,6 +146,9 @@ function dmc_header( array $c = array() ): void {
 
 function dmc_header_html( array $c = array() ): string {
 	$c       = dmc_config( $c );
+	if ( dmc_skin() ) {
+		return dmc_skin_header_html( $c );
+	}
 	$current = dmc_current( $c );
 	$links   = '';
 	foreach ( dmc_nav( $c ) as $key => $item ) {
@@ -177,9 +190,8 @@ function dmc_footer_html( array $c = array() ): string {
 	$field  = array( 'blog' => 's', 'lyrics' => 'q', 'gallery' => 's' )[ $c['site'] ];
 	$hidden = '';
 	$note  = $c['note'] ?? 'Ramblings of DarkMirage · 2005–' . date( 'Y' ) . ' · Kiro and the art: all rights reserved · Theme code: GPL-2.0';
-	return sprintf(
-		'<div class="dm-footer"><p>%1$s</p><p class="dm-footer__lineage" aria-label="This theme follows Kubrick DM, dmbrickv2 and DarkMirage Blocks">Kubrick DM <span>→</span> dmbrickv2 <span>→</span> Blocks <span>→</span> <b>Dune</b> <span>·</span> <a class="dm-footer__src" href="https://github.com/darkmirage/darkmirage.com">Source on GitHub</a></p></div><nav class="dm-tabbar" aria-label="Main (mobile)">%2$s<details class="dm-sheet"><summary>%3$s<span>More</span></summary><div class="dm-sheet__panel"><form class="dm-search" role="search" method="get" action="%4$s"><label class="screen-reader-text" for="dm-sheet-search">Search</label>%10$s<input id="dm-sheet-search" type="search" name="%5$s" placeholder="%6$s"><button type="submit" aria-label="Search">%7$s</button></form><ul>%8$s</ul>%9$s</div></details></nav>',
-		$note,
+	$tabbar = sprintf(
+		'<nav class="dm-tabbar" aria-label="Main (mobile)">%1$s<details class="dm-sheet"><summary>%2$s<span>More</span></summary><div class="dm-sheet__panel"><form class="dm-search" role="search" method="get" action="%3$s"><label class="screen-reader-text" for="dm-sheet-search">Search</label>%9$s<input id="dm-sheet-search" type="search" name="%4$s" placeholder="%5$s"><button type="submit" aria-label="Search">%6$s</button></form><ul>%7$s</ul>%8$s</div></details></nav>',
 		implode( '', array_map( $tab, $tabs ) ),
 		dmc_icon( 'more', 22 ),
 		dmc_e( $c['search'] ),
@@ -187,8 +199,17 @@ function dmc_footer_html( array $c = array() ): string {
 		dmc_e( $c['placeholder'] ),
 		dmc_icon( 'search', 18 ),
 		$more,
-		dmc_mode_button( 'dm-mode--sheet' ),
+		dmc_skin() ? '' : dmc_mode_button( 'dm-mode--sheet' ),
 		$hidden
+	);
+	if ( dmc_skin() ) {
+		return dmc_skin_footer_html( $c, $tabbar );
+	}
+	return sprintf(
+		'<div class="dm-footer"><p>%1$s</p><p class="dm-footer__lineage" aria-label="Earlier themes: tap one to see the site as it looked then">%2$s <span>·</span> <a class="dm-footer__src" href="https://github.com/darkmirage/darkmirage.com">Source on GitHub</a></p></div>%3$s',
+		$note,
+		dmc_lineage_html(),
+		$tabbar
 	);
 }
 

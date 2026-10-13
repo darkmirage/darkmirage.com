@@ -181,6 +181,23 @@ if ( $song ) {
 		$meta = array( 'title' => 'Not found', 'robots' => 'noindex' );
 	}
 }
+if ( $song ) {
+	// Era skins (chrome/skins.php) show these in the sidebar, as the 2008 post pages did.
+	$cover_url = ly_cover( $song['file'] );
+	$who       = implode( '<br>', array_map( static fn( $a ) => '<a href="' . ly_e( ly_url( array( 'lang' => $lang, 'ArtistID' => $a['id'] ) ) ) . '">' . ly_e( mb_strtolower( ly_pick( $a['name'], $a['kanji'], $ja ) ) ) . '</a>', $song['artists'] ) );
+	$facts     = '<h3>sung by</h3><p>' . $who . '</p>';
+	if ( 1 !== $song['series']['id'] ) {
+		$facts .= '<h3>from</h3><p><a href="' . ly_e( ly_url( array( 'lang' => $lang, 'SeriesID' => $song['series']['id'] ) ) ) . '">' . ly_e( mb_strtolower( ly_pick( $song['series']['title'], $song['series']['kanji'], $ja ) ) ) . '</a></p>';
+	}
+	if ( '' !== $song['type'] ) {
+		$facts .= '<h3>type</h3><p>' . ly_e( mb_strtolower( $song['type'] ) ) . '</p>';
+	}
+	$facts .= '<h3>added</h3><p>' . ly_e( substr( $song['date'], 0, 4 ) ) . '<br>' . ly_e( mb_strtolower( date( 'F jS', strtotime( $song['date'] ) ) ) ) . '</p>';
+	$chrome['side'] = array_filter( array(
+		$cover_url ? array( 'Current', '<img class="bk-current" src="' . ly_e( $cover_url ) . '" alt="">' ) : null,
+		array( 'Meta', '<div class="bk-meta">' . $facts . '</div>' ),
+	) );
+}
 ?><!doctype html>
 <html lang="en">
 <head>

@@ -34,6 +34,16 @@
 	window.addEventListener('pageshow', sync);
 	document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
 
+	// Era skins: one cookie across the three sites, then reload so the server sends that era.
+	document.addEventListener('click', function (e) {
+		var era = e.target.closest('[data-dm-skin]');
+		if (!era) return;
+		var skin = era.getAttribute('data-dm-skin');
+		var domain = /(^|\.)darkmirage\.com$/.test(location.hostname) ? '; domain=.darkmirage.com' : '';
+		document.cookie = 'dm-skin=' + skin + '; path=/; SameSite=Lax' + domain + (skin ? '; max-age=31536000' : '; max-age=0');
+		location.reload();
+	});
+
 	document.addEventListener('click', function (e) {
 		var toggle = e.target.closest('[data-dm-toggle]');
 		if (toggle) {
