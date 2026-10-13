@@ -27,6 +27,8 @@ add_action(
 			'post-meta'      => array( 'title' => __( 'Post categories', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'byline'         => array( 'title' => __( 'Post byline', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'archive-head'   => array( 'title' => __( 'Archive header', 'dmdune' ) ),
+			'row'            => array( 'title' => __( 'Log row', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
+			'channels'       => array( 'title' => __( 'Channels and frequencies', 'dmdune' ) ),
 			'related'        => array( 'title' => __( 'Related posts', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'year-strip'     => array( 'title' => __( 'Archive by year', 'dmdune' ), 'attributes' => array( 'always' => array( 'type' => 'boolean', 'default' => false ) ) ),
 			'archive-index'  => array( 'title' => __( 'Archive index', 'dmdune' ) ),
@@ -304,87 +306,104 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 	if ( empty( $attrs['always'] ) && is_paged() ) {
 		return '';
 	}
-	$counts = dmdune_year_counts();
-	if ( ! $counts ) {
+	$points = dmdune_month_points();
+	if ( ! $points ) {
 		return '';
 	}
-	$max  = max( $counts );
-	$bars = '';
-	foreach ( $counts as $year => $n ) {
-		$bars .= sprintf(
-			'<li><a href="%1$s" class="dm-years__bar" data-era="%2$s"><span class="dm-years__fill" style="--h:%3$.3f"></span><span class="dm-years__label">%4$d <span>%5$s</span></span></a></li>',
-			esc_url( get_year_link( $year ) ),
-			esc_attr( dmdune_era( $year ) ),
-			max( 0.03, $n / $max ),
-			$year,
-			esc_html( number_format_i18n( $n ) )
-		);
-	}
+	$total = array_sum( array_column( $points, 1 ) );
+	$peak  = array_reduce( $points, static fn( $c, $p ) => ( ! $c || $p[1] > $c[1] ) ? $p : $c );
+	$first = $points[0][0];
+	$last  = end( $points )[0];
+	$note  = sprintf(
+		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><i data-era="default"></i>WP Default <i data-era="kubrick"></i>Kubrick DM · dmbrickv2 <i data-era="blocks"></i>Blocks</span>',
+		esc_html( number_format_i18n( $total ) ),
+		esc_html__( 'transmissions', 'dmdune' ),
+		esc_html( $peak[0] ),
+		/* translators: %s: number of posts */
+		esc_html( sprintf( __( 'Busiest month (%s posts):', 'dmdune' ), $peak[1] ) )
+	);
 	return sprintf(
-		'<section class="dm-years alignwide" aria-labelledby="dm-years-title"><div class="dm-years__head"><h2 id="dm-years-title" class="dm-section-title">%1$s</h2><p class="dm-years__legend"><span data-era="default">%2$s</span><span data-era="kubrick">%3$s</span><span data-era="blocks">%4$s</span></p></div><ol class="dm-years__bars">%5$s</ol></section>',
-		esc_html__( 'The archive, year by year', 'dmdune' ),
-		esc_html__( 'WP Default', 'dmdune' ),
-		esc_html__( 'Kubrick DM · dmbrickv2', 'dmdune' ),
-		esc_html__( 'Blocks', 'dmdune' ),
-		$bars
+		'<section class="dm-unit dm-history alignwide" aria-labelledby="dm-history-title">%1$s%2$s<p class="dm-spec__range"><span>%3$s</span><span>%4$s</span></p></section>',
+		dmdune_hud_head( 'SIGNAL HISTORY', __( 'Every month on air', 'dmdune' ), $note, 'dm-history-title' ),
+		dmdune_spectrum( $points, 'dm-spec--months' ),
+		esc_html( $first ),
+		esc_html( $last )
 	);
 }
 
 function dmdune_render_archive_index( array $attrs, WP_Block $block ): string {
 	global $wp_locale;
-	$out = '';
+	$era_names = array( 'default' => 'WP Default', 'kubrick' => 'Kubrick DM · dmbrickv2', 'blocks' => 'DarkMirage Blocks' );
+	$out       = '';
 	foreach ( dmdune_month_counts() as $year => $months ) {
-		$items = '';
-		foreach ( $months as $m => $n ) {
-			$items .= sprintf(
-				'<li><a href="%s">%s <span>%s</span></a></li>',
-				esc_url( get_month_link( $year, $m ) ),
-				esc_html( $wp_locale->get_month_abbrev( $wp_locale->get_month( $m ) ) ),
-				esc_html( number_format_i18n( $n ) )
-			);
+		$max   = max( $months );
+		$cells = '';
+		for ( $m = 1; $m <= 12; $m++ ) {
+			$n    = $months[ $m ] ?? 0;
+			$name = $wp_locale->get_month_abbrev( $wp_locale->get_month( $m ) );
+			$cells .= $n
+				? sprintf( '<a class="dm-heat__cell" href="%s" style="--i:%.3f"><span>%s</span><b>%s</b></a>', esc_url( get_month_link( $year, $m ) ), 0.15 + 0.85 * $n / max( 1, $max ), esc_html( $name ), esc_html( number_format_i18n( $n ) ) )
+				: sprintf( '<span class="dm-heat__cell is-empty"><span>%s</span><b>–</b></span>', esc_html( $name ) );
 		}
+		$loud = '';
+		foreach ( dmdune_loudest( $year, 3 ) as $id ) {
+			$p = get_post( $id );
+			if ( $p ) {
+				$loud .= '<li>' . dmdune_row_html( $p ) . '</li>';
+			}
+		}
+		$era  = dmdune_era( $year );
 		$out .= sprintf(
-			'<section class="dm-archive__year" data-era="%1$s"><h2><a href="%2$s">%3$d</a> <span>%4$s</span></h2><ul>%5$s</ul></section>',
-			esc_attr( dmdune_era( $year ) ),
-			esc_url( get_year_link( $year ) ),
+			'<section class="dm-unit dm-yearbook" data-era="%1$s" aria-labelledby="dm-y%2$d"><header class="dm-yearbook__head"><h2 id="dm-y%2$d"><a href="%3$s">%2$d</a></h2><p class="dm-hud-code">// %4$s</p><p class="dm-yearbook__count">%5$s</p></header><div class="dm-heat">%6$s</div><div class="dm-yearbook__loud"><p class="dm-hud-code">// %7$s</p><ul class="dm-rows">%8$s</ul></div></section>',
+			esc_attr( $era ),
 			$year,
+			esc_url( get_year_link( $year ) ),
+			esc_html( strtoupper( $era_names[ $era ] ) . ' ERA' ),
 			/* translators: %s: number of posts */
-			esc_html( sprintf( _n( '%s post', '%s posts', array_sum( $months ), 'dmdune' ), number_format_i18n( array_sum( $months ) ) ) ),
-			$items
+			esc_html( sprintf( _n( '%s transmission', '%s transmissions', array_sum( $months ), 'dmdune' ), number_format_i18n( array_sum( $months ) ) ) ),
+			$cells,
+			esc_html__( 'LOUDEST', 'dmdune' ),
+			$loud
 		);
 	}
-	return '<div class="dm-archive alignwide">' . $out . '</div>';
+	return '<div class="dm-yearbooks alignwide">' . $out . '</div>';
 }
 
 function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 	if ( is_paged() ) {
 		return '';
 	}
-	$ids = get_transient( 'dmdune_most_discussed' );
-	if ( ! is_array( $ids ) ) {
-		$ids = get_posts(
-			array(
-				'orderby'        => 'comment_count',
-				'order'          => 'DESC',
-				'posts_per_page' => 6,
-				'fields'         => 'ids',
-				'no_found_rows'  => true,
-			)
-		);
-		set_transient( 'dmdune_most_discussed', $ids, DAY_IN_SECONDS );
+	$ids = dmdune_loudest( null, 6 );
+	if ( ! $ids ) {
+		return '';
 	}
-	$cards = '';
-	foreach ( $ids as $id ) {
+	$max  = max( 1, (int) get_post_field( 'comment_count', $ids[0] ) );
+	$rows = '';
+	foreach ( $ids as $i => $id ) {
 		$p = get_post( $id );
-		if ( $p ) {
-			$cards .= '<li>' . dmdune_card_html( $p, 'h3' ) . '</li>';
+		if ( ! $p ) {
+			continue;
 		}
+		$ts    = get_post_timestamp( $p );
+		$n     = (int) $p->comment_count;
+		$rows .= sprintf(
+			'<li class="dm-rank" data-era="%1$s"><span class="dm-rank__no">%2$02d</span>%3$s<div class="dm-rank__body"><p class="dm-row__stamp"><time datetime="%4$s">%5$s</time>%6$s</p><h3 class="dm-rank__title"><a href="%7$s">%8$s</a></h3><p class="dm-rank__signal"><span class="dm-rank__bar" style="--w:%9$.3f"></span><span class="dm-rank__n">%10$s</span></p></div></li>',
+			esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ) ) ),
+			$i + 1,
+			dmdune_frame( $p, 'dm-frame--sm', false ),
+			esc_attr( wp_date( 'c', $ts ) ),
+			esc_html( wp_date( 'Y.m.d', $ts ) ),
+			dmdune_cat_label( $p ),
+			esc_url( get_permalink( $p ) ),
+			esc_html( wp_strip_all_tags( get_the_title( $p ) ) ),
+			$n / $max,
+			esc_html( dmdune_replies( $p ) )
+		);
 	}
 	return sprintf(
-		'<section class="dm-discussed alignwide" aria-labelledby="dm-discussed-title"><div class="dm-section-head"><h2 id="dm-discussed-title" class="dm-section-title">%s</h2><p class="dm-meta">%s</p></div><ul class="dm-grid">%s</ul></section>',
-		esc_html__( 'Most discussed', 'dmdune' ),
-		esc_html__( 'The posts readers argued about most', 'dmdune' ),
-		$cards
+		'<section class="dm-unit dm-loudest alignwide" aria-labelledby="dm-loudest-title">%s<ol class="dm-ranks">%s</ol></section>',
+		dmdune_hud_head( 'LOUDEST TRANSMISSIONS', __( 'Most discussed', 'dmdune' ), esc_html__( 'Ranked by replies, all time', 'dmdune' ), 'dm-loudest-title' ),
+		$rows
 	);
 }
 
@@ -395,64 +414,154 @@ function dmdune_render_related( array $attrs, WP_Block $block ): string {
 	}
 	$items = '';
 	foreach ( dmdune_related_posts( $post ) as $r ) {
-		$items .= '<li>' . dmdune_card_html( $r, 'h3' ) . '</li>';
+		$items .= '<li>' . dmdune_row_html( $r ) . '</li>';
 	}
 	if ( '' === $items ) {
 		return '';
 	}
 	return sprintf(
-		'<nav class="dm-related" aria-labelledby="dm-related-title"><div class="dm-section-head"><h2 id="dm-related-title" class="dm-section-title">%s</h2></div><ul class="dm-grid dm-grid--related">%s</ul></nav>',
-		esc_html__( 'Keep reading', 'dmdune' ),
+		'<nav class="dm-unit dm-related" aria-labelledby="dm-related-title">%s<ul class="dm-rows">%s</ul></nav>',
+		dmdune_hud_head( 'NEARBY FREQUENCIES', __( 'Keep reading', 'dmdune' ), '', 'dm-related-title' ),
 		$items
 	);
 }
 
 /**
- * Header for archive, category, tag and search pages: what kind of list this is, its name, and
- * how many posts it holds.
+ * Search results are rows (relevance order, no timeline).
+ */
+function dmdune_render_row( array $attrs, WP_Block $block ): string {
+	$post = get_post( $block->context['postId'] ?? 0 );
+	return $post ? dmdune_row_html( $post, 'h2' ) : '';
+}
+
+/**
+ * Header for every list screen: HUD code, name, count and span, and the list's own signal over
+ * the years (or months, for a year archive).
  */
 function dmdune_render_archive_head( array $attrs, WP_Block $block ): string {
-	global $wp_query;
-	$count = (int) $wp_query->found_posts;
-	$desc  = '';
+	global $wp_query, $wp_locale;
+	$count  = (int) $wp_query->found_posts;
+	$desc   = '';
+	$points = array();
+	$ja     = '';
 	if ( is_search() ) {
-		$kind  = __( 'Search', 'dmdune' );
-		/* translators: %s: search terms */
-		$title = sprintf( __( '“%s”', 'dmdune' ), get_search_query() );
-	} elseif ( is_category() ) {
-		$kind  = __( 'Category', 'dmdune' );
-		$title = single_cat_title( '', false );
-		$desc  = category_description();
-	} elseif ( is_tag() ) {
-		$kind  = __( 'Tag', 'dmdune' );
-		$title = single_tag_title( '', false );
-		// Tags were typed in lowercase; give them a title's capitalisation, leave mixed-case ones alone.
-		if ( $title === mb_strtolower( $title ) ) {
+		$code   = 'SCAN';
+		$title  = '“' . get_search_query() . '”';
+		$points = dmdune_year_points( dmdune_year_counts_for( 'search', get_search_query() ), static fn( $y ) => add_query_arg( array( 's' => get_search_query(), 'year' => $y ), home_url( '/' ) ) );
+	} elseif ( is_category() || is_tag() ) {
+		$term   = get_queried_object();
+		$code   = is_category() ? 'CHANNEL' : 'FREQUENCY';
+		$title  = $term->name;
+		if ( is_tag() && $title === mb_strtolower( $title ) ) {
 			$title = mb_convert_case( $title, MB_CASE_TITLE );
 		}
+		$ja     = is_category() ? dmdune_cat_ja( $term->slug ) : '';
+		$desc   = is_category() ? trim( wp_strip_all_tags( (string) $term->description ) ) : '';
+		$tt     = (int) $term->term_taxonomy_id;
+		$link   = get_term_link( $term );
+		$points = dmdune_year_points( dmdune_year_counts_for( 'term', $tt ), static fn( $y ) => add_query_arg( 'year', $y, $link ) );
 	} elseif ( is_year() ) {
-		$kind  = __( 'Archive', 'dmdune' );
-		$title = get_the_date( 'Y' );
-	} elseif ( is_month() ) {
-		$kind  = __( 'Archive', 'dmdune' );
-		$title = get_the_date( 'F Y' );
-	} elseif ( is_day() ) {
-		$kind  = __( 'Archive', 'dmdune' );
-		$title = get_the_date( 'j F Y' );
+		$y      = (int) get_query_var( 'year' );
+		$code   = 'ARCHIVE · ' . strtoupper( dmdune_era( $y ) ) . ' ERA';
+		$title  = (string) $y;
+		$months = dmdune_month_counts()[ $y ] ?? array();
+		for ( $m = 1; $m <= 12; $m++ ) {
+			$points[] = array( $wp_locale->get_month( $m ) . ' ' . $y, $months[ $m ] ?? 0, get_month_link( $y, $m ), dmdune_era( $y ), mb_substr( $wp_locale->get_month_abbrev( $wp_locale->get_month( $m ) ), 0, 1 ) );
+		}
+	} elseif ( is_page() ) {
+		$slug  = get_post_field( 'post_name', get_queried_object_id() );
+		$title = 'tag' === $slug ? __( 'Tags', 'dmdune' ) : get_the_title( get_queried_object_id() );
+		$years = array_keys( dmdune_year_counts() );
+		if ( 'tag' === $slug ) {
+			$code  = 'INDEX';
+			$count = -1;
+			$n     = sprintf(
+				/* translators: 1: number of categories, 2: number of tags */
+				__( '%1$s channels · %2$s tags', 'dmdune' ),
+				number_format_i18n( count( get_categories( array( 'hide_empty' => true ) ) ) ),
+				number_format_i18n( (int) wp_count_terms( array( 'taxonomy' => 'post_tag', 'hide_empty' => true ) ) )
+			);
+		} else {
+			$code  = 'ARCHIVE · ' . min( $years ) . '–' . max( $years );
+			$count = array_sum( dmdune_year_counts() );
+		}
+	} elseif ( is_month() || is_day() ) {
+		$code  = 'ARCHIVE';
+		$title = is_day() ? get_the_date( 'j F Y' ) : get_the_date( 'F Y' );
 	} else {
-		$kind  = __( 'Archive', 'dmdune' );
+		$code  = 'ARCHIVE';
 		$title = wp_strip_all_tags( get_the_archive_title() );
 	}
-	/* translators: %s: number of posts */
-	$n    = sprintf( _n( '%s post', '%s posts', $count, 'dmdune' ), number_format_i18n( $count ) );
-	$desc = trim( wp_strip_all_tags( (string) $desc ) );
+	$years = array_keys( array_filter( array_column( $points, 1, 0 ) ) );
+	$span  = ( $points && ! is_year() && $years ) ? ( min( $years ) === max( $years ) ? min( $years ) : min( $years ) . '–' . max( $years ) ) : '';
+	if ( $count >= 0 ) {
+		/* translators: %s: number of posts */
+		$n = sprintf( _n( '%s transmission', '%s transmissions', $count, 'dmdune' ), number_format_i18n( $count ) );
+	}
 	return sprintf(
-		'<header class="dm-archive-head alignwide"><p class="dm-eyebrow">%1$s</p><h1>%2$s</h1><p class="dm-meta">%3$s%4$s</p>%5$s</header>',
-		esc_html( $kind ),
+		'<header class="dm-archive-head alignwide"><div class="dm-archive-head__text"><p class="dm-hud-code">// %1$s</p><h1>%2$s%3$s</h1><p class="dm-meta">%4$s%5$s%6$s</p>%7$s</div>%8$s</header>',
+		esc_html( $code ),
 		esc_html( $title ),
+		$ja ? ' <span class="dm-archive-head__ja" lang="ja">' . esc_html( $ja ) . '</span>' : '',
 		esc_html( $n ),
+		$span ? '<span class="dm-sep" aria-hidden="true">·</span>' . esc_html( $span ) : '',
 		$desc ? '<span class="dm-sep" aria-hidden="true">·</span><span lang="ja">' . esc_html( $desc ) . '</span>' : '',
-		is_search() ? get_search_form( array( 'echo' => false ) ) : ''
+		is_search() ? get_search_form( array( 'echo' => false ) ) : '',
+		$points ? '<div class="dm-archive-head__spec">' . dmdune_spectrum( $points, 'dm-spec--years' ) . '</div>' : ''
+	);
+}
+
+/**
+ * Tags page: categories as channels with their own signal, tags grouped by strength.
+ */
+function dmdune_render_channels( array $attrs, WP_Block $block ): string {
+	$cats  = get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'hide_empty' => true ) );
+	$tiles = '';
+	foreach ( $cats as $i => $c ) {
+		$tiles .= sprintf(
+			'<li><a class="dm-channel" data-cat="%1$s" href="%2$s"><span class="dm-channel__ch">CH·%3$02d</span><span class="dm-channel__name">%4$s</span><span class="dm-channel__ja" lang="ja">%5$s</span><span class="dm-channel__n">%6$s</span>%7$s</a></li>',
+			esc_attr( $c->slug ),
+			esc_url( get_category_link( $c ) ),
+			$i + 1,
+			esc_html( $c->name ),
+			esc_html( dmdune_cat_ja( $c->slug ) ),
+			esc_html( number_format_i18n( $c->count ) ),
+			// Inside a link, so the bars must not be links themselves.
+			dmdune_spectrum( dmdune_year_points( dmdune_year_counts_for( 'term', (int) $c->term_taxonomy_id ), static fn() => '' ), 'dm-spec--mini' )
+		);
+	}
+	$tags  = get_tags( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 180, 'hide_empty' => true ) );
+	$tiers = array(
+		'strong' => array( __( 'Strong signal', 'dmdune' ), '20+', array() ),
+		'clear'  => array( __( 'Clear', 'dmdune' ), '6–19', array() ),
+		'faint'  => array( __( 'Faint', 'dmdune' ), '3–5', array() ),
+	);
+	foreach ( $tags as $t ) {
+		$k = $t->count >= 20 ? 'strong' : ( $t->count >= 6 ? 'clear' : ( $t->count >= 3 ? 'faint' : '' ) );
+		if ( $k ) {
+			$tiers[ $k ][2][] = $t;
+		}
+	}
+	$bands = '';
+	foreach ( $tiers as $k => $tier ) {
+		if ( ! $tier[2] ) {
+			continue;
+		}
+		usort( $tier[2], static fn( $a, $b ) => strcasecmp( $a->name, $b->name ) );
+		$chips = '';
+		foreach ( $tier[2] as $t ) {
+			$chips .= sprintf( '<li><a href="%s">%s<b>%s</b></a></li>', esc_url( get_tag_link( $t ) ), esc_html( $t->name ), esc_html( number_format_i18n( $t->count ) ) );
+		}
+		$bands .= sprintf( '<section class="dm-band dm-band--%1$s"><p class="dm-hud-code">// %2$s · %3$s</p><ul>%4$s</ul></section>', esc_attr( $k ), esc_html( strtoupper( $tier[0] ) ), esc_html( $tier[1] ), $chips );
+	}
+	$total_tags = (int) wp_count_terms( array( 'taxonomy' => 'post_tag', 'hide_empty' => true ) );
+	return sprintf(
+		'<div class="dm-channels alignwide"><section class="dm-unit" aria-labelledby="dm-ch-title">%1$s<ul class="dm-channel-grid">%2$s</ul></section><section class="dm-unit" aria-labelledby="dm-fq-title">%3$s%4$s</section></div>',
+		dmdune_hud_head( 'CHANNELS', __( 'Categories', 'dmdune' ), esc_html__( 'Each bar is a year, 2005–2013', 'dmdune' ), 'dm-ch-title' ),
+		$tiles,
+		/* translators: %s: number of tags */
+		dmdune_hud_head( 'FREQUENCIES', __( 'Tags', 'dmdune' ), esc_html( sprintf( __( '%s tags; showing those used 3+ times', 'dmdune' ), number_format_i18n( $total_tags ) ) ), 'dm-fq-title' ),
+		$bands
 	);
 }
 

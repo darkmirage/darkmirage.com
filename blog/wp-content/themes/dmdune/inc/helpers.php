@@ -204,6 +204,8 @@ function dmdune_flush_counts(): void {
 	delete_transient( 'dmdune_year_counts' );
 	delete_transient( 'dmdune_month_counts' );
 	delete_transient( 'dmdune_most_discussed' );
+	global $wpdb;
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_dmdune\\_loud\\_%' OR option_name LIKE '\\_transient\\_dmdune\\_yc\\_%'" );
 }
 add_action( 'save_post_post', 'dmdune_flush_counts' );
 add_action( 'deleted_post', 'dmdune_flush_counts' );

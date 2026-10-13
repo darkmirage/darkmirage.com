@@ -1129,3 +1129,163 @@ h1, h2, h3, h4 { text-wrap: balance; }
 	.dm-tx__title { font-size: 22px; }
 	.dm-tx__excerpt { display: none; }
 }
+
+/* ---------- Unit family: everything that lists posts speaks the transmission-log dialect ---------- */
+
+.dm-unit { display: flex; flex-direction: column; gap: 16px; }
+.dm-hud-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 4px 24px; padding-bottom: 12px; border-bottom: 1px dashed var(--dm-line); }
+.dm-hud-code { margin: 0; font: 500 11px/1.2 var(--wp--preset--font-family--mono); letter-spacing: 0.2em; color: var(--dm-accent); text-transform: uppercase; }
+.dm-hud-head .dm-hud-code { grid-column: 1 / -1; }
+.dm-hud-title { margin: 0; font: 600 30px/1.05 var(--wp--preset--font-family--display); color: var(--dm-fg); letter-spacing: -0.005em; }
+.dm-hud-note { margin: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 18px; font: 500 13px var(--wp--preset--font-family--body); color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+.dm-hud-note b { color: var(--dm-fg); font-weight: 600; }
+.dm-legend { display: inline-flex; align-items: center; gap: 6px; }
+.dm-legend i { width: 9px; height: 9px; border-radius: 2px; background: var(--era); margin-left: 8px; }
+.dm-legend i:first-child { margin-left: 0; }
+
+/* Signal meter (shared) */
+.dm-sig { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; flex: none; }
+.dm-sig b { width: 4px; border-radius: 1px; background: var(--dm-line); }
+.dm-sig b.on { background: var(--era, var(--dm-accent)); }
+
+/* Recorded frame (shared) */
+.dm-frame { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #0c0e13; box-shadow: 0 0 0 1px var(--dm-line), 0 12px 22px -18px rgba(30, 20, 10, 0.6); }
+.dm-frame__media { position: absolute; inset: 0; }
+.dm-frame__media .dm-media__img { transition: transform 0.5s; }
+.dm-frame:hover .dm-media__img, .dm-row:hover .dm-media__img, .dm-rank:hover .dm-media__img { transform: scale(1.04); }
+.dm-row:hover .dm-media--yt .dm-media__img, .dm-rank:hover .dm-media--yt .dm-media__img { transform: none; }
+.dm-frame__scan { position: absolute; z-index: 2; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px); mix-blend-mode: overlay; }
+.dm-frame__rec { position: absolute; z-index: 3; left: 8px; bottom: 7px; font: 500 9px/1 var(--wp--preset--font-family--mono); letter-spacing: 0.14em; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+.dm-frame__rec::before { content: "●"; color: #ff4d4d; margin-right: 5px; font-size: 7px; vertical-align: 1px; }
+.dm-frame__nosignal { display: grid; place-items: center; font: 500 9px var(--wp--preset--font-family--mono); letter-spacing: 0.24em; color: #7d8597; background: repeating-linear-gradient(135deg, #151922 0 8px, #10131a 8px 16px); }
+.dm-frame--sm { width: 100%; }
+
+/* Log row (search results, Keep reading, loudest of a year) */
+.dm-rows { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.dm-rows > li, .dm-rows > .wp-block-post { margin: 0; }
+.dm-row { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--dm-line); }
+.dm-rows > :last-child .dm-row { border-bottom: 0; }
+.dm-row__body { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.dm-row__stamp { margin: 0; display: flex; align-items: center; gap: 10px; font: 500 11px/1 var(--wp--preset--font-family--mono); letter-spacing: 0.12em; color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+.dm-row__no { padding: 3px 5px; border: 1px solid currentColor; border-radius: 3px; color: var(--era); font-size: 9px; }
+.dm-row__title { margin: 0; font: 600 18px/1.25 var(--wp--preset--font-family--display); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dm-row__title a { color: var(--dm-fg); text-decoration: none; }
+.dm-row__title a:hover { color: var(--dm-accent); }
+.dm-row__meta { margin: 0; display: flex; align-items: center; gap: 10px; font: 500 13px var(--wp--preset--font-family--body); color: var(--dm-muted); white-space: nowrap; overflow: hidden; }
+.dm-rows--results .dm-row { grid-template-columns: 220px minmax(0, 1fr); gap: 22px; padding: 16px 0; }
+.dm-rows--results .dm-row__title { font-size: 22px; }
+
+/* Spectrum (shared): one bar per period */
+.dm-spec { --sh: 120px; display: flex; align-items: flex-end; gap: 1px; height: var(--sh); padding-bottom: 18px; position: relative; }
+.dm-spec__col { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; text-decoration: none; }
+.dm-spec__bar { display: block; width: 100%; height: calc(var(--h) * 100%); min-height: 0; background: var(--era); border-radius: 2px 2px 0 0; transition: filter 0.15s, transform 0.15s; transform-origin: bottom; }
+.dm-spec__col.is-empty .dm-spec__bar { height: 1px; background: var(--dm-line); }
+a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(1.06); }
+.dm-spec__tick { position: absolute; left: 0; top: 100%; margin-top: 5px; font: 500 10px/1 var(--wp--preset--font-family--mono); letter-spacing: 0.06em; color: var(--dm-muted); white-space: nowrap; }
+.dm-spec__col.is-tick::before { content: ""; position: absolute; left: 0; bottom: -4px; width: 1px; height: 4px; background: var(--dm-muted); opacity: 0.5; }
+.dm-spec__range { display: none; }
+.dm-spec--years { --sh: 70px; gap: 4px; }
+.dm-spec--years .dm-spec__tick { left: 50%; transform: translateX(-50%); }
+.dm-spec--years .dm-spec__col.is-tick::before { display: none; }
+.dm-spec--mini { --sh: 30px; gap: 2px; padding-bottom: 0; }
+.dm-spec--mini .dm-spec__tick, .dm-spec--mini .dm-spec__col::before { display: none; }
+
+/* Signal history panel: an instrument with a faint graticule */
+.dm-history { padding: 20px clamp(16px, 3vw, 26px) 16px; border: 1px solid var(--dm-line); border-radius: 18px; background:
+	linear-gradient(var(--dm-line) 1px, transparent 1px) 0 100% / 100% 25%,
+	var(--dm-surface); background-repeat: repeat-y; }
+.dm-history .dm-hud-head { border-bottom: 0; padding-bottom: 4px; }
+.dm-history .dm-spec { background: linear-gradient(transparent calc(100% - 19px), var(--dm-line) calc(100% - 19px), var(--dm-line) calc(100% - 18px), transparent calc(100% - 18px)); }
+
+/* Loudest transmissions: ranked */
+.dm-ranks { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 36px; counter-reset: none; }
+.dm-rank { display: grid; grid-template-columns: 64px 128px minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px 0; border-bottom: 1px dashed var(--dm-line); }
+.dm-rank__no { font: 600 52px/0.9 var(--wp--preset--font-family--display); color: transparent; -webkit-text-stroke: 1.5px var(--era); text-align: center; font-variant-numeric: tabular-nums; }
+.dm-rank:hover .dm-rank__no { color: var(--era); }
+.dm-rank__body { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.dm-rank__title { margin: 0; font: 600 18px/1.2 var(--wp--preset--font-family--display); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dm-rank__title a { color: var(--dm-fg); text-decoration: none; }
+.dm-rank__title a:hover { color: var(--dm-accent); }
+.dm-rank__signal { margin: 0; display: flex; align-items: center; gap: 10px; }
+.dm-rank__bar { flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--era) calc(var(--w) * 100%), var(--dm-line) calc(var(--w) * 100%)); }
+.dm-rank__n { flex: none; font: 600 13px var(--wp--preset--font-family--body); color: var(--dm-fg); font-variant-numeric: tabular-nums; }
+
+/* Archive page: a yearbook per year */
+.dm-yearbooks { display: flex; flex-direction: column; }
+.dm-yearbook { display: grid; grid-template-columns: 180px minmax(0, 340px) minmax(0, 1fr); gap: 18px 32px; align-items: start; padding: 26px 0; border-top: 1px dashed var(--dm-line); }
+.dm-yearbook__head { display: flex; flex-direction: column; gap: 6px; }
+.dm-yearbook__head h2 { margin: 0; }
+.dm-yearbook__head h2 a { font: 600 64px/0.9 var(--wp--preset--font-family--display); color: transparent; -webkit-text-stroke: 1.5px var(--era); text-decoration: none; }
+.dm-yearbook__head h2 a:hover { color: var(--era); }
+.dm-yearbook__head .dm-hud-code { color: var(--era); }
+.dm-yearbook__count { margin: 0; font: 500 13px var(--wp--preset--font-family--body); color: var(--dm-muted); }
+.dm-heat { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.dm-heat__cell { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; text-decoration: none; background: color-mix(in srgb, var(--era) calc(var(--i, 0) * 75%), var(--dm-surface)); box-shadow: 0 0 0 1px var(--dm-line) inset; color: var(--dm-fg); transition: transform 0.15s; }
+.dm-heat__cell span { font: 500 10px var(--wp--preset--font-family--mono); letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.8; }
+.dm-heat__cell b { font: 600 18px/1 var(--wp--preset--font-family--display); font-variant-numeric: tabular-nums; }
+a.dm-heat__cell:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--era) inset; }
+.dm-heat__cell.is-empty { background: transparent; color: var(--dm-muted); box-shadow: 0 0 0 1px var(--dm-line) inset; opacity: 0.6; }
+.dm-yearbook__loud { display: flex; flex-direction: column; gap: 4px; }
+.dm-yearbook__loud .dm-row { grid-template-columns: 112px minmax(0, 1fr); padding: 8px 0; gap: 14px; }
+.dm-yearbook__loud .dm-row__title { font-size: 16px; }
+
+/* List headers: name on the left, the list's own signal on the right */
+.dm-archive-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 16px 40px; align-items: end; padding-bottom: 18px; border-bottom: 1px dashed var(--dm-line); }
+.dm-archive-head__text { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dm-archive-head h1 { margin: 0; font: 600 var(--wp--preset--font-size--xx-large)/1 var(--wp--preset--font-family--display); color: var(--dm-fg); overflow-wrap: anywhere; }
+.dm-archive-head__ja { font: 500 0.45em var(--wp--preset--font-family--body); color: var(--dm-muted); letter-spacing: 0.1em; vertical-align: middle; }
+.dm-archive-head__spec { min-width: 0; }
+
+/* Channels (categories) */
+.dm-channel-grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.dm-channel { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "ch n" "name n" "ja ja" "spec spec"; gap: 2px 10px; padding: 14px 16px 12px; border-radius: 12px; border: 1px solid var(--dm-line); border-left: 4px solid var(--dot, var(--a)); background: var(--dm-surface); text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; }
+.dm-channel:hover { transform: translateY(-2px); box-shadow: var(--dm-shadow); }
+.dm-channel__ch { grid-area: ch; font: 500 10px var(--wp--preset--font-family--mono); letter-spacing: 0.18em; color: var(--dm-muted); }
+.dm-channel__name { grid-area: name; font: 600 22px/1.1 var(--wp--preset--font-family--display); color: var(--dm-fg); }
+.dm-channel__ja { grid-area: ja; font: 500 12px var(--wp--preset--font-family--body); color: var(--dm-muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+.dm-channel__n { grid-area: n; align-self: start; font: 600 28px/1 var(--wp--preset--font-family--display); color: var(--dot, var(--a)); font-variant-numeric: tabular-nums; }
+.dm-channel .dm-spec { grid-area: spec; }
+.dm-channel .dm-spec__bar { background: var(--dot, var(--a)); }
+.dm-channel .dm-spec__col.is-empty .dm-spec__bar { background: var(--dm-line); }
+.dm-channel .dm-spec__col.is-empty:not(.is-tick), .dm-channel .dm-spec__col { cursor: inherit; }
+
+/* Frequencies (tags) */
+.dm-band { display: flex; flex-direction: column; gap: 10px; padding: 6px 0 14px; }
+.dm-band ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.dm-band a { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 12px; border: 1px solid var(--dm-line); border-radius: 999px; background: var(--dm-surface); color: var(--dm-body); text-decoration: none; font: 500 13px var(--wp--preset--font-family--body); }
+.dm-band a b { font: 500 11px var(--wp--preset--font-family--mono); color: var(--dm-muted); }
+.dm-band a:hover { border-color: var(--dm-accent-line); color: var(--dm-accent); }
+.dm-band--strong a { min-height: 40px; padding: 0 14px; font: 600 15px var(--wp--preset--font-family--display); color: var(--dm-fg); border-color: var(--dm-accent-line); }
+.dm-band--strong a b { color: var(--dm-accent); }
+.dm-band--faint a { min-height: 30px; font-size: 12px; color: var(--dm-muted); background: transparent; }
+.dm-channels { display: flex; flex-direction: column; gap: 40px; }
+
+@media (max-width: 1000px) {
+	.dm-yearbook { grid-template-columns: 140px minmax(0, 1fr); }
+	.dm-yearbook__loud { grid-column: 1 / -1; }
+	.dm-channel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.dm-ranks { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+	.dm-hud-head { grid-template-columns: minmax(0, 1fr); }
+	.dm-hud-note { justify-content: flex-start; }
+	.dm-hud-title { font-size: 24px; }
+	.dm-archive-head { grid-template-columns: minmax(0, 1fr); }
+	.dm-spec--months { gap: 0; --sh: 100px; }
+	.dm-spec--months .dm-spec__tick { font-size: 9px; }
+	.dm-spec--months .dm-spec__col.is-tick:nth-of-type(n) .dm-spec__tick { transform: rotate(0); }
+	.dm-rank { grid-template-columns: 44px 96px minmax(0, 1fr); gap: 12px; }
+	.dm-rank__no { font-size: 36px; }
+	.dm-rank__title { font-size: 16px; }
+	.dm-row, .dm-rows--results .dm-row { grid-template-columns: 104px minmax(0, 1fr); gap: 12px; }
+	.dm-rows--results .dm-row__title { font-size: 17px; }
+	.dm-row__no { display: none; }
+	.dm-yearbook { grid-template-columns: minmax(0, 1fr); padding: 20px 0; }
+	.dm-yearbook__head { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+	.dm-yearbook__head h2 a { font-size: 48px; }
+	.dm-yearbook__loud .dm-row { grid-template-columns: 96px minmax(0, 1fr); }
+	.dm-channel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+	.dm-channel { padding: 12px; }
+	.dm-channel__name { font-size: 18px; }
+	.dm-channel__n { font-size: 22px; }
+}
