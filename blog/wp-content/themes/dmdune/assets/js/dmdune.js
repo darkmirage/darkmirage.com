@@ -177,8 +177,10 @@
 		var mismatch = Math.abs(Math.log((nw / nh) / (bw / bh)));
 		var fit = upscale > 1.6 || mismatch > Math.log(1.7);
 		box.classList.toggle('is-fit', fit);
-		box.style.setProperty('--nw', Math.round(nw * 1.5) + 'px');
-		box.style.setProperty('--nh', Math.round(nh * 1.5) + 'px');
+		// Never enlarge a letterboxed picture: old logos and screencaps are small, often palette PNGs
+		// with hard edges, and any upscaling makes their edges stair-step.
+		box.style.setProperty('--nw', nw + 'px');
+		box.style.setProperty('--nh', nh + 'px');
 	}
 	function watchMedia() {
 		document.querySelectorAll('.dm-media__img').forEach(function (img) {

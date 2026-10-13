@@ -10,6 +10,8 @@ mono HUD labels, Kiro the shiba.
 - `assets/brand/` (banner scenes, Kiro, roundel marks, brigade patch): all rights reserved. See
   `assets/brand/LICENSE.md`.
 - `assets/fonts/`: Chakra Petch and JetBrains Mono, SIL OFL 1.1 (licence files alongside).
+- `assets/flags/`: country flags from flag-icons 7.2.3, MIT (`assets/flags/LICENSE.txt`). Only the
+  countries that appear in the blog's comments are included.
 
 ## What it does with the old posts
 
@@ -28,6 +30,9 @@ they render:
 | icons from deleted plugins, ad scripts | removed |
 
 Card thumbnails come from each post's first image (no featured images are written).
+
+Commenters get a country flag, as the old IP to Nation plugin did: their stored IP is looked up in
+the `ip2nation` tables that plugin left in the database (no new data is imported).
 
 ## Layout
 

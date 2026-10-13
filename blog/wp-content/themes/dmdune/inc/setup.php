@@ -74,3 +74,25 @@ add_action(
 
 add_filter( 'excerpt_length', static fn() => 34, 999 );
 add_filter( 'excerpt_more', static fn() => '…' );
+
+/**
+ * Country flag after each commenter's name, as the IP to Nation plugin showed from 2006.
+ */
+add_filter(
+	'render_block_core/comment-author-name',
+	static function ( $html, $parsed, $block ) {
+		$comment = get_comment( $block->context['commentId'] ?? 0 );
+		$country = $comment ? dmdune_comment_country( $comment ) : null;
+		if ( ! $country ) {
+			return $html;
+		}
+		$file  = '/assets/flags/' . $country['code'] . '.svg';
+		$label = $country['name'] ?: strtoupper( $country['code'] );
+		$flag  = file_exists( get_template_directory() . $file )
+			? sprintf( '<img src="%s" alt="" width="20" height="15" loading="lazy" decoding="async">', esc_url( get_template_directory_uri() . $file ) )
+			: '<span>' . esc_html( strtoupper( $country['code'] ) ) . '</span>';
+		return $html . sprintf( '<span class="dm-flag" title="%1$s" role="img" aria-label="%1$s">%2$s</span>', esc_attr( $label ), $flag );
+	},
+	10,
+	3
+);

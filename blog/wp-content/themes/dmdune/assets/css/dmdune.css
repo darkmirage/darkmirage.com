@@ -763,6 +763,9 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-comment__head .wp-block-avatar img { border-radius: 9px; display: block; }
 .dm-comment .wp-block-comment-author-name { font-weight: 700; color: var(--dm-fg); font-size: 0.9375rem; }
 .dm-comment .wp-block-comment-author-name a { color: inherit; text-decoration: none; }
+.dm-flag { display: inline-flex; align-items: center; flex: none; }
+.dm-flag img { display: block; width: 20px; height: 15px; border-radius: 3px; box-shadow: 0 0 0 1px var(--dm-line); object-fit: cover; }
+.dm-flag span { font: 500 0.625rem/1 var(--wp--preset--font-family--mono); letter-spacing: 0.08em; padding: 3px 5px; border: 1px solid var(--dm-line); border-radius: 4px; color: var(--dm-muted); }
 .dm-comment .wp-block-comment-date { margin-left: auto; font: 0.75rem var(--wp--preset--font-family--mono); color: var(--dm-muted); }
 .dm-comment .wp-block-comment-date a { color: inherit; text-decoration: none; }
 .dm-comment .wp-block-comment-content { font-size: 0.9375rem; line-height: 1.7; overflow-wrap: anywhere; }

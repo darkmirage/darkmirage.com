@@ -266,3 +266,37 @@ function dmdune_icon( string $name, int $size = 20 ): string {
 		$paths[ $name ] ?? ''
 	);
 }
+
+/**
+ * Commenter's country, from the ip2nation tables the old "IP to Nation" plugin left in the
+ * database. Its data is from the same years as the comments, so it places 2005–2013 IPs better
+ * than a current database would. Returns null when the tables are gone or the IP isn't public.
+ *
+ * @return array{code:string,name:string}|null
+ */
+function dmdune_comment_country( WP_Comment $comment ): ?array {
+	static $has_tables = null, $cache = array();
+	global $wpdb;
+	if ( null === $has_tables ) {
+		$has_tables = (bool) $wpdb->get_var( "SHOW TABLES LIKE 'ip2nation'" );
+	}
+	$ip = $comment->comment_author_IP;
+	if ( ! $has_tables || ( '' !== $comment->comment_type && 'comment' !== $comment->comment_type )
+		|| ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+		return null;
+	}
+	if ( ! array_key_exists( $ip, $cache ) ) {
+		$row          = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT n.country AS code, c.country AS name FROM ip2nation n
+				 LEFT JOIN ip2nationCountries c ON c.code = n.country
+				 WHERE n.ip < INET_ATON(%s) ORDER BY n.ip DESC LIMIT 1',
+				$ip
+			)
+		);
+		$cache[ $ip ] = ( $row && ! in_array( $row->code, array( '01', '' ), true ) )
+			? array( 'code' => 'uk' === $row->code ? 'gb' : $row->code, 'name' => (string) $row->name )
+			: null;
+	}
+	return $cache[ $ip ];
+}
