@@ -1181,8 +1181,8 @@ h1, h2, h3, h4 { text-wrap: balance; }
 .dm-spec__bar { display: block; width: 100%; height: calc(var(--h) * 100%); min-height: 0; background: var(--era); border-radius: 2px 2px 0 0; transition: filter 0.15s, transform 0.15s; transform-origin: bottom; }
 .dm-spec__col.is-empty .dm-spec__bar { height: 1px; background: var(--dm-line); }
 a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(1.06); }
-.dm-spec__tick { position: absolute; left: 0; top: 100%; margin-top: 5px; font: 500 10px/1 var(--wp--preset--font-family--mono); letter-spacing: 0.06em; color: var(--dm-muted); white-space: nowrap; }
-.dm-spec__col.is-tick::before { content: ""; position: absolute; left: 0; bottom: -4px; width: 1px; height: 4px; background: var(--dm-muted); opacity: 0.5; }
+.dm-spec__tick { position: absolute; left: 5px; top: 100%; margin-top: 4px; font: 500 10px/1 var(--wp--preset--font-family--mono); letter-spacing: 0.06em; color: var(--dm-muted); white-space: nowrap; }
+.dm-spec__col.is-tick::before { content: ""; position: absolute; left: 0; bottom: -14px; width: 1px; height: 14px; background: var(--dm-muted); opacity: 0.5; }
 .dm-spec__range { display: none; }
 .dm-spec--years { --sh: 70px; gap: 4px; }
 .dm-spec--years .dm-spec__tick { left: 50%; transform: translateX(-50%); }
