@@ -17,7 +17,8 @@
   # Serve everything over https (certificate renewals still reach /.well-known/ over http).
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !=https
-  RewriteCond %{REQUEST_URI} !^/\.well-known/
+  RewriteCond %{ENV:REDIRECT_STATUS} ^$
+RewriteCond %{REQUEST_URI} !^/\.well-known/
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
   # --- Legacy Zenphoto 1.2 URLs ---
