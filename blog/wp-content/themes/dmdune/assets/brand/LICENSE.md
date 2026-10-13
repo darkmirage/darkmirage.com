@@ -8,6 +8,7 @@ licence:
 - `banner/`: the header scenes (day and night) and the Kiro character layers
 - `icons/`: the sunset roundel logo marks and site icons
 - `badges/`: the DM団 brigade patch
+- `soraven/`: So Raven's skyline and raven logo (soraven.com branding)
 
 This includes the character **Kiro** (the black-and-tan Shiba Inu with goggles, sand cloak and
 DM団 armband), his name and likeness.

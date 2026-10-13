@@ -116,12 +116,17 @@ function dmdune_legacy_after_autop( string $content ): string {
 			$tag = preg_replace( '#(?<=["\'\s])style=(["\'])[^"\']*\1#i', ' ', $tag );
 			$tag = preg_replace_callback(
 				'#\ssrc=(["\'])(.*?)\1#i',
-				static fn( $s ) => ' src="' . esc_url( dmdune_https( html_entity_decode( $s[2] ) ) ) . '"',
+				static fn( $s ) => ' src="' . esc_url( dmdune_override_image( dmdune_https( html_entity_decode( $s[2] ) ), 'content' ) ) . '"',
 				$tag
 			);
 			// Icons injected by plugins deleted long ago (e.g. Post Thumb's youtube.png) now 404.
 			if ( preg_match( '#\ssrc="[^"]*/wp-content/plugins/#i', $tag ) ) {
 				return '';
+			}
+			// A replaced image can't keep WordPress's srcset/sizes for the old file.
+			if ( preg_match( '#/assets/brand/#', $tag ) ) {
+				$tag = preg_replace( '#\s(?:srcset|sizes|width|height)=(["\'])[^"\']*\1#i', '', $tag );
+				$tag = preg_replace( '#^<img\b#i', '<img width="320" height="320"', $tag );
 			}
 			if ( ! preg_match( '#\sloading=#i', $tag ) ) {
 				$tag = preg_replace( '#^<img\b#i', '<img loading="lazy"', $tag );

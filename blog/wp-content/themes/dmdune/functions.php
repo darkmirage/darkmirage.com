@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DMDUNE_VERSION', '1.2.0' );
+define( 'DMDUNE_VERSION', '1.2.1' );
 
 require __DIR__ . '/inc/helpers.php';
 require __DIR__ . '/inc/setup.php';

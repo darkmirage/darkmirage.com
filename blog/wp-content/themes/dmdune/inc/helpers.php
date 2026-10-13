@@ -16,6 +16,32 @@ function dmdune_https( string $url ): string {
 }
 
 /**
+ * Old images replaced at render time by newer artwork. "So Raven" (2013) pointed readers to
+ * soraven.com with a 256px palette PNG that stair-steps when scaled; it now shows So Raven's
+ * current skyline (on cards) and raven logo (in the post).
+ *
+ * @return array<string,array{card:string,content:string}> path fragment => replacements
+ */
+function dmdune_image_overrides(): array {
+	$base = get_template_directory_uri() . '/assets/brand/soraven/';
+	return array(
+		'/uploads/2013/06/sr.png' => array(
+			'card'    => $base . 'skyline-1600.webp',
+			'content' => $base . 'raven-logo.webp',
+		),
+	);
+}
+
+function dmdune_override_image( string $src, string $where ): string {
+	foreach ( dmdune_image_overrides() as $fragment => $new ) {
+		if ( false !== strpos( $src, $fragment ) ) {
+			return $new[ $where ];
+		}
+	}
+	return $src;
+}
+
+/**
  * The first real image in a post, for card thumbnails. Posts predate featured images, so this
  * reads the content instead of writing thumbnails to the database.
  */
@@ -53,7 +79,7 @@ function dmdune_first_image( WP_Post $post ): ?string {
 			if ( $thumbish && preg_match( '#\.(?:jpe?g|png|gif|webp)$#i', $href ) ) {
 				$src = $href;
 			}
-			$found = dmdune_https( $src );
+			$found = dmdune_override_image( dmdune_https( $src ), 'card' );
 			if ( 0 === strpos( $found, '/' ) ) {
 				$found = home_url( $found );
 			}

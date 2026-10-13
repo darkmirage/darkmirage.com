@@ -175,7 +175,10 @@
 		if (!bw || !bh || !nw || !nh) return;
 		var upscale = Math.max(bw / nw, bh / nh);
 		var mismatch = Math.abs(Math.log((nw / nh) / (bw / bh)));
-		var fit = upscale > 1.6 || mismatch > Math.log(1.7);
+		// Wide panoramas fill by cropping the sides (their middle is the subject); everything else that
+		// would be badly cropped or blown up is letterboxed.
+		var wider = nw / nh > bw / bh;
+		var fit = upscale > 1.6 || (mismatch > Math.log(1.7) && !(wider && nw / nh <= 5 && upscale <= 1.6));
 		box.classList.toggle('is-fit', fit);
 		// Never enlarge a letterboxed picture: old logos and screencaps are small, often palette PNGs
 		// with hard edges, and any upscaling makes their edges stair-step.
