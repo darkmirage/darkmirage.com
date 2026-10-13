@@ -13,7 +13,7 @@ Code for the active darkmirage.com sites on HostGator. The repo root maps 1:1 to
 
 Server-managed content stays on the server, and the deploy tool never touches it:
 
-- WordPress **themes and plugins** (`blog/wp-content/themes/`, `plugins/`): managed on the server via WP admin or WP-CLI (over SSH: `cd <docroot>/blog && wp plugin list`). Copies are in the backup mirror. lyrics.darkmirage.com loads CSS and art from `themes/default2`, so keep that theme on the server.
+- WordPress **themes and plugins** (`blog/wp-content/themes/`, `plugins/`): managed on the server via WP admin or WP-CLI (over SSH: `cd <docroot>/blog && wp plugin list`). Copies are in the backup mirror. lyrics.darkmirage.com loads CSS and art from `themes/default2`, so keep that theme on the server. The exception is the site's own theme, `themes/dmdune/`, which lives in git and deploys like everything else.
 - WordPress uploads (`blog/wp-content/uploads/`, 2006-era images loose in `blog/wp-content/`, `blog/audio/`), gallery albums, `lyrics/txt/` (lyric text and cover art; song metadata is in MySQL)
 - Config files with DB passwords: `wp-config.php`, `zp-config.php`, `lyrics/config.php`. Local copies sit in the working tree but are gitignored.
 - Caches, logs, commenter gravatars
@@ -49,6 +49,6 @@ GPL-2.0-or-later (see `LICENSE`). This matches the bundled third-party code, whi
 - WordPress core (`blog/`): GPLv2 or later. See `blog/license.txt`.
 - Zenphoto 1.6.8 (`gallery/`): GPLv2, with some bundled libraries under their own licenses. See `gallery/LICENSE` and the license files under `gallery/zp-core/`.
 
-The original code here (`lyrics/` PHP, `tools/`) is released under the same license.
+The original code here (`lyrics/` PHP, `tools/`, and the `blog/wp-content/themes/dmdune/` theme code) is released under the same license. The theme's fonts are SIL OFL 1.1 (`themes/dmdune/assets/fonts/`).
 
-**Not covered:** site content kept out of git (lyric text and cover art, uploads, gallery photos, themes) isn't part of this repository or this license. The DarkMirage logo and banner (`favicon.ico`, `apple-touch-icon.png`, `lyrics/lyrics_banner.jpg`) are site branding; please don't reuse them to represent another site.
+**Not covered:** site content kept out of git (lyric text and cover art, uploads, gallery photos, themes) isn't part of this repository or this license. The DarkMirage logo and banner (`favicon.ico`, `apple-touch-icon.png`, `lyrics/lyrics_banner.jpg`) are site branding; please don't reuse them to represent another site. The theme's artwork in `blog/wp-content/themes/dmdune/assets/brand/` (header scenes, Kiro the shiba, the roundel marks) is all rights reserved; see its `LICENSE.md`.
