@@ -67,9 +67,10 @@ def remote_md5s(paths):
     """Map path -> md5 for files that exist on the server (missing files are omitted)."""
     if not paths:
         return {}
-    script = "cd " + REMOTE_ROOT + " && for f in " + " ".join(shlex.quote(p) for p in paths) + \
-             '; do [ -f "$f" ] && md5sum "$f"; done; true'
-    r = ssh(script)
+    # Paths go over stdin: large deploys overflow the remote shell's argument limit.
+    script = "cd " + shlex.quote(REMOTE_ROOT) + \
+             ' && while IFS= read -r f; do [ -f "$f" ] && md5sum "$f"; done; true'
+    r = ssh(script, stdin="\n".join(paths).encode() + b"\n")
     if r.returncode:
         sys.exit(f"md5 check failed: {r.stderr.decode()}")
     out = {}
@@ -141,7 +142,13 @@ def main():
         if r.returncode:
             sys.exit(f"Upload failed: {r.stderr.decode()}")
     if removed and args.delete_removed:
-        r = ssh(f"cd {REMOTE_ROOT} && rm -f -- " + " ".join(shlex.quote(p) for p in removed))
+        # NUL-separated over stdin (no argument limit); then prune directories left empty.
+        r = ssh(f"cd {shlex.quote(REMOTE_ROOT)} && xargs -0 rm -f --",
+                stdin=b"\0".join(p.encode() for p in removed))
+        if r.returncode == 0:
+            dirs = sorted({os.path.dirname(p) for p in removed if os.path.dirname(p)}, key=len, reverse=True)
+            ssh(f"cd {shlex.quote(REMOTE_ROOT)} && xargs -0 rmdir -p --ignore-fail-on-non-empty -- 2>/dev/null; true",
+                stdin=b"\0".join(d.encode() for d in dirs))
         if r.returncode:
             sys.exit(f"Delete failed: {r.stderr.decode()}")
 

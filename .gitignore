@@ -101,3 +101,6 @@ Thumbs.db
 !/gallery/zp-core/**/*.mp3
 !/gallery/zp-core/**/*.zip
 !/gallery/zp-core/**/*.gz
+
+# Python bytecode
+__pycache__/
