@@ -74,9 +74,10 @@ function dmdune_thumb( WP_Post $post, string $class = 'dm-thumb' ): string {
 	if ( $src ) {
 		// The blurred copy only shows when the picture is letterboxed (see .is-fit and dmdune.js).
 		return sprintf(
-			'<div class="%1$s dm-media"><img class="dm-media__bg" src="%2$s" alt="" aria-hidden="true" loading="lazy" decoding="async"><img class="dm-media__img" src="%2$s" alt="" loading="lazy" decoding="async"></div>',
+			'<div class="%1$s dm-media%3$s"><img class="dm-media__bg" src="%2$s" alt="" aria-hidden="true" loading="lazy" decoding="async"><img class="dm-media__img" src="%2$s" alt="" loading="lazy" decoding="async"></div>',
 			esc_attr( $class ),
-			esc_url( $src )
+			esc_url( $src ),
+			false !== strpos( $src, '/hqdefault.jpg' ) ? ' dm-media--yt' : ''
 		);
 	}
 	$cats = get_the_category( $post->ID );

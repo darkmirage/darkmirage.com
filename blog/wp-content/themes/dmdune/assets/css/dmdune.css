@@ -361,6 +361,9 @@ h1, h2, h3, h4 { text-wrap: balance; }
 }
 .dm-media__img { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; }
 .dm-media__bg { display: none; }
+/* YouTube's 480x360 cover is a 16:9 frame with black bars top and bottom (12.5% each): make the
+   image 4/3 of the box's height and shift it up so the bars fall outside the card. */
+.dm-media--yt .dm-media__img { position: absolute; left: 0; top: -16.67%; height: 133.34%; }
 /* Letterboxed: small, very tall or very wide pictures sit whole on a blurred copy of themselves
    instead of being cropped or blown up. dmdune.js decides per image. */
 .dm-media.is-fit .dm-media__bg {

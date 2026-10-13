@@ -86,8 +86,46 @@ function dmdune_first_image( WP_Post $post ): ?string {
 			break;
 		}
 	}
+	// Posts that only embed YouTube videos: use the first video's cover art that still exists.
+	if ( '' === $found && preg_match_all( '#youtube(?:-nocookie)?\.com/(?:v|embed)/([A-Za-z0-9_-]{11})|youtu\.be/([A-Za-z0-9_-]{11})|youtube\.com/watch\?v=([A-Za-z0-9_-]{11})#i', $post->post_content, $yt, PREG_SET_ORDER ) ) {
+		foreach ( $yt as $m ) {
+			$id = $m[1] ?: ( $m[2] ?? '' ) ?: ( $m[3] ?? '' );
+			$cover = $id ? dmdune_youtube_cover( $id ) : null;
+			if ( $cover ) {
+				$found = $cover;
+				break;
+			}
+		}
+	}
 	wp_cache_set( $post->ID, $found, 'dmdune_first_image', HOUR_IN_SECONDS );
 	return '' === $found ? null : $found;
+}
+
+/**
+ * Cover art for a YouTube video, or null if the video is gone (removed videos' thumbnails 404).
+ * Prefers the 1280x720 image; old uploads only have the 480x360 one, which has letterbox bars
+ * (cropped off in CSS via .dm-media--yt). Cached for a month, so each video costs a request or two.
+ */
+function dmdune_youtube_cover( string $id ): ?string {
+	$key   = 'dmdune_ytc_' . $id;
+	$cover = get_transient( $key );
+	if ( false === $cover ) {
+		$cover = '';
+		foreach ( array( 'maxresdefault', 'hqdefault' ) as $size ) {
+			$url  = 'https://i.ytimg.com/vi/' . $id . '/' . $size . '.jpg';
+			$res  = wp_remote_head( $url, array( 'timeout' => 4, 'redirection' => 0 ) );
+			$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
+			if ( 0 === $code ) {
+				return null; // Network trouble: don't cache, try again next time.
+			}
+			if ( 200 === $code ) {
+				$cover = $url;
+				break;
+			}
+		}
+		set_transient( $key, $cover, MONTH_IN_SECONDS );
+	}
+	return '' === $cover ? null : $cover;
 }
 
 /**

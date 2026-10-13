@@ -171,6 +171,7 @@
 	// Card pictures: crop to fill when that looks fine, otherwise show the whole picture letterboxed.
 	function fitMedia(img) {
 		var box = img.parentNode;
+		if (box.classList.contains('dm-media--yt')) return;
 		var bw = box.clientWidth, bh = box.clientHeight, nw = img.naturalWidth, nh = img.naturalHeight;
 		if (!bw || !bh || !nw || !nh) return;
 		var upscale = Math.max(bw / nw, bh / nh);

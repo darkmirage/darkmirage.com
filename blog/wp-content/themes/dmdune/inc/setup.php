@@ -65,6 +65,8 @@ add_action(
 			return;
 		}
 		$base = get_template_directory_uri() . '/assets/brand/icons/';
+		// SVG first: it switches to night colours in dark mode. PNG for browsers without SVG icons.
+		printf( '<link rel="icon" href="%s" type="image/svg+xml">' . "\n", esc_url( $base . 'favicon.svg' ) );
 		printf( '<link rel="icon" href="%s" sizes="32x32">' . "\n", esc_url( $base . 'site-icon-32.png' ) );
 		printf( '<link rel="icon" href="%s" sizes="192x192">' . "\n", esc_url( $base . 'site-icon-192.png' ) );
 		printf( '<link rel="apple-touch-icon" href="%s">' . "\n", esc_url( $base . 'site-icon-180.png' ) );
