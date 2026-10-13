@@ -128,11 +128,11 @@ a { color: var(--dm-accent); }
 	.ly-credits div { grid-template-columns: 64px minmax(0, 1fr); }
 }
 
-/* Series / Artists / A–Z: each song slides to its new place. Rows change shape between groupings
-   (the series or artist line drops out), so the old and new pictures swap quickly and the move
-   reads as one row sliding rather than two ghosting. */
+/* Series ↔ Artists: the songs on screen slide to their new places; A–Z, Rōmaji ↔ 日本語 and a
+   song's text versions cross-fade. Rows change shape between groupings (the series or artist line
+   drops out), so their old and new pictures swap quickly and read as one row moving. */
 .ly-view[hidden] { display: none; }
-::view-transition-group(*) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
-::view-transition-old(*) { animation-duration: 0.12s; }
-::view-transition-new(*) { animation-duration: 0.2s; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.25s; }
+::view-transition-group(*) { animation-duration: 0.3s; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+::view-transition-old(*) { animation-duration: 0.1s; }
+::view-transition-new(*) { animation-duration: 0.16s; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.18s; }

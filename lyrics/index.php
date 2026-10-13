@@ -193,7 +193,7 @@ if ( $song ) {
 </head>
 <body>
 <?php dmc_header( $chrome ); ?>
-<main id="dm-main" class="ly-main">
+<main id="dm-main" class="ly-main" data-state="<?php echo ly_e( $lang . '|' . $display . '|' . ( $song_id ?: '' ) ); ?>">
 <?php if ( $song ) :
 	list( $code, $kind ) = ly_type( $song['type'] );
 	$romaji  = ly_lines( $song['file'], 'romaji' );
@@ -337,7 +337,7 @@ if ( $song ) {
 		<?php if ( $filtered ) : ?>
 			<a class="ly-back" href="<?php echo ly_e( ly_url( array( 'lang' => $lang, 'view' => $artist_id ? 'artist' : 'series' ) ) ); ?>">← All <?php echo $artist_id ? 'artists' : 'series'; ?></a>
 		<?php else : ?>
-			<nav class="ly-seg" aria-label="Group songs by">
+			<nav class="ly-seg" data-group aria-label="Group songs by">
 				<?php foreach ( array( 'series' => 'Series', 'artist' => 'Artists', 'title' => 'A–Z' ) as $k => $label ) : ?>
 					<a href="<?php echo ly_e( ly_url( array( 'lang' => $lang, 'view' => $k ) ) ); ?>"<?php echo $view === $k ? ' aria-current="page"' : ''; ?>><?php echo ly_e( $label ); ?></a>
 				<?php endforeach; ?>
@@ -420,49 +420,70 @@ if ( $song ) {
 <?php dmc_footer( $chrome ); ?>
 <script>
 (function () {
-	var input = document.getElementById('find');
-	if (!input) return;
-	var none = document.querySelector('.ly-none');
-	function active() { return document.querySelector('.ly-view:not([hidden])'); }
+	var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+	function transition(update) {
+		if (document.startViewTransition && !reduce.matches) return document.startViewTransition(update);
+		update();
+		return null;
+	}
+
+	// Find box: filters every grouping at once.
 	function apply() {
+		var input = document.getElementById('find');
+		if (!input) return;
+		var view = document.querySelector('.ly-view:not([hidden])');
 		var words = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
 		var shown = 0;
 		document.querySelectorAll('.ly-song').forEach(function (r) {
-			var hay = r.getAttribute('data-find');
+			var hay = r.getAttribute('data-find') || '';
 			var ok = words.every(function (w) { return hay.indexOf(w) !== -1; });
 			r.hidden = !ok;
-			if (ok && active().contains(r)) shown++;
+			if (ok && view && view.contains(r)) shown++;
 		});
 		document.querySelectorAll('.ly-group').forEach(function (g) { g.hidden = !g.querySelector('.ly-song:not([hidden])'); });
+		var none = document.querySelector('.ly-none');
 		if (none) none.hidden = shown > 0;
 	}
-	input.addEventListener('input', apply);
-	if (location.hash === '#find') input.focus();
-	if (input.value) apply();
+	document.addEventListener('input', function (e) { if (e.target.id === 'find') apply(); });
 
-	// Series / Artists / A–Z swap the pre-rendered grouping in place. Each song carries a
-	// view-transition-name, so where the browser supports it the rows glide to their new places.
-	var seg = document.querySelector('.ly-seg[aria-label="Group songs by"]');
-	if (!seg) return;
-	var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-	function name(view) {
+	// Series / Artists / A–Z swap the pre-rendered grouping in place. Between Series and Artists the
+	// songs on screen slide to their new places; A–Z rearranges everything, so it cross-fades.
+	function inView(el) {
+		var r = el.getBoundingClientRect();
+		return r.bottom > 0 && r.top < innerHeight;
+	}
+	function label(view, ids) {
 		var seen = {};
-		document.querySelectorAll('.ly-view').forEach(function (v) {
-			var here = v.getAttribute('data-view') === view;
-			v.querySelectorAll('.ly-song').forEach(function (r) {
-				var id = r.getAttribute('data-song');
-				var on = here && !seen[id];
-				if (on) seen[id] = true;
-				r.style.viewTransitionName = on ? 'ly-song-' + id : '';
-			});
+		document.querySelectorAll('.ly-song').forEach(function (r) { r.style.viewTransitionName = ''; });
+		if (!ids) return;
+		var v = document.querySelector('.ly-view[data-view="' + view + '"]');
+		v.querySelectorAll('.ly-song').forEach(function (r) {
+			var id = r.getAttribute('data-song');
+			if (ids[id] && !seen[id]) {
+				seen[id] = true;
+				r.style.viewTransitionName = 'ly-song-' + id;
+			}
 		});
 	}
-	function show(view, push) {
-		var current = active();
+	function group(view, push) {
+		var current = document.querySelector('.ly-view:not([hidden])');
 		if (!current || current.getAttribute('data-view') === view) return;
-		var swap = function () {
+		var from = current.getAttribute('data-view');
+		var ids = null;
+		if (from !== 'title' && view !== 'title') {
+			ids = {};
+			current.querySelectorAll('.ly-song:not([hidden])').forEach(function (r) { if (inView(r)) ids[r.getAttribute('data-song')] = true; });
+		}
+		if (push) {
+			var url = new URL(location.href);
+			url.searchParams.set('view', view);
+			history.pushState(null, '', url.pathname + url.search);
+		}
+		label(from, ids);
+		document.documentElement.classList.toggle('ly-moving', !!ids);
+		var t = transition(function () {
 			document.querySelectorAll('.ly-view').forEach(function (v) { v.hidden = v.getAttribute('data-view') !== view; });
-			seg.querySelectorAll('a').forEach(function (a) {
+			document.querySelectorAll('.ly-seg[data-group] a').forEach(function (a) {
 				if (new URL(a.href).searchParams.get('view') === view) a.setAttribute('aria-current', 'page');
 				else a.removeAttribute('aria-current');
 			});
@@ -471,30 +492,66 @@ if ( $song ) {
 				u.searchParams.set('view', view);
 				a.href = u.pathname + u.search;
 			});
-			name(view);
+			label(view, ids);
 			apply();
-		};
-		if (push) {
-			var url = new URL(location.href);
-			url.searchParams.set('view', view);
-			history.pushState({ view: view }, '', url.pathname + url.search);
-		}
-		if (document.startViewTransition && !reduce.matches) {
-			name(current.getAttribute('data-view'));
-			document.startViewTransition(swap);
-		} else {
-			swap();
-		}
+		});
+		var done = function () { label(view, null); document.documentElement.classList.remove('ly-moving'); };
+		if (t) t.finished.then(done, done); else done();
 	}
-	seg.addEventListener('click', function (e) {
+
+	// Rōmaji / 日本語 and a song's text versions: fetch that page and swap <main> in place, so the
+	// header and footer never repaint.
+	var busy = false;
+	function swapTo(href, push) {
+		if (busy) return;
+		busy = true;
+		fetch(href, { credentials: 'same-origin' }).then(function (r) {
+			if (!r.ok) throw new Error(r.status);
+			return r.text();
+		}).then(function (html) {
+			var doc = new DOMParser().parseFromString(html, 'text/html');
+			var next = doc.getElementById('dm-main');
+			if (!next) throw new Error('no main');
+			var q = document.getElementById('find');
+			var keep = q ? q.value : '';
+			var y = scrollY;
+			if (push) history.pushState(null, '', href);
+			transition(function () {
+				document.getElementById('dm-main').replaceWith(document.importNode(next, true));
+				document.title = doc.title;
+				var nq = document.getElementById('find');
+				if (nq && keep) { nq.value = keep; }
+				apply();
+				scrollTo(0, y);
+			});
+		}).catch(function () {
+			location.href = href;
+		}).then(function () { busy = false; });
+	}
+
+	document.addEventListener('click', function (e) {
 		var a = e.target.closest('a');
-		if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
-		e.preventDefault();
-		show(new URL(a.href).searchParams.get('view') || 'series', true);
+		if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+		if (a.closest('.ly-seg[data-group]')) {
+			e.preventDefault();
+			group(new URL(a.href).searchParams.get('view') || 'series', true);
+		} else if (a.closest('.ly-seg--lang') || (a.closest('.ly-tabs') && !a.classList.contains('ly-tabs__print'))) {
+			e.preventDefault();
+			if (!a.hasAttribute('aria-current')) swapTo(a.href, true);
+		}
 	});
 	window.addEventListener('popstate', function () {
-		show(new URL(location.href).searchParams.get('view') || 'series', false);
+		var url = new URL(location.href);
+		var main = document.getElementById('dm-main');
+		if (main.getAttribute('data-state') !== (url.searchParams.get('lang') || '') + '|' + (url.searchParams.get('display') || '') + '|' + (url.searchParams.get('SongID') || '')) {
+			swapTo(location.href, false);
+		} else {
+			group(url.searchParams.get('view') || 'series', false);
+		}
 	});
+
+	if (location.hash === '#find' && document.getElementById('find')) document.getElementById('find').focus();
+	apply();
 })();
 </script>
 </body>
