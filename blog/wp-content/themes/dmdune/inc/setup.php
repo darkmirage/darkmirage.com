@@ -104,3 +104,51 @@ add_filter(
  * newest page, which for a 2011 post means landing mid-argument.
  */
 add_filter( 'option_default_comments_page', static fn() => 'oldest' );
+
+/**
+ * Utility pages from the old themes. Archives and Tags are real screens now (templates
+ * page-archives / page-tag); the rest were empty shells the old themes filled in. None of them
+ * should collect comments.
+ */
+function dmdune_utility_pages(): array {
+	return array( 'contact', 'links', 'search', '404-2', '403', 'tag', 'archives' );
+}
+
+add_filter(
+	'comments_open',
+	static function ( $open, $post_id ) {
+		$post = get_post( $post_id );
+		return ( $post && 'page' === $post->post_type && in_array( $post->post_name, dmdune_utility_pages(), true ) ) ? false : $open;
+	},
+	10,
+	2
+);
+
+/**
+ * Retired pages: /links/ was always empty (its content came from the old theme's blogroll),
+ * /search/ duplicated the real search, and /404-2/ and /403/ were bodies for error pages that the
+ * server no longer uses. Send readers somewhere useful, or answer 404 like any missing page.
+ */
+add_action(
+	'template_redirect',
+	static function () {
+		if ( ! is_page() ) {
+			return;
+		}
+		$slug = get_post_field( 'post_name', get_queried_object_id() );
+		if ( 'links' === $slug ) {
+			wp_safe_redirect( home_url( '/contact/' ), 301 );
+			exit;
+		}
+		if ( 'search' === $slug ) {
+			wp_safe_redirect( home_url( '/' ), 301 );
+			exit;
+		}
+		if ( in_array( $slug, array( '404-2', '403' ), true ) ) {
+			global $wp_query;
+			$wp_query->set_404();
+			status_header( 404 );
+			nocache_headers();
+		}
+	}
+);
