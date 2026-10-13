@@ -23,6 +23,7 @@ add_action(
 			'site-footer'    => array( 'title' => __( 'Site footer', 'dmdune' ) ),
 			'hero'           => array( 'title' => __( 'Desert banner', 'dmdune' ) ),
 			'card'           => array( 'title' => __( 'Post card', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
+			'tx'             => array( 'title' => __( 'Transmission log entry', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'post-meta'      => array( 'title' => __( 'Post categories', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'byline'         => array( 'title' => __( 'Post byline', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'archive-head'   => array( 'title' => __( 'Archive header', 'dmdune' ) ),
@@ -133,6 +134,85 @@ function dmdune_card_html( WP_Post $post, string $heading = 'h2' ): string {
 		dmdune_time( $post ),
 		dmdune_comment_count( $post )
 	);
+}
+
+/**
+ * Category names in Japanese, shown beside the English label in the transmission log.
+ */
+function dmdune_cat_ja( string $slug ): string {
+	$ja = array(
+		'anime' => 'アニメ', 'blog' => 'ブログ', 'otaku' => 'オタク', 'games' => 'ゲーム', 'music' => '音楽', 'money' => 'お金',
+		'reviews' => 'レビュー', 'tech' => '技術', 'rant' => '愚痴', 'figures' => 'フィギュア', 'manga' => '漫画', 'world' => '世界', 'japanese' => '日本語',
+	);
+	return $ja[ $slug ] ?? '';
+}
+
+/**
+ * One entry in the transmission log: a timeline row with a date stamp, the post's picture as a
+ * recorded frame, and a signal meter for how much discussion it drew. A year marker is printed
+ * before the first entry of each year (and at the top of every page).
+ */
+function dmdune_render_tx( array $attrs, WP_Block $block ): string {
+	static $last_year = null;
+	$post = get_post( $block->context['postId'] ?? 0 );
+	if ( ! $post ) {
+		return '';
+	}
+	$ts   = get_post_timestamp( $post );
+	$year = (int) wp_date( 'Y', $ts );
+	$era  = dmdune_era( $year );
+	$out  = '';
+	if ( $year !== $last_year ) {
+		$out      .= sprintf( '<div class="dm-tx-year" data-era="%1$s"><a href="%2$s">%3$d</a><i aria-hidden="true"></i></div>', esc_attr( $era ), esc_url( get_year_link( $year ) ), $year );
+		$last_year = $year;
+	}
+
+	$src   = dmdune_first_image( $post );
+	$frame = $src
+		? dmdune_thumb( $post, 'dm-tx__media' )
+		: '<div class="dm-tx__media dm-tx__nosignal"><span>NO SIGNAL</span></div>';
+
+	$n    = (int) $post->comment_count;
+	$bars = $n ? min( 5, max( 1, (int) round( log( $n + 1, 2 ) ) ) ) : 0;
+	$sig  = '';
+	for ( $i = 0; $i < 5; $i++ ) {
+		$sig .= sprintf( '<b class="%s" style="height:%dpx"></b>', $i < $bars ? 'on' : '', 4 + $i * 3 );
+	}
+	$cat = dmdune_primary_category( $post );
+	/* translators: %s: number of comments */
+	$replies = $n ? sprintf( _n( '%s reply', '%s replies', $n, 'dmdune' ), number_format_i18n( $n ) ) : __( 'No replies', 'dmdune' );
+	$title   = wp_strip_all_tags( get_the_title( $post ) );
+	$url     = get_permalink( $post );
+
+	$out .= sprintf(
+		'<article class="dm-tx" data-era="%1$s">
+			<div class="dm-tx__rail"><time datetime="%2$s"><span class="dm-tx__day">%3$s</span><span class="dm-tx__mon">%4$s</span></time><span class="dm-tx__no">TX·%5$d</span></div>
+			<a class="dm-tx__frame" href="%6$s" tabindex="-1" aria-hidden="true">%7$s<span class="dm-tx__scan"></span><span class="dm-tx__rec">REC %8$s</span></a>
+			<div class="dm-tx__body">
+				<p class="dm-tx__cat">%9$s%10$s</p>
+				<h2 class="dm-tx__title"><a href="%6$s">%11$s</a></h2>
+				<p class="dm-tx__excerpt">%12$s</p>
+				<p class="dm-tx__meta"><span class="dm-tx__sig" aria-hidden="true">%13$s</span><a href="%6$s#comments">%14$s</a><span class="dm-sep" aria-hidden="true">·</span><span>%15$s</span></p>
+			</div>
+		</article>',
+		esc_attr( $era ),
+		esc_attr( wp_date( 'c', $ts ) ),
+		esc_html( wp_date( 'd', $ts ) ),
+		esc_html( strtoupper( wp_date( 'M', $ts ) ) ),
+		$post->ID,
+		esc_url( $url ),
+		$frame,
+		esc_html( wp_date( 'Y.m.d', $ts ) ),
+		dmdune_cat_label( $post ),
+		$cat && dmdune_cat_ja( $cat->slug ) ? '<span class="dm-tx__ja" lang="ja">' . esc_html( dmdune_cat_ja( $cat->slug ) ) . '</span>' : '',
+		'' !== $title ? esc_html( $title ) : esc_html__( '(untitled)', 'dmdune' ),
+		esc_html( wp_trim_words( get_the_excerpt( $post ), 28, '…' ) ),
+		$sig,
+		esc_html( $replies ),
+		/* translators: %d: minutes */
+		esc_html( sprintf( __( '%d min read', 'dmdune' ), dmdune_reading_minutes( $post ) ) )
+	);
+	return $out;
 }
 
 function dmdune_render_card( array $attrs, WP_Block $block ): string {
