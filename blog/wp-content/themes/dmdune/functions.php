@@ -7,9 +7,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'DMDUNE_VERSION', '1.6.0' );
-
 require __DIR__ . '/chrome/chrome.php';
+
+// One number for the blog and the shared chrome, so every asset URL changes on each release.
+define( 'DMDUNE_VERSION', DMC_VERSION );
 require __DIR__ . '/inc/helpers.php';
 require __DIR__ . '/inc/setup.php';
 require __DIR__ . '/inc/legacy-content.php';

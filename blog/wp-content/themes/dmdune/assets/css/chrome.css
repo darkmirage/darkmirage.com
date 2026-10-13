@@ -489,15 +489,6 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 .dm-spec--mini { --sh: 30px; gap: 2px; padding-bottom: 0; }
 .dm-spec--mini .dm-spec__tick, .dm-spec--mini .dm-spec__col::before { display: none; }
 
-/* Subsite badge after the brand: DARKMIRAGE / LYRICS */
-.dm-brand__site {
-	margin-left: 2px;
-	padding: 3px 8px 3px 10px;
-	border-left: 1px solid var(--dm-line);
-	font: 600 0.8125rem/1 var(--dm-font-display);
-	letter-spacing: 0.14em;
-	color: var(--dm-muted);
-}
 @media (max-width: 900px) {
 	.dm-tabbar { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }

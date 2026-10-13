@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.7.0' );
+define( 'DMC_VERSION', '1.7.1' );
 
 function dmc_e( $s ): string {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
@@ -116,7 +116,9 @@ function dmc_head_early(): void {
 	echo '<meta name="color-scheme" content="light dark">' . "\n";
 	echo '<meta name="theme-color" content="#f2efe9" media="(prefers-color-scheme: light)">' . "\n";
 	echo '<meta name="theme-color" content="#0d1017" media="(prefers-color-scheme: dark)">' . "\n";
-	echo "<script>(function(){try{var m=(document.cookie.match(/(?:^|; )dm-theme=(light|dark|system)/)||[])[1]||localStorage.getItem('dm-theme');if(m==='light'||m==='dark'){document.documentElement.setAttribute('data-theme',m);}}catch(e){}})();</script>\n";
+	// The shared cookie decides. A choice saved by dmdune 1.6 and earlier lives only in this site's
+	// localStorage, so it is copied into the cookie once; otherwise it would override the other sites.
+	echo "<script>(function(){try{var m=(document.cookie.match(/(?:^|; )dm-theme=(light|dark|system)/)||[])[1];if(!m){m=localStorage.getItem('dm-theme');if(m==='light'||m==='dark'){document.cookie='dm-theme='+m+'; path=/; SameSite=Lax; max-age=31536000'+(/(^|\\.)darkmirage\\.com$/.test(location.hostname)?'; domain=.darkmirage.com':'');}}if(m==='light'||m==='dark'){document.documentElement.setAttribute('data-theme',m);}}catch(e){}})();</script>\n";
 }
 
 function dmc_mode_button( string $class ): string {
@@ -139,14 +141,13 @@ function dmc_header_html( array $c = array() ): string {
 	foreach ( dmc_nav( $c ) as $key => $item ) {
 		$links .= sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
 	}
-	$site  = array( 'lyrics' => 'Lyrics', 'gallery' => 'Gallery' )[ $c['site'] ] ?? '';
 	$icons = $c['assets'] . 'brand/icons/';
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span>%4$s</a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%8$s</div></nav></div>',
+		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%8$s</div></nav></div>',
 		dmc_e( $c['skip'] ),
 		dmc_e( $c['www'] ),
 		dmc_e( $icons ),
-		$site ? '<span class="dm-brand__site">' . dmc_e( $site ) . '</span>' : '',
+		'',
 		$links,
 		dmc_e( $c['search'] . array( 'blog' => '?s=', 'lyrics' => '#find', 'gallery' => '' )[ $c['site'] ] ),
 		dmc_icon( 'search', 18 ),

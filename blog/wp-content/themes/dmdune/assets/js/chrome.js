@@ -23,6 +23,17 @@
 		try { localStorage.setItem('dm-theme', value); } catch (err) {}
 	}
 
+	// A page restored by Back, or a tab left open, may predate a change made on another site.
+	function sync() {
+		var m = (document.cookie.match(/(?:^|; )dm-theme=(light|dark|system)/) || [])[1];
+		if (!m) return;
+		if (m === 'system') root.removeAttribute('data-theme');
+		else root.setAttribute('data-theme', m);
+		label();
+	}
+	window.addEventListener('pageshow', sync);
+	document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
+
 	document.addEventListener('click', function (e) {
 		var toggle = e.target.closest('[data-dm-toggle]');
 		if (toggle) {
