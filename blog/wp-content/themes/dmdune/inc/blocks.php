@@ -565,99 +565,27 @@ function dmdune_render_channels( array $attrs, WP_Block $block ): string {
 	);
 }
 
-function dmdune_mode_button( string $class ): string {
-	return sprintf(
-		'<button type="button" class="dm-mode %1$s" data-dm-toggle aria-label="%2$s">%3$s%4$s<span class="dm-mode__label"><span class="is-day">%5$s</span><span class="is-night">%6$s</span></span></button>',
-		esc_attr( $class ),
-		esc_attr__( 'Switch between light and dark mode', 'dmdune' ),
-		str_replace( 'class="dm-icon"', 'class="dm-icon is-day"', dmdune_icon( 'moon', 16 ) ),
-		str_replace( 'class="dm-icon"', 'class="dm-icon is-night"', dmdune_icon( 'sun', 16 ) ),
-		esc_html__( 'Dark', 'dmdune' ),
-		esc_html__( 'Light', 'dmdune' )
+/**
+ * Header, footer and tab bar come from chrome/chrome.php, shared with the lyrics and gallery sites.
+ */
+function dmdune_chrome_config(): array {
+	return array(
+		'site'        => 'blog',
+		'current'     => dmdune_current_nav(),
+		'www'         => home_url( '/' ),
+		'assets'      => get_template_directory_uri() . '/assets/',
+		/* translators: %s: number of posts */
+		'placeholder' => sprintf( __( 'Search %s posts', 'dmdune' ), number_format_i18n( array_sum( dmdune_year_counts() ) ) ),
+		'note'        => esc_html( sprintf( __( '%1$s · 2005–%2$s · Kiro and the art: all rights reserved · Theme code: GPL-2.0', 'dmdune' ), get_bloginfo( 'name' ), wp_date( 'Y' ) ) ),
 	);
 }
 
 function dmdune_render_site_header( array $attrs, WP_Block $block ): string {
-	$current = dmdune_current_nav();
-	$links   = '';
-	foreach ( dmdune_nav_items() as $item ) {
-		$links .= sprintf(
-			'<li><a href="%1$s"%2$s%3$s>%4$s%5$s</a></li>',
-			esc_url( $item['url'] ),
-			$current === $item['key'] ? ' aria-current="page"' : '',
-			! empty( $item['external'] ) ? ' class="is-external"' : '',
-			esc_html( $item['label'] ),
-			! empty( $item['external'] ) ? '<span class="dm-out" aria-hidden="true">↗</span>' : ''
-		);
-	}
-	$icon = get_template_directory_uri() . '/assets/brand/icons/';
-	return sprintf(
-		'<a class="dm-skip" href="#dm-main">%1$s</a><div class="dm-topbar"><nav class="dm-nav" aria-label="%2$s"><a class="dm-brand" href="%3$s" rel="home"><img class="is-day" src="%4$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%4$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>%10$s</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="%7$s">%8$s</a>%9$s</div></nav></div>',
-		esc_html__( 'Skip to content', 'dmdune' ),
-		esc_attr__( 'Main', 'dmdune' ),
-		esc_url( home_url( '/' ) ),
-		esc_url( $icon ),
-		$links,
-		esc_url( home_url( '/?s=' ) ),
-		esc_attr__( 'Search', 'dmdune' ),
-		dmdune_icon( 'search', 18 ),
-		dmdune_mode_button( 'dm-mode--top' ),
-		esc_html__( 'More', 'dmdune' )
-	);
+	return dmc_header_html( dmdune_chrome_config() );
 }
 
 function dmdune_render_site_footer( array $attrs, WP_Block $block ): string {
-	$current = dmdune_current_nav();
-	$items   = dmdune_nav_items();
-	$tab     = static function ( array $item ) use ( $current ) {
-		return sprintf(
-			'<a href="%1$s"%2$s>%3$s<span>%4$s</span></a>',
-			esc_url( $item['url'] ),
-			$current === $item['key'] ? ' aria-current="page"' : '',
-			dmdune_icon( $item['icon'], 22 ),
-			esc_html( $item['label'] )
-		);
-	};
-	$by_key = array_column( $items, null, 'key' );
-	$more   = '';
-	foreach ( $items as $item ) {
-		if ( in_array( $item['key'], array( 'home', 'archives', 'tag' ), true ) ) {
-			continue;
-		}
-		$more .= sprintf(
-			'<li><a href="%1$s"%2$s>%3$s<span>%4$s</span>%5$s</a></li>',
-			esc_url( $item['url'] ),
-			$current === $item['key'] ? ' aria-current="page"' : '',
-			dmdune_icon( $item['icon'], 20 ),
-			esc_html( $item['label'] ),
-			! empty( $item['external'] ) ? dmdune_icon( 'out', 16 ) : ''
-		);
-	}
-	$search = sprintf(
-		'<form class="dm-search" role="search" method="get" action="%1$s"><label class="screen-reader-text" for="dm-sheet-search">%2$s</label><input id="dm-sheet-search" type="search" name="s" placeholder="%3$s"><button type="submit" aria-label="%2$s">%4$s</button></form>',
-		esc_url( home_url( '/' ) ),
-		esc_attr__( 'Search', 'dmdune' ),
-		/* translators: %s: number of posts */
-		esc_attr( sprintf( __( 'Search %s posts', 'dmdune' ), number_format_i18n( array_sum( dmdune_year_counts() ) ) ) ),
-		dmdune_icon( 'search', 18 )
-	);
-
-	return sprintf(
-		'<div class="dm-footer"><p>%1$s</p><p class="dm-footer__lineage" aria-label="%2$s">Kubrick DM <span>→</span> dmbrickv2 <span>→</span> Blocks <span>→</span> <b>Dune</b></p></div>
-		<nav class="dm-tabbar" aria-label="%3$s">%4$s%5$s%6$s<details class="dm-sheet"><summary>%7$s<span>%8$s</span></summary><div class="dm-sheet__panel">%9$s<ul>%10$s</ul>%11$s</div></details></nav>',
-		/* translators: 1: site name, 2: year */
-		esc_html( sprintf( __( '%1$s · 2005–%2$s · Kiro and the art: all rights reserved · Theme code: GPL-2.0', 'dmdune' ), get_bloginfo( 'name' ), wp_date( 'Y' ) ) ),
-		esc_attr__( 'This theme follows Kubrick DM, dmbrickv2 and DarkMirage Blocks', 'dmdune' ),
-		esc_attr__( 'Main (mobile)', 'dmdune' ),
-		$tab( $by_key['home'] ),
-		$tab( $by_key['archives'] ),
-		$tab( $by_key['tag'] ),
-		dmdune_icon( 'more', 22 ),
-		esc_html__( 'More', 'dmdune' ),
-		$search,
-		$more,
-		dmdune_mode_button( 'dm-mode--sheet' )
-	);
+	return dmc_footer_html( dmdune_chrome_config() );
 }
 
 function dmdune_render_not_found( array $attrs, WP_Block $block ): string {

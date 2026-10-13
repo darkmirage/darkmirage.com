@@ -1,272 +1,372 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
 <?php
+/**
+ * lyrics.darkmirage.com: anime and J-pop lyrics, transliterated and translated by DarkMirage.
+ * Shares the header, footer and design system of www.darkmirage.com (blog theme "dmdune").
+ *
+ * URLs from the 2006 site still work: ?view=series|artist|title, ?SeriesID=, ?ArtistID=,
+ * ?SongID= (&display=jpn for the Japanese text), ?lang=e|j for romaji or Japanese names.
+ */
 
-  include("config.php");
-  include("query.php");
-  $connection_test = connection();
-  $view = in_array($_GET['view'] ?? null, array("title", "artist", "series"), true) ? $_GET['view'] : null;
-  $SongID = (int) ($_GET['SongID'] ?? 0);
-  $ArtistID = (int) ($_GET['ArtistID'] ?? 0);
-  $SeriesID = (int) ($_GET['SeriesID'] ?? 0);
-  if (!$view && !$SongID && !$ArtistID && !$SeriesID) { $view = "series"; }
-  if ($view != "title" && $view )
-  {
-    $current_parameter = "&view=" . $view;
-  }
-  else
-  {
-    if ($ArtistID)
-    {
-      $current_parameter = "&ArtistID=" . $ArtistID;
-    }
-    else if ($SeriesID)
-    {
-      $current_parameter = "&SeriesID=" . $SeriesID;
-    }
-  }
-  $lang = in_array($_GET['lang'] ?? null, array("e", "j"), true) ? $_GET['lang'] : "";
-  if ($lang == "e") { $japanese_names = false; } else if ($lang == "j") { $japanese_names = true; }
-  
-  if ($SongID)
-  {
-    $songData = send_query("SongTitle","credit.SongID",$SongID, true);
-  }
-    
-?>
+require __DIR__ . '/config.php';
+require __DIR__ . '/lib.php';
+require __DIR__ . '/../blog/wp-content/themes/dmdune/chrome/chrome.php';
+connection();
 
-<head profile="http://gmpg.org/xfn/11"><meta charset="utf-8">
+$chrome = array_merge(
+	array( 'site' => 'lyrics', 'placeholder' => 'Find a song, artist or series', 'note' => 'All lyrics transliterated and translated by DarkMirage · Free to use if you credit the source' ),
+	$dm_chrome ?? array()
+);
 
+$songs     = ly_songs();
+$lang      = in_array( $_GET['lang'] ?? '', array( 'e', 'j' ), true ) ? $_GET['lang'] : '';
+$ja        = 'j' === $lang;
+$song_id   = (int) ( $_GET['SongID'] ?? 0 );
+$artist_id = (int) ( $_GET['ArtistID'] ?? 0 );
+$series_id = (int) ( $_GET['SeriesID'] ?? 0 );
+$view      = in_array( $_GET['view'] ?? '', array( 'series', 'artist', 'title' ), true ) ? $_GET['view'] : 'series';
+$display   = 'jpn' === ( $_GET['display'] ?? '' ) ? 'jpn' : '';
+$q         = trim( (string) ( $_GET['q'] ?? '' ) );
+$song      = $song_id ? ( $songs[ $song_id ] ?? null ) : null;
 
-<title><?php if ($songData) :
-  print $songData["SongTitle"] . " ";
-  if ($songData["KanjiSongTitle"]) { print "(" . $songData["KanjiSongTitle"] . ") "; }
-  print "by " . $songData["Name1"] . " ";
-  if ($songData["KanjiName1"]) { print "(" . $songData["KanjiName1"] . ") "; }
-  print "- ";
-?>Anime & J-Pop Lyrics Translations by DarkMirage</title>
+if ( $song_id && ! $song ) {
+	http_response_code( 404 );
+}
 
-<meta name="description" content="Series: <?php
+function ly_era( int $y ): string {
+	return $y <= 2005 ? 'default' : ( $y <= 2007 ? 'kubrick' : 'blocks' );
+}
 
-if ($japanese_names and $songData["KanjiTitle"]) { print $songData["KanjiTitle"]; }
-else { print $songData["Title"]; }
+function ly_year( array $s ): int {
+	return (int) substr( $s['date'], 0, 4 );
+}
 
-if ($songData["SongType"]) { print " | Note: " . $songData["SongType"]; }
-          
-?> | Added: <?php echo date("F j, Y", mktime(0, 0, 0, substr($songData["DateAdded"], 5, 2), substr($songData["DateAdded"], 8, 2), substr($songData["DateAdded"], 0, 4))); ?>" />
-<?php else : ?>Anime & J-Pop Lyrics Translations by DarkMirage</title>
-<meta name="description" content="Translated Japanese song lyrics from anime, games and others. Please credit if you want to use them." />
-<?php endif ?>
+/**
+ * One song as a log row: type tile (or cover), title in the chosen script, the other script,
+ * then artists and series.
+ */
+function ly_row( array $s, bool $ja, string $lang, string $hide = '' ): string {
+	list( $code, $kind ) = ly_type( $s['type'] );
+	$cover = ly_cover( $s['file'] );
+	$tile  = $cover
+		? '<span class="ly-tile ly-tile--cover"><img src="' . ly_e( $cover ) . '" alt="" loading="lazy"></span>'
+		: '<span class="ly-tile" data-kind="' . ly_e( $kind ) . '">' . ly_e( $code ) . '</span>';
+	$by = array();
+	foreach ( $s['artists'] as $a ) {
+		$by[] = '<a href="' . ly_e( ly_url( array( 'lang' => $lang, 'ArtistID' => $a['id'] ) ) ) . '">' . ly_e( ly_pick( $a['name'], $a['kanji'], $ja ) ) . '</a>';
+	}
+	$meta = array();
+	if ( 'artist' !== $hide ) {
+		$meta[] = implode( ' <span class="ly-slash">/</span> ', $by );
+	}
+	if ( 'series' !== $hide && 1 !== $s['series']['id'] ) {
+		$meta[] = '<a href="' . ly_e( ly_url( array( 'lang' => $lang, 'SeriesID' => $s['series']['id'] ) ) ) . '">' . ly_e( ly_pick( $s['series']['title'], $s['series']['kanji'], $ja ) ) . '</a>';
+	}
+	if ( '' !== $s['type'] ) {
+		$meta[] = '<span class="ly-type">' . ly_e( $s['type'] ) . '</span>';
+	}
+	$alt  = ly_alt( $s['title'], $s['kanji'], $ja );
+	$find = mb_strtolower( implode( ' ', array_merge(
+		array( $s['title'], $s['kanji'], $s['english'], $s['series']['title'], $s['series']['kanji'] ),
+		array_column( $s['artists'], 'name' ),
+		array_column( $s['artists'], 'kanji' )
+	) ) );
+	return sprintf(
+		'<li class="ly-song" data-era="%1$s" data-find="%2$s">%3$s<div class="ly-song__body"><p class="ly-song__stamp"><span>LY·%4$03d</span><time datetime="%5$s">%6$s</time></p><h3 class="ly-song__title"><a href="%7$s">%8$s</a>%9$s</h3><p class="ly-song__meta">%10$s</p></div></li>',
+		ly_e( ly_era( ly_year( $s ) ) ),
+		ly_e( $find ),
+		$tile,
+		$s['id'],
+		ly_e( substr( $s['date'], 0, 10 ) ),
+		ly_e( str_replace( '-', '.', substr( $s['date'], 0, 10 ) ) ),
+		ly_e( ly_url( array( 'lang' => $lang, 'SongID' => $s['id'] ) ) ),
+		ly_e( ly_pick( $s['title'], $s['kanji'], $ja ) ),
+		'' !== $alt ? ' <span class="ly-alt" lang="' . ( $ja ? 'en' : 'ja' ) . '">' . ly_e( $alt ) . '</span>' : '',
+		implode( '<span class="dm-sep" aria-hidden="true">·</span>', $meta )
+	);
+}
 
-<link rel="stylesheet" href="<?php get_root() ?>wp-content/themes/default2/style.css" type="text/css" media="screen" />
-<link rel="stylesheet" href="song.css" type="text/css" media="screen" />
-<link rel="icon" href="https://www.darkmirage.com/favicon.ico" type="image/x-icon" />
-<link rel="shortcut icon" href="https://www.darkmirage.com/favicon.ico" type="image/x-icon" /> 
-<link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="http://feeds.feedburner.com/animelyrics" />
-<link rel="alternate" type="application/rss+xml" title="RSS 2.0 (日本語)" href="http://feeds.feedburner.com/animelyrics2" />
+/**
+ * Songs added per year as a spectrum, like the blog's list headers.
+ */
+function ly_spectrum( array $songs ): string {
+	$years = array();
+	foreach ( $songs as $s ) {
+		$y           = ly_year( $s );
+		$years[ $y ] = ( $years[ $y ] ?? 0 ) + 1;
+	}
+	if ( ! $years ) {
+		return '';
+	}
+	$max  = max( $years );
+	$cols = '';
+	for ( $y = 2006; $y <= 2011; $y++ ) {
+		$n     = $years[ $y ] ?? 0;
+		$cols .= sprintf(
+			'<span class="dm-spec__col%s is-tick" data-era="%s" title="%d · %d songs added"><span class="dm-spec__bar" style="--h:%.3f"></span><span class="dm-spec__tick">\'%s</span></span>',
+			$n ? '' : ' is-empty',
+			ly_era( $y ),
+			$y,
+			$n,
+			$n ? max( 0.06, $n / $max ) : 0,
+			substr( (string) $y, 2 )
+		);
+	}
+	return '<div class="dm-spec dm-spec--years">' . $cols . '</div>';
+}
 
-<style type="text/css" media="screen">
-<!--
-	body { background: url("<?php get_root() ?>wp-content/themes/default2/images/kubrickbgcolor.jpg"); }	
-	#page { background: url("<?php get_root() ?>wp-content/themes/default2/images/kubrickbg_white.jpg") repeat-y top; border: none; }
-	#header { background: url("<?php get_root() ?>wp-content/themes/default2/images/custom/lyrics.jpg") no-repeat bottom center; }
-	#footer { background: url("<?php get_root() ?>wp-content/themes/default2/images/kubrickfooter.jpg") no-repeat bottom; border: none;}
-	#header 	{ margin: 0 !important; margin: 0 0 0 1px; padding: 1px; height: 198px; width: 758px; }
-	#headerimg 	{ margin: 7px 9px 0; height: 192px; width: 740px; } 
-	#sidebar a:hover { text-decoration: none; }
-	.description a { color: #fff; }
-	.description, h1 { text-align: left; margin: 0 30px; }
--->
-</style>
-
-	<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
-  </script>
-  <script type="text/javascript">
-  _uacct = "UA-655761-1";
-  _udn="darkmirage.com";
-  urchinTracker();
-  </script>
-
+$title = 'Lyrics Translations by DarkMirage';
+if ( $song ) {
+	$title = $song['title'] . ( '' !== $song['kanji'] ? ' (' . $song['kanji'] . ')' : '' ) . ' by ' . $song['artists'][0]['name'] . ' · ' . $title;
+}
+?><!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title><?php echo ly_e( $title ); ?></title>
+<meta name="description" content="<?php echo ly_e( $song ? 'Romaji, Japanese and English lyrics' . ( 1 !== $song['series']['id'] ? ' from ' . $song['series']['title'] : '' ) . '. Translated by DarkMirage.' : 'Anime and J-pop lyrics in romaji, Japanese and English, translated by DarkMirage. Free to use with credit.' ); ?>">
+<?php dmc_head( $chrome ); ?>
+<link rel="stylesheet" href="lyrics.css?v=<?php echo ly_e( DMC_VERSION ); ?>">
+<link rel="alternate" type="application/rss+xml" title="New lyrics" href="feed.php">
 </head>
 <body>
+<?php dmc_header( $chrome ); ?>
+<main id="dm-main" class="ly-main">
+<?php if ( $song ) :
+	list( $code, $kind ) = ly_type( $song['type'] );
+	$romaji  = ly_lines( $song['file'], 'romaji' );
+	$english = ly_lines( $song['file'], 'english' );
+	$kanji   = ly_lines( $song['file'], 'kanji' );
+	if ( 'jpn' === $display && ! $kanji ) {
+		$display = '';
+	}
+	$cover = ly_cover( $song['file'] );
+	$alt   = ly_alt( $song['title'], $song['kanji'], $ja || 'jpn' === $display );
+	?>
+	<article class="ly-sheet" data-era="<?php echo ly_e( ly_era( ly_year( $song ) ) ); ?>">
+		<header class="ly-sheet__head">
+			<div class="ly-sheet__text">
+				<p class="dm-hud-code">// LY·<?php printf( '%03d', $song['id'] ); ?> · <?php echo ly_e( strtoupper( $song['type'] ?: 'Song' ) ); ?> · Added <?php echo ly_e( str_replace( '-', '.', substr( $song['date'], 0, 10 ) ) ); ?></p>
+				<h1><?php echo ly_e( ly_pick( $song['title'], $song['kanji'], $ja || 'jpn' === $display ) ); ?></h1>
+				<?php if ( '' !== $alt ) : ?><p class="ly-sheet__alt" lang="<?php echo $ja || 'jpn' === $display ? 'en' : 'ja'; ?>"><?php echo ly_e( $alt ); ?></p><?php endif; ?>
+				<?php if ( '' !== $song['english'] ) : ?><p class="ly-sheet__english">“<?php echo ly_e( $song['english'] ); ?>”</p><?php endif; ?>
+				<dl class="ly-credits">
+					<div><dt>Sung by</dt><dd><?php
+						$parts = array();
+						foreach ( $song['artists'] as $a ) {
+							$note    = ly_pick( $a['note'], $a['knote'], $ja );
+							$parts[] = '<a href="' . ly_e( ly_url( array( 'lang' => $lang, 'ArtistID' => $a['id'] ) ) ) . '">' . ly_e( ly_pick( $a['name'], $a['kanji'], $ja ) ) . '</a>' . ( '' !== $note ? ' <span class="ly-as">as ' . ly_e( $note ) . '</span>' : '' );
+						}
+						echo implode( '<br>', $parts );
+					?></dd></div>
+					<?php if ( 1 !== $song['series']['id'] ) : ?>
+					<div><dt>From</dt><dd><a href="<?php echo ly_e( ly_url( array( 'lang' => $lang, 'SeriesID' => $song['series']['id'] ) ) ); ?>"><?php echo ly_e( ly_pick( $song['series']['title'], $song['series']['kanji'], $ja ) ); ?></a><?php if ( '' !== $song['type'] ) : ?> <span class="ly-type"><?php echo ly_e( $song['type'] ); ?></span><?php endif; ?></dd></div>
+					<?php endif; ?>
+				</dl>
+			</div>
+			<?php if ( $cover ) : ?>
+				<figure class="dm-frame ly-sheet__cover"><img src="<?php echo ly_e( $cover ); ?>" alt="Cover of <?php echo ly_e( $song['title'] ); ?>"><span class="dm-frame__scan"></span></figure>
+			<?php else : ?>
+				<div class="ly-sheet__disc" data-kind="<?php echo ly_e( $kind ); ?>" aria-hidden="true"><span><?php echo ly_e( $code ); ?></span></div>
+			<?php endif; ?>
+		</header>
 
-<div id="page">
+		<nav class="ly-tabs" aria-label="Lyrics version">
+			<?php
+			$main_label = $romaji && $english ? 'Rōmaji + English' : ( $romaji ? 'Rōmaji' : 'English' );
+			if ( $romaji || $english ) {
+				printf( '<a href="%s"%s>%s</a>', ly_e( ly_url( array( 'lang' => $lang, 'SongID' => $song['id'] ) ) ), 'jpn' !== $display ? ' aria-current="page"' : '', ly_e( $main_label ) );
+			}
+			if ( $kanji ) {
+				printf( '<a href="%s"%s lang="ja">日本語</a>', ly_e( ly_url( array( 'lang' => $lang, 'SongID' => $song['id'], 'display' => 'jpn' ) ) ), 'jpn' === $display ? ' aria-current="page"' : '' );
+			}
+			?>
+			<a class="ly-tabs__print" href="print.php?SongID=<?php echo (int) $song['id']; ?>">Printable</a>
+		</nav>
 
-<div id="header">
-	<div id="headerimg">
-		<h1><a href="https://lyrics.darkmirage.com/">Lyrics Translations</a></h1>
-		<div class="description">by <a href="https://www.darkmirage.com/">DarkMirage</a></div>
+		<div class="ly-text<?php echo 'jpn' === $display ? ' ly-text--ja' : ( $romaji && $english ? ' ly-text--pair' : '' ); ?>">
+			<?php
+			if ( 'jpn' === $display ) {
+				$lines = $kanji;
+			} else {
+				$lines = $romaji ?: $english;
+			}
+			$stanza = array();
+			$out    = '';
+			$flush  = static function () use ( &$stanza, &$out ) {
+				if ( $stanza ) {
+					$out   .= '<div class="ly-stanza">' . implode( '', $stanza ) . '</div>';
+					$stanza = array();
+				}
+			};
+			foreach ( (array) $lines as $i => $line ) {
+				if ( '' === trim( $line ) ) {
+					$flush();
+					continue;
+				}
+				if ( 'jpn' !== $display && $romaji && $english ) {
+					$stanza[] = '<p class="ly-line"><span class="ly-line__r">' . ly_e( $line ) . '</span><span class="ly-line__e">' . ly_e( $english[ $i ] ?? '' ) . '</span></p>';
+				} else {
+					$stanza[] = '<p class="ly-line"' . ( 'jpn' === $display ? ' lang="ja"' : '' ) . '>' . ly_e( $line ) . '</p>';
+				}
+			}
+			$flush();
+			echo $out ?: '<p class="ly-empty">The text for this song is missing.</p>';
+			?>
+		</div>
+		<p class="ly-credit">Transliterated and translated by <a href="https://www.darkmirage.com/">DarkMirage</a>. You may use these lyrics if you credit the source.</p>
+	</article>
 
+	<?php
+	$siblings = array_filter( $songs, static fn( $s ) => $s['series']['id'] === $song['series']['id'] && $s['id'] !== $song['id'] && 1 !== $song['series']['id'] );
+	if ( $siblings ) :
+		?>
+		<section class="dm-unit ly-more">
+			<?php echo dmc_hud( 'SAME SERIES', 'More from ' . ly_pick( $song['series']['title'], $song['series']['kanji'], $ja ) ); ?>
+			<ul class="ly-songs"><?php foreach ( $siblings as $s ) { echo ly_row( $s, $ja, $lang, 'series' ); } ?></ul>
+		</section>
+	<?php endif; ?>
+
+<?php elseif ( $song_id ) : ?>
+	<section class="ly-head"><div><p class="dm-hud-code">// NO SIGNAL</p><h1>Song not found</h1><p class="dm-meta"><a href="./">Back to all lyrics</a></p></div></section>
+
+<?php else :
+	$list = $songs;
+	$code = 'LYRICS · TRANSLATION LOG';
+	$head = 'Lyrics Translations';
+	$sub  = '歌詞の翻訳';
+	$hide = '';
+	if ( $series_id ) {
+		$list = array_filter( $songs, static fn( $s ) => $s['series']['id'] === $series_id );
+		$one  = reset( $list );
+		$code = 'SERIES';
+		$head = $one ? ly_pick( $one['series']['title'], $one['series']['kanji'], $ja ) : 'Unknown series';
+		$sub  = $one ? ly_alt( $one['series']['title'], $one['series']['kanji'], $ja ) : '';
+		$hide = 'series';
+	} elseif ( $artist_id ) {
+		$list = array_filter( $songs, static fn( $s ) => in_array( $artist_id, array_column( $s['artists'], 'id' ), true ) );
+		$one  = $list ? current( array_filter( reset( $list )['artists'], static fn( $a ) => $a['id'] === $artist_id ) ) : null;
+		$code = 'ARTIST';
+		$head = $one ? ly_pick( $one['name'], $one['kanji'], $ja ) : 'Unknown artist';
+		$sub  = $one ? ly_alt( $one['name'], $one['kanji'], $ja ) : '';
+		$hide = 'artist';
+	}
+	$n_series  = count( array_unique( array_map( static fn( $s ) => $s['series']['id'], $list ) ) );
+	$n_artists = count( array_unique( array_merge( ...array_map( static fn( $s ) => array_column( $s['artists'], 'id' ), array_values( $list ) ?: array( array( 'artists' => array() ) ) ) ) ) );
+	$dates     = array_map( 'ly_year', $list );
+	$filtered  = $series_id || $artist_id;
+	?>
+	<header class="dm-archive-head ly-head">
+		<div class="dm-archive-head__text">
+			<p class="dm-hud-code">// <?php echo ly_e( $code ); ?></p>
+			<h1><?php echo ly_e( $head ); ?><?php if ( '' !== $sub ) : ?> <span class="dm-archive-head__ja" lang="<?php echo $ja && $filtered ? 'en' : 'ja'; ?>"><?php echo ly_e( $sub ); ?></span><?php endif; ?></h1>
+			<p class="dm-meta"><?php
+				$bits = array( count( $list ) . ( 1 === count( $list ) ? ' song' : ' songs' ) );
+				if ( ! $series_id ) { $bits[] = $n_series . ' series'; }
+				if ( ! $artist_id ) { $bits[] = $n_artists . ( 1 === $n_artists ? ' artist' : ' artists' ); }
+				if ( $dates ) { $bits[] = min( $dates ) === max( $dates ) ? min( $dates ) : min( $dates ) . '–' . max( $dates ); }
+				echo ly_e( implode( ' · ', $bits ) );
+			?></p>
+		</div>
+		<div class="dm-archive-head__spec"><?php echo ly_spectrum( $list ); ?></div>
+	</header>
+
+	<div class="ly-controls">
+		<?php if ( $filtered ) : ?>
+			<a class="ly-back" href="<?php echo ly_e( ly_url( array( 'lang' => $lang, 'view' => $artist_id ? 'artist' : 'series' ) ) ); ?>">← All <?php echo $artist_id ? 'artists' : 'series'; ?></a>
+		<?php else : ?>
+			<nav class="ly-seg" aria-label="Group songs by">
+				<?php foreach ( array( 'series' => 'Series', 'artist' => 'Artists', 'title' => 'A–Z' ) as $k => $label ) : ?>
+					<a href="<?php echo ly_e( ly_url( array( 'lang' => $lang, 'view' => $k ) ) ); ?>"<?php echo $view === $k ? ' aria-current="page"' : ''; ?>><?php echo ly_e( $label ); ?></a>
+				<?php endforeach; ?>
+			</nav>
+		<?php endif; ?>
+		<nav class="ly-seg ly-seg--lang" aria-label="Show names in">
+			<?php
+			$keep = array( 'view' => $filtered ? null : $view, 'SeriesID' => $series_id ?: null, 'ArtistID' => $artist_id ?: null );
+			printf( '<a href="%s"%s>Rōmaji</a>', ly_e( ly_url( $keep + array( 'lang' => 'e' ) ) ), $ja ? '' : ' aria-current="true"' );
+			printf( '<a href="%s"%s lang="ja">日本語</a>', ly_e( ly_url( $keep + array( 'lang' => 'j' ) ) ), $ja ? ' aria-current="true"' : '' );
+			?>
+		</nav>
+		<form class="ly-find" role="search" onsubmit="return false">
+			<label class="screen-reader-text" for="find">Find</label>
+			<?php echo dmc_icon( 'search', 16 ); ?>
+			<input id="find" type="search" placeholder="Find a song, artist or series" value="<?php echo ly_e( $q ); ?>" autocomplete="off">
+		</form>
 	</div>
-	
-</div>
 
-<div style="margin:10px; position:relative; left:6px;">
-<script type="text/javascript"><!--
-google_ad_client = "pub-8980773669361185";
-/* Lyrics Top */
-google_ad_slot = "5204221429";
-google_ad_width = 728;
-google_ad_height = 90;
-//-->
-</script>
-<script type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
-</div>
-
-	<div id="content" class="narrowcolumn">
-		<div class="post">
-		
-		<?php
-    
-    print "<br />";
-    include("songlist.php");
-    
-    if ($SongID)
-    {
-      include("songdisplay.php");
-      display_song($songData);
-    }
-    else
-    { ?>
-            <div class="viewselect">
-         
-<!-- SiteSearch Google -->
-<form method="get" action="https://www.google.com/custom" target="_top">
-<table border="0" bgcolor="#ffffff">
-<tr><td nowrap="nowrap" valign="top" align="left" height="32">
-<a href="https://www.google.com/">
-<img src="https://www.google.com/logos/Logo_25wht.gif" border="0" alt="Google"></img></a>
-</td>
-<td nowrap="nowrap">
-<input type="hidden" name="domains" value="lyrics.darkmirage.com"></input>
-<input type="text" name="q" size="20" maxlength="255" value="" id="sbi"></input>
-<input type="hidden" name="q" value="                                                                               -print.php -display=jpn -lang=j -seriesid -artistid -view="></input>
-<input type="submit" name="sa" value="Search" id="sbb"></input>
-</td></tr>
-<tr>
-<td>&nbsp;</td>
-<td nowrap="nowrap">
-<input type="hidden" name="sitesearch" value="lyrics.darkmirage.com"></input>
-<input type="hidden" name="client" value="pub-8980773669361185"></input>
-<input type="hidden" name="forid" value="1"></input>
-<input type="hidden" name="ie" value="UTF-8"></input>
-<input type="hidden" name="oe" value="UTF-8"></input>
-<input type="hidden" name="cof" value="GALT:#008000;GL:1;DIV:#336699;VLC:663399;AH:center;BGC:FFFFFF;LBGC:336699;ALC:0000FF;LC:0000FF;T:000000;GFNT:0000FF;GIMP:0000FF;FORID:1"></input>
-<input type="hidden" name="hl" value="en"></input>
-</td></tr></table>
-</form>
-<!-- SiteSearch Google -->
-
-            <a href="index.php"><b>main</b></a>
-          | <?php if (!$japanese_names) { print "english"; } else { ?><a href="?lang=e<?php print $current_parameter;?>">english</a><?php } ?>
-          | <?php if ($japanese_names) { print "japanese"; } else { ?><a href="?lang=j<?php print $current_parameter;?>">japanese</a><?php } ?>
-          | <?php if ($view == "title") { print "title"; } else { ?><a href="?lang=<?php echo $lang; ?>&view=title">title</a><?php } ?>
-          | <?php if ($view == "artist") { print "artist"; } else { ?><a href="?lang=<?php echo $lang; ?>&view=artist">artist</a><?php } ?>
-          | <?php if ($view == "series") { print "series"; } else { ?><a href="?lang=<?php echo $lang; ?>&view=series">series</a><?php } ?>
-        </div> 
-      <?php
-      
-      if ($view == "artist" || $ArtistID) { $order_by = "Name1"; include("artistlist.php"); }
-      else if ($view == "series" || $SeriesID) { $order_by = "Title"; include("serieslist.php"); }
-      $query = $query2 = false;
-      if ($ArtistID) { $query="credit.ArtistID"; $query2=$ArtistID; }
-      else if ($SeriesID) { $query="series.SeriesID"; $query2=$SeriesID; $order_by = "Title"; }
-      send_query($order_by, $query, $query2);
-    } 
-    
-    ?>
-  <!-- End of Query -->
-    </p>
+	<?php
+	$groups = array();
+	if ( $filtered ) {
+		$groups[''] = array( 'label' => '', 'alt' => '', 'url' => '', 'songs' => $list );
+	} elseif ( 'title' === $view ) {
+		uasort( $list, static fn( $a, $b ) => strcasecmp( ly_pick( $a['title'], $a['kanji'], $ja ), ly_pick( $b['title'], $b['kanji'], $ja ) ) );
+		foreach ( $list as $s ) {
+			$first = mb_strtoupper( mb_substr( ly_pick( $s['title'], $s['kanji'], $ja ), 0, 1 ) );
+			$key   = preg_match( '/[A-Z]/', $first ) ? $first : ( $ja ? $first : '#' );
+			$groups[ $key ]['label']   = $key;
+			$groups[ $key ]['letter']  = true;
+			$groups[ $key ]['songs'][] = $s;
+		}
+	} elseif ( 'artist' === $view ) {
+		foreach ( $list as $s ) {
+			foreach ( $s['artists'] as $a ) {
+				$groups[ $a['id'] ]['label']   = ly_pick( $a['name'], $a['kanji'], $ja );
+				$groups[ $a['id'] ]['alt']     = ly_alt( $a['name'], $a['kanji'], $ja );
+				$groups[ $a['id'] ]['url']     = ly_url( array( 'lang' => $lang, 'ArtistID' => $a['id'] ) );
+				$groups[ $a['id'] ]['songs'][] = $s;
+			}
+		}
+		uasort( $groups, static fn( $a, $b ) => strcasecmp( $a['label'], $b['label'] ) );
+	} else {
+		foreach ( $list as $s ) {
+			$sid                      = $s['series']['id'];
+			$groups[ $sid ]['label']   = 1 === $sid ? 'J-pop and others' : ly_pick( $s['series']['title'], $s['series']['kanji'], $ja );
+			$groups[ $sid ]['alt']     = 1 === $sid ? '' : ly_alt( $s['series']['title'], $s['series']['kanji'], $ja );
+			$groups[ $sid ]['url']     = ly_url( array( 'lang' => $lang, 'SeriesID' => $sid ) );
+			$groups[ $sid ]['songs'][] = $s;
+		}
+		uasort( $groups, static fn( $a, $b ) => ( 'J-pop and others' === $a['label'] ) <=> ( 'J-pop and others' === $b['label'] ) ?: strcasecmp( $a['label'], $b['label'] ) );
+	}
+	?>
+	<div class="ly-groups" id="ly-groups">
+		<?php foreach ( $groups as $g ) : ?>
+			<section class="ly-group<?php echo ! empty( $g['letter'] ) ? ' ly-group--letter' : ''; ?>">
+				<?php if ( ! empty( $g['letter'] ) ) : ?>
+					<h2 class="ly-letter"><?php echo ly_e( $g['label'] ); ?></h2>
+				<?php elseif ( '' !== $g['label'] ) : ?>
+					<h2 class="ly-group__head"><a href="<?php echo ly_e( $g['url'] ); ?>"><?php echo ly_e( $g['label'] ); ?></a><?php if ( ! empty( $g['alt'] ) ) : ?> <span class="ly-alt"><?php echo ly_e( $g['alt'] ); ?></span><?php endif; ?><span class="ly-group__n"><?php echo count( $g['songs'] ); ?></span></h2>
+				<?php endif; ?>
+				<ul class="ly-songs"><?php foreach ( $g['songs'] as $s ) { echo ly_row( $s, $ja, $lang, 'series' === $view && ! $filtered ? 'series' : ( 'artist' === $view && ! $filtered ? 'artist' : $hide ) ); } ?></ul>
+			</section>
+		<?php endforeach; ?>
+		<p class="ly-none" hidden>No songs match. Try a romaji or Japanese name.</p>
 	</div>
-						
-			
-	
-	</div>
-
-<?php if (!$SongID) { ?>
-<div id="sidebar">
-		<ul>
-		
-		  <li><h2>RSS Feeds</h2>
-      <p><a href="http://feeds.feedburner.com/animelyrics" title="RSS feed for the 10 latest songs added"><img src="./rss.gif" alt="RSS 2.0" /> <span style="position:relative; bottom: 5px;">English</span></a> 
-      <a href="http://feeds.feedburner.com/animelyrics2" title="RSS feed for the 10 latest songs added (Japanese ver.)"><img src="./rss.gif" alt="RSS 2.0 (日本語)" /> <span style="position:relative; bottom: 5px;">Japanese</span></a></p>
-      </li>
-		  
-
-			<li><h2>Menu</h2>
-			<ul>
-			<li><a href="https://www.darkmirage.com/">Blog</a></li>
-			<li><a href="https://www.darkmirage.com/beginners-japanese-lessons-by-darkmirage/">Japanese Lessons</a></li>
-			<li><a href="http://www.last.fm/user/DarkMirage/">Last.fm</a></li>
-			<li><a href="http://anidb.info/perl-bin/animedb.pl?show=myvotes&amp;uid=32918&amp;orderby=vote&amp;orderdir=1">AniDB Votes</a></li>
-			<li><a href="https://www.darkmirage.com/contact/">Contact Me</a></li>
-			</ul>
-			</li>	
-
-<?php if(false):?>
-<li><h2>Advertisement</h2>
-
-<p class="center"><script type="text/javascript"><!--
-google_ad_client = "pub-8980773669361185";
-google_ad_width = 160;
-google_ad_height = 600;
-google_ad_format = "160x600_as";
-google_ad_type = "text_image";
-//2006-12-04: lyrics.darkmirage.com
-google_ad_channel = "0254015482";
-google_color_border = "FFFFFF";
-google_color_bg = "FFFFFF";
-google_color_link = "0066CC";
-google_color_text = "000000";
-google_color_url = "0066CC";
-//--></script>
-<script type="text/javascript"
-  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script></p>
-
-</li><?php endif; ?>
-						
-		</ul>
-	</div>
-<?php } ?>
-
-
-<div id="footer">
-
-<?php if(false) :?>
-<p>
-<script type="text/javascript"><!--
-google_ad_client = "pub-8980773669361185";
-google_alternate_color = "FFFFFF";
-google_ad_width = 468;
-google_ad_height = 60;
-google_ad_format = "468x60_as";
-google_ad_type = "text_image";
-//2006-12-04: lyrics.darkmirage.com
-google_ad_channel = "0254015482";
-google_color_border = "FFFFFF";
-google_color_bg = "FFFFFF";
-google_color_link = "0066CC";
-google_color_text = "000000";
-google_color_url = "0066CC";
-//--></script>
-<script type="text/javascript"
-  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
-</p>
 <?php endif; ?>
-
-	<p>
-	   All lyrics are transliterated and translated by <a href="https://www.darkmirage.com/">DarkMirage</a>.<br />
-	   You may use them if you credit the source.
-	</p>
-
-</div>
-</div>
-
-<!-- Gorgeous design by Michael Heilemann - http://binarybonsai.com/kubrick/ -->
-	
+</main>
+<?php dmc_footer( $chrome ); ?>
+<script>
+(function () {
+	var input = document.getElementById('find');
+	if (!input) return;
+	var rows = document.querySelectorAll('.ly-song');
+	var groups = document.querySelectorAll('.ly-group');
+	var none = document.querySelector('.ly-none');
+	function apply() {
+		var words = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+		var shown = 0;
+		rows.forEach(function (r) {
+			var hay = r.getAttribute('data-find');
+			var ok = words.every(function (w) { return hay.indexOf(w) !== -1; });
+			r.hidden = !ok;
+			if (ok) shown++;
+		});
+		groups.forEach(function (g) { g.hidden = !g.querySelector('.ly-song:not([hidden])'); });
+		if (none) none.hidden = shown > 0;
+	}
+	input.addEventListener('input', apply);
+	if (location.hash === '#find') input.focus();
+	if (input.value) apply();
+})();
+</script>
 </body>
 </html>

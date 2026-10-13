@@ -261,28 +261,6 @@ function dmdune_related_posts( WP_Post $post, int $limit = 3 ): array {
 }
 
 /**
- * The site's main navigation. Pages are looked up by slug so links survive permalink changes.
- *
- * @return array<int,array{label:string,url:string,external?:bool,key:string,icon:string}>
- */
-function dmdune_nav_items(): array {
-	$page = static function ( string $slug ): string {
-		$p = get_page_by_path( $slug );
-		return $p ? get_permalink( $p ) : home_url( "/$slug/" );
-	};
-	return array(
-		array( 'key' => 'home', 'label' => __( 'Home', 'dmdune' ), 'url' => home_url( '/' ), 'icon' => 'home' ),
-		array( 'key' => 'archives', 'label' => __( 'Archive', 'dmdune' ), 'url' => $page( 'archives' ), 'icon' => 'archive' ),
-		array( 'key' => 'tag', 'label' => __( 'Tags', 'dmdune' ), 'url' => $page( 'tag' ), 'icon' => 'tag' ),
-		array( 'key' => 'japanese', 'label' => '日本語', 'url' => $page( 'beginners-japanese-lessons-by-darkmirage' ), 'icon' => 'kana' ),
-		array( 'key' => 'lyrics', 'label' => __( 'Lyrics', 'dmdune' ), 'url' => 'https://lyrics.darkmirage.com/', 'external' => true, 'icon' => 'music' ),
-		array( 'key' => 'gallery', 'label' => __( 'Gallery', 'dmdune' ), 'url' => 'https://gallery.darkmirage.com/', 'external' => true, 'icon' => 'camera' ),
-		array( 'key' => 'capsule', 'label' => __( 'Time Capsule', 'dmdune' ), 'url' => $page( 'haruhiism-time-capsule-project' ), 'icon' => 'capsule' ),
-		array( 'key' => 'contact', 'label' => __( 'Contact', 'dmdune' ), 'url' => $page( 'contact' ), 'icon' => 'mail' ),
-	);
-}
-
-/**
  * The nav key for the current request, for aria-current.
  */
 function dmdune_current_nav(): string {

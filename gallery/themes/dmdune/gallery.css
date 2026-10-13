@@ -1,0 +1,94 @@
+/* gallery.darkmirage.com. Loads after the shared chrome.css from the blog theme (tokens, header,
+   frames, spectrum), so this file only lays out albums, the thumbnail grid and the viewer. */
+
+body { background: var(--dm-bg); color: var(--dm-body); margin: 0; font: 400 1.0625rem/1.8 var(--dm-font-body); }
+a { color: var(--dm-accent); }
+.dmg-main {
+	box-sizing: border-box;
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: clamp(20px, 3vw, 28px) clamp(16px, 4vw, 28px) 56px;
+	display: flex;
+	flex-direction: column;
+	gap: 26px;
+}
+
+/* ---------- Heads ---------- */
+.dmg-head { display: flex; flex-direction: column; gap: 10px; padding-bottom: 18px; border-bottom: 1px dashed var(--dm-line); }
+.dmg-head h1 { margin: 0; font: 600 clamp(2rem, 1.4rem + 3vw, 3.5rem)/1.02 var(--dm-font-display); color: var(--dm-fg); text-wrap: balance; overflow-wrap: anywhere; }
+.dmg-crumbs a { color: inherit; text-decoration: none; }
+.dmg-crumbs a:hover { color: var(--dm-fg); }
+.dmg-crumbs span { opacity: 0.5; }
+.dmg-desc { max-width: 70ch; color: var(--dm-body); }
+.dmg-desc p { margin: 0; }
+.dmg-head--image { gap: 6px; padding-bottom: 14px; }
+.dmg-head__row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.dmg-head--image h1 { font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem); }
+.dmg-count { margin: 0; font: 500 0.8125rem var(--dm-font-mono); letter-spacing: 0.12em; color: var(--dm-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dmg-count b { color: var(--dm-accent); font-weight: 500; }
+
+/* ---------- Album cards: recorded frames ---------- */
+.dmg-albums { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px 24px; }
+.dmg-album a { display: flex; flex-direction: column; gap: 10px; color: inherit; text-decoration: none; }
+.dmg-album__cover { margin: 0; aspect-ratio: 4 / 3; }
+.dmg-album__cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+.dmg-album a:hover img { transform: scale(1.04); }
+.dmg-album__text { display: flex; flex-direction: column; gap: 2px; padding-left: 10px; border-left: 2px solid var(--era); }
+.dmg-album__title { font: 600 1.125rem/1.25 var(--dm-font-display); color: var(--dm-fg); }
+.dmg-album a:hover .dmg-album__title { color: var(--dm-accent); }
+.dmg-album__meta { font: 500 11px/1.6 var(--dm-font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dm-muted); }
+
+/* ---------- Thumbnail grid ---------- */
+.dmg-grid { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.dmg-grid a { display: block; aspect-ratio: 4 / 3; border-radius: 6px; overflow: hidden; background: var(--dm-sunk); box-shadow: 0 0 0 1px var(--dm-line); }
+.dmg-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s, opacity 0.2s; }
+.dmg-grid a:hover img { transform: scale(1.05); }
+.dmg-grid a:focus-visible { outline: 2px solid var(--dm-accent); outline-offset: 2px; }
+
+/* ---------- Viewer ---------- */
+.dmg-viewer { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.dmg-viewer__stage { position: relative; display: grid; place-items: center; min-height: 200px; padding: clamp(8px, 2vw, 18px); border-radius: 10px; background: #0c0e13; box-shadow: 0 0 0 1px var(--dm-line); }
+.dmg-viewer__stage img { display: block; max-width: 100%; max-height: min(78vh, 1200px); width: auto; height: auto; border-radius: 3px; }
+.dmg-viewer__nav { position: absolute; top: 0; bottom: 0; width: 22%; display: flex; align-items: center; color: #fff; text-decoration: none; opacity: 0; transition: opacity 0.2s; }
+.dmg-viewer__nav span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(12, 14, 19, 0.6); font-size: 1.25rem; }
+.dmg-viewer__nav--prev { left: 0; padding-left: 14px; }
+.dmg-viewer__nav--next { right: 0; padding-right: 14px; justify-content: flex-end; }
+.dmg-viewer__stage:hover .dmg-viewer__nav, .dmg-viewer__nav:focus-visible { opacity: 1; }
+.dmg-viewer__cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-size: 0.9375rem; }
+.dmg-viewer__rec { font: 500 11px var(--dm-font-mono); letter-spacing: 0.14em; color: var(--dm-muted); }
+.dmg-viewer__rec::before { content: "●"; color: #ff4d4d; margin-right: 6px; font-size: 8px; vertical-align: 1px; }
+.dmg-viewer__desc { color: var(--dm-fg); min-width: 0; }
+.dmg-viewer__desc p { margin: 0; }
+.dmg-viewer__full { margin-left: auto; font: 600 0.8125rem var(--dm-font-display); letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; }
+
+.dmg-strip { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; }
+.dmg-strip a { display: block; aspect-ratio: 4 / 3; border-radius: 5px; overflow: hidden; opacity: 0.55; box-shadow: 0 0 0 1px var(--dm-line); transition: opacity 0.2s; }
+.dmg-strip a:hover { opacity: 0.9; }
+.dmg-strip a[aria-current] { opacity: 1; box-shadow: 0 0 0 2px var(--dm-accent); }
+.dmg-strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Pager, search, misc ---------- */
+.dmg-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 16px; border-top: 1px dashed var(--dm-line); font: 600 0.875rem var(--dm-font-display); letter-spacing: 0.06em; }
+.dmg-pager a { text-decoration: none; }
+.dmg-pager__nums { display: flex; flex-wrap: wrap; gap: 4px; font-family: var(--dm-font-mono); font-weight: 500; }
+.dmg-pager__nums a, .dmg-pager__nums b { min-width: 32px; padding: 4px 6px; border-radius: 6px; text-align: center; }
+.dmg-pager__nums b { background: var(--dm-accent); color: var(--dm-bg); font-weight: 500; }
+.dmg-search { position: relative; display: flex; gap: 8px; max-width: 560px; }
+.dmg-search .dm-icon { position: absolute; left: 14px; top: 13px; color: var(--dm-muted); pointer-events: none; }
+.dmg-search input[type="search"] { flex: 1; min-width: 0; min-height: 42px; box-sizing: border-box; padding: 8px 16px 8px 38px; border: 1px solid var(--dm-line); border-radius: 999px; background: var(--dm-surface); color: var(--dm-fg); font: inherit; font-size: 0.9375rem; }
+.dmg-search input[type="search"]:focus { outline: none; border-color: var(--dm-accent); box-shadow: 0 0 0 3px var(--dm-accent-soft); }
+.dmg-search button { min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--dm-accent); color: var(--dm-bg); font: 600 0.9375rem var(--dm-font-display); letter-spacing: 0.06em; cursor: pointer; }
+.dmg-empty { color: var(--dm-muted); }
+.dmg-password input { min-height: 40px; padding: 6px 12px; border: 1px solid var(--dm-line); border-radius: 8px; background: var(--dm-surface); color: var(--dm-fg); font: inherit; }
+
+@media (max-width: 700px) {
+	.dmg-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+	.dmg-album__title { font-size: 1rem; }
+	.dmg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+	.dmg-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+	.dmg-strip a:nth-child(n+6) { display: none; }
+	.dmg-viewer__stage { padding: 0; border-radius: 6px; }
+	.dmg-viewer__nav { opacity: 1; width: 30%; }
+	.dmg-viewer__nav span { width: 36px; height: 36px; background: rgba(12, 14, 19, 0.45); }
+	.dmg-pager__nums { display: none; }
+}

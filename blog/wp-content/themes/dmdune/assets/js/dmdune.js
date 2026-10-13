@@ -1,37 +1,9 @@
-/* DarkMirage Dune: light/dark toggle, click-to-play video, image viewer, mobile sheet. */
+/* DarkMirage Dune (blog only): click-to-play video, image viewer, card picture fitting, taglines.
+   The toggle, header and sheet live in chrome.js. */
 (function () {
 	'use strict';
-	var root = document.documentElement;
-	var media = window.matchMedia('(prefers-color-scheme: dark)');
-
-	function isDark() {
-		var forced = root.getAttribute('data-theme');
-		return forced ? forced === 'dark' : media.matches;
-	}
-
-	function label() {
-		var text = isDark() ? window.dmdune.toLight : window.dmdune.toDark;
-		document.querySelectorAll('[data-dm-toggle]').forEach(function (b) {
-			b.setAttribute('aria-label', text);
-		});
-	}
 
 	document.addEventListener('click', function (e) {
-		var toggle = e.target.closest('[data-dm-toggle]');
-		if (toggle) {
-			var next = isDark() ? 'light' : 'dark';
-			// Choosing the mode the OS already uses means "follow the OS" again.
-			if ((next === 'dark') === media.matches) {
-				root.removeAttribute('data-theme');
-				try { localStorage.removeItem('dm-theme'); } catch (err) {}
-			} else {
-				root.setAttribute('data-theme', next);
-				try { localStorage.setItem('dm-theme', next); } catch (err) {}
-			}
-			label();
-			return;
-		}
-
 		var play = e.target.closest('[data-yt]');
 		if (play) {
 			var frame = document.createElement('iframe');
@@ -51,10 +23,6 @@
 			return;
 		}
 
-		// Tapping outside the open "More" sheet closes it.
-		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) {
-			if (!d.contains(e.target)) d.removeAttribute('open');
-		});
 	});
 
 	function isImageLink(a) {
@@ -138,12 +106,6 @@
 		dlg.showModal();
 	}
 
-	document.addEventListener('keydown', function (e) {
-		if (e.key === 'Escape') {
-			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) { d.removeAttribute('open'); });
-		}
-	});
-
 	// A missing thumbnail means YouTube has removed the video.
 	function markGone(img) {
 		var fig = img.closest('.dm-video');
@@ -203,40 +165,4 @@
 		});
 	});
 
-	// Header: links that don't fit on one line move into the "More" menu, so the bar never wraps.
-	var navList = document.querySelector('.dm-nav__links');
-	var navMore = document.querySelector('.dm-nav__more');
-	function fitNav() {
-		if (!navList || !navMore) return;
-		navList.classList.add('is-managed');
-		var items = Array.prototype.slice.call(navList.children);
-		items.forEach(function (li) { li.hidden = false; });
-		navMore.hidden = true;
-		navMore.removeAttribute('open');
-		var menu = navMore.querySelector('ul');
-		menu.textContent = '';
-		if (!navList.offsetParent || navList.scrollWidth <= navList.clientWidth) return;
-		navMore.hidden = false;
-		for (var i = items.length - 1; i > 0 && navList.scrollWidth > navList.clientWidth; i--) {
-			items[i].hidden = true;
-		}
-		var current = false;
-		items.forEach(function (li) {
-			if (!li.hidden) return;
-			menu.appendChild(li.cloneNode(true)).hidden = false;
-			if (li.querySelector('[aria-current]')) current = true;
-		});
-		navMore.classList.toggle('has-current', current);
-	}
-	var fitQueued = false;
-	window.addEventListener('resize', function () {
-		if (fitQueued) return;
-		fitQueued = true;
-		requestAnimationFrame(function () { fitQueued = false; fitNav(); });
-	});
-	fitNav();
-	if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNav);
-
-	if (media.addEventListener) media.addEventListener('change', label);
-	label();
 })();

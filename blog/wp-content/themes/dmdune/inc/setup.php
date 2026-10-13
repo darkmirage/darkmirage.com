@@ -13,7 +13,7 @@ add_action(
 		add_theme_support( 'wp-block-styles' );
 		add_theme_support( 'editor-styles' );
 		add_theme_support( 'responsive-embeds' );
-		add_editor_style( 'assets/css/dmdune.css' );
+		add_editor_style( array( 'assets/css/chrome.css', 'assets/css/dmdune.css' ) );
 		add_theme_support( 'html5', array( 'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script' ) );
 	}
 );
@@ -22,7 +22,9 @@ add_action(
 	'wp_enqueue_scripts',
 	static function () {
 		$uri = get_template_directory_uri();
-		wp_enqueue_style( 'dmdune', $uri . '/assets/css/dmdune.css', array(), DMDUNE_VERSION );
+		wp_enqueue_style( 'dmdune-chrome', $uri . '/assets/css/chrome.css', array(), DMDUNE_VERSION );
+		wp_enqueue_style( 'dmdune', $uri . '/assets/css/dmdune.css', array( 'dmdune-chrome' ), DMDUNE_VERSION );
+		wp_enqueue_script( 'dmdune-chrome', $uri . '/assets/js/chrome.js', array(), DMDUNE_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 		wp_enqueue_script( 'dmdune', $uri . '/assets/js/dmdune.js', array(), DMDUNE_VERSION, array( 'strategy' => 'defer', 'in_footer' => true ) );
 		wp_localize_script(
 			'dmdune',
@@ -47,10 +49,7 @@ add_action(
 add_action(
 	'wp_head',
 	static function () {
-		echo '<meta name="color-scheme" content="light dark">' . "\n";
-		echo '<meta name="theme-color" content="#f2efe9" media="(prefers-color-scheme: light)">' . "\n";
-		echo '<meta name="theme-color" content="#0d1017" media="(prefers-color-scheme: dark)">' . "\n";
-		echo "<script>(function(){try{var m=localStorage.getItem('dm-theme');if(m==='light'||m==='dark'){document.documentElement.setAttribute('data-theme',m);}}catch(e){}})();</script>\n";
+		dmc_head_early();
 	},
 	1
 );

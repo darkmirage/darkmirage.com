@@ -1,0 +1,129 @@
+/* lyrics.darkmirage.com. Loads after the shared chrome.css from the blog theme (tokens, header,
+   HUD heads, spectrum), so this file only lays out the song lists and the lyric sheet. */
+
+.ly-main {
+	box-sizing: border-box;
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: clamp(20px, 3vw, 28px) clamp(16px, 4vw, 28px) 56px;
+	display: flex;
+	flex-direction: column;
+	gap: 26px;
+}
+body { background: var(--dm-bg); color: var(--dm-body); margin: 0; font: 400 1.0625rem/1.8 var(--dm-font-body); }
+a { color: var(--dm-accent); }
+
+/* ---------- Controls: group by, name script, find ---------- */
+.ly-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.ly-seg { display: inline-flex; padding: 3px; border: 1px solid var(--dm-line); border-radius: 999px; background: var(--dm-surface); }
+.ly-seg a { padding: 7px 14px; border-radius: 999px; color: var(--dm-muted); text-decoration: none; font: 600 0.8125rem/1 var(--dm-font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.ly-seg a[lang="ja"] { text-transform: none; letter-spacing: 0.04em; }
+.ly-seg a:hover { color: var(--dm-fg); }
+.ly-seg a[aria-current] { background: var(--dm-accent); color: var(--dm-bg); }
+.ly-back { font: 600 0.875rem var(--dm-font-display); letter-spacing: 0.06em; text-decoration: none; }
+.ly-find { margin-left: auto; position: relative; display: flex; align-items: center; min-width: min(100%, 320px); }
+.ly-find .dm-icon { position: absolute; left: 14px; color: var(--dm-muted); pointer-events: none; }
+.ly-find input { width: 100%; box-sizing: border-box; min-height: 42px; padding: 8px 16px 8px 38px; border: 1px solid var(--dm-line); border-radius: 999px; background: var(--dm-surface); color: var(--dm-fg); font: inherit; font-size: 0.9375rem; }
+.ly-find input:focus { outline: none; border-color: var(--dm-accent); box-shadow: 0 0 0 3px var(--dm-accent-soft); }
+
+/* ---------- Groups and song rows ---------- */
+.ly-groups { display: flex; flex-direction: column; gap: 10px; }
+.ly-group { display: flex; flex-direction: column; }
+.ly-group__head { margin: 18px 0 4px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--dm-line); font: 600 1.375rem/1.2 var(--dm-font-display); }
+.ly-group__head a { color: var(--dm-fg); text-decoration: none; }
+.ly-group__head a:hover { color: var(--dm-accent); }
+.ly-group__n { margin-left: auto; font: 500 0.75rem var(--dm-font-mono); letter-spacing: 0.12em; color: var(--dm-muted); }
+.ly-group--letter { display: grid; grid-template-columns: 90px minmax(0, 1fr); align-items: start; padding-top: 12px; border-top: 1px dashed var(--dm-line); }
+.ly-letter { margin: 0; font: 600 56px/0.9 var(--dm-font-display); color: transparent; -webkit-text-stroke: 1.5px var(--dm-accent); }
+.ly-alt { font: 500 0.8125rem var(--dm-font-body); color: var(--dm-muted); letter-spacing: 0.04em; }
+
+.ly-songs { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.ly-song { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--dm-line); }
+.ly-song[hidden], .ly-group[hidden] { display: none; }
+.ly-song__body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ly-song__stamp { margin: 0; display: flex; gap: 10px; font: 500 10px/1 var(--dm-font-mono); letter-spacing: 0.14em; color: var(--dm-muted); }
+.ly-song__stamp span { color: var(--era); }
+.ly-song__title { margin: 0; font: 600 1.0625rem/1.3 var(--dm-font-display); }
+.ly-song__title a { color: var(--dm-fg); text-decoration: none; }
+.ly-song__title a:hover { color: var(--dm-accent); }
+.ly-song__title .ly-alt { margin-left: 6px; }
+.ly-song__meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font: 500 0.8125rem/1.5 var(--dm-font-body); color: var(--dm-muted); }
+.ly-song__meta a { color: var(--dm-body); text-decoration: none; }
+.ly-song__meta a:hover { color: var(--dm-accent); }
+.ly-slash { opacity: 0.5; }
+.ly-type { padding: 1px 7px; border: 1px solid var(--dm-line); border-radius: 999px; font: 500 0.6875rem var(--dm-font-mono); letter-spacing: 0.06em; color: var(--dm-muted); white-space: nowrap; }
+
+/* Type tile: the song's role in its show, colour-coded, or its cover */
+.ly-tile, .ly-sheet__disc {
+	--k: var(--dm-muted);
+	display: grid;
+	place-items: center;
+	aspect-ratio: 1;
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--k) 14%, var(--dm-surface));
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--k) 40%, var(--dm-line)) inset;
+	color: var(--k);
+	font: 600 0.8125rem/1 var(--dm-font-display);
+	letter-spacing: 0.08em;
+	overflow: hidden;
+}
+[data-kind="op"] { --k: var(--dm-accent); }
+[data-kind="ed"] { --k: var(--dm-era-kubrick); }
+[data-kind="ins"] { --k: #3d9b6f; }
+.ly-tile--cover { box-shadow: 0 0 0 1px var(--dm-line); }
+.ly-tile--cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ly-none { color: var(--dm-muted); }
+
+/* ---------- Song sheet ---------- */
+.ly-sheet { display: flex; flex-direction: column; gap: 22px; }
+.ly-sheet__head { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 24px 40px; align-items: start; padding-bottom: 22px; border-bottom: 1px dashed var(--dm-line); }
+.ly-sheet__text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ly-sheet__text .dm-hud-code { color: var(--era); }
+.ly-sheet h1 { margin: 0; font: 600 clamp(2rem, 1.4rem + 3vw, 3.5rem)/1.02 var(--dm-font-display); color: var(--dm-fg); text-wrap: balance; overflow-wrap: anywhere; }
+.ly-sheet__alt { margin: 0; font: 500 1.25rem/1.4 var(--dm-font-body); color: var(--dm-body); }
+.ly-sheet__english { margin: 0; font-style: italic; color: var(--dm-muted); }
+.ly-credits { margin: 8px 0 0; display: grid; gap: 6px; }
+.ly-credits div { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 12px; }
+.ly-credits dt { font: 500 11px/2.1 var(--dm-font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dm-muted); }
+.ly-credits dd { margin: 0; font-size: 0.9375rem; color: var(--dm-fg); }
+.ly-credits a { color: var(--dm-fg); font-weight: 600; text-decoration: none; }
+.ly-credits a:hover { color: var(--dm-accent); }
+.ly-as { color: var(--dm-muted); }
+.ly-sheet__cover { aspect-ratio: 1; }
+.ly-sheet__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ly-sheet__disc { font-size: 2.5rem; border-radius: 50%; background: radial-gradient(circle, var(--dm-bg) 0 8%, color-mix(in srgb, var(--k) 18%, var(--dm-surface)) 8.5% 34%, color-mix(in srgb, var(--k) 10%, var(--dm-surface)) 34.5%), var(--dm-surface); }
+.ly-sheet__disc span { transform: translateY(-38px); font-size: 1rem; letter-spacing: 0.2em; }
+
+.ly-tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--dm-line); }
+.ly-tabs a { padding: 10px 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--dm-muted); text-decoration: none; font: 600 0.875rem/1 var(--dm-font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.ly-tabs a[lang="ja"] { text-transform: none; }
+.ly-tabs a:hover { color: var(--dm-fg); }
+.ly-tabs a[aria-current] { color: var(--dm-accent); border-bottom-color: var(--dm-accent); }
+.ly-tabs__print { margin-left: auto; }
+
+.ly-text { display: flex; flex-direction: column; gap: 26px; max-width: 980px; }
+.ly-stanza { display: flex; flex-direction: column; gap: 2px; }
+.ly-line { margin: 0; font-size: 1.0625rem; line-height: 1.7; color: var(--dm-fg); }
+.ly-text--ja .ly-line { font-size: 1.1875rem; line-height: 1.9; letter-spacing: 0.04em; }
+.ly-text--pair .ly-line { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; padding: 2px 0; border-radius: 6px; }
+.ly-text--pair .ly-line:hover { background: var(--dm-accent-soft); }
+.ly-line__e { color: var(--dm-accent); }
+.ly-text--pair .ly-stanza { padding-left: 14px; border-left: 2px solid var(--dm-line); }
+.ly-credit { margin: 6px 0 0; padding-top: 16px; border-top: 1px dashed var(--dm-line); font-size: 0.875rem; color: var(--dm-muted); }
+.ly-more .ly-songs { margin-top: 4px; }
+
+@media (max-width: 800px) {
+	.ly-songs { grid-template-columns: minmax(0, 1fr); }
+	.ly-find { margin-left: 0; flex: 1 1 100%; }
+	.ly-sheet__head { grid-template-columns: minmax(0, 1fr) 120px; gap: 16px; }
+	.ly-sheet__disc span { transform: translateY(-20px); font-size: 0.75rem; }
+	.ly-text--pair .ly-line { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 4px 0; }
+	.ly-line__e { font-size: 0.9375rem; }
+	.ly-group--letter { grid-template-columns: 52px minmax(0, 1fr); }
+	.ly-letter { font-size: 40px; }
+}
+@media (max-width: 480px) {
+	.ly-sheet__head { grid-template-columns: minmax(0, 1fr); }
+	.ly-sheet__cover, .ly-sheet__disc { width: 140px; }
+	.ly-credits div { grid-template-columns: 64px minmax(0, 1fr); }
+}
