@@ -1,0 +1,67 @@
+==================================================================
+https://keybase.io/nadesico
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of http://darkmirage.com
+  * I am nadesico (https://keybase.io/nadesico) on keybase.
+  * I have a public key with fingerprint 0D95 BEBE 7A2A 97DA 1111  8663 0B51 A2AD EC91 71BE
+
+To do so, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "fingerprint": "0d95bebe7a2a97da111186630b51a2adec9171be",
+            "host": "keybase.io",
+            "key_id": "0b51a2adec9171be",
+            "kid": "0101c5c31fd209145e542c07b18a9ebdf67587e298e3b0b02325160ac56ffb3200500a",
+            "uid": "6e0330b1ffb4095b373207b60c28b319",
+            "username": "nadesico"
+        },
+        "service": {
+            "hostname": "darkmirage.com",
+            "protocol": "http:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1428564860,
+    "expire_in": 157680000,
+    "prev": "7b142d8925d46dfa32547051d46711e979e10e11c76eea65abefa8675630613a",
+    "seqno": 8,
+    "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v2.0.8
+Comment: https://keybase.io/crypto
+
+yMIbAnicZVJbSFRRFJ3JVwqCkpWChl7JkCY7577vVH4EkubrJ0EabbiPc2duk3PH
+O3fGV0NohASBYA80Mog+giCRIh8IYuNklJWIoh/1kzUihaCEIPph55p9dX4Oe++1
+1tl7nR1LT7Cl2btcz13j44uj9pk350O2uqKT1zsISVfaCGcH4UN7l6r5PcgIGJrf
+JJwEUARGQhLiRFIUOEWE+PAsSwGJgTilIFmAHJQQ4SC8etBiYBlJDKISTcc5HLg1
+xdL5H+/7W4AAyoxMQVUhgQBpBjE0KQNOgrwoIElRWY7hOUQKPKIkIAGSIhnIAlFm
+WFWVKBIABgARy4X25FgEKNwcxDUa4NYpDkM4iQUyyUsUFCxgEBl+sQlhtB83FNRk
+nYg4CJwNazKyLLAm2UcoouFr0gzRg0pkvQmzA4Zu6rJ+Dde8phlwWlSzLWBhW5Dk
+3ldxS5pfwUZiQhgZQU33E06IkbKpWbKQJnmGpXkWOAjUGtAM5NYsBMOxPMDHegaF
+sSS2gSYVXiAZhWYVVcTD0xxgII44CJHACQgCBKHMsQiJLCNKSBV5bBn+IRZSli9B
+1OzXCSeP2xQ9WDKoefyiGTIQEYlONiTa7Gm25KQD1irY0lIz/i3I8mjKbn3uZELL
+akX3SOOTeE0H9HDg5tmKY7cdcfvSLfVljne8LzNxO3Lx1cyj1w1qtCq23p2S91a+
+dH9j8NtyPIm8U1NWc7n6Y1f+ysLdvvmtuv5wRq/LW16V1VPXW//jXVFl1kqtp7a9
+bThevl3Y6J59785dm+i7MjTwoGLzcO3SVGynubN/5nfZh5afn4rzhdxVl3Nuhz26
+4zyTfbB1gIuaC5snjJFSX3ZGxlLl8L0b5waZubyxC/OxnrXdkReJT9O3ulNSM6ee
+FXd+/7peUlowGz0+EaFdTiEy/QtsH/oydiSePPE5fzi0UXh6dohXC67mLLZXPzx0
+CjgeO6bLWl1/AO8gJuc=
+=zqJ2
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/nadesico
+
+==================================================================

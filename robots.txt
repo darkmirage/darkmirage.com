@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /stuff
+Disallow: /moefactor
+Disallow: /code-geass
+Disallow: /search
+Disallow: /404
+Disallow: /403
+Disallow: /*/*/*/*/comment-page-*

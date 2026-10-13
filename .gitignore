@@ -1,0 +1,93 @@
+# Repo root = the server docroot for darkmirage.com (see README).
+# The whole tree is rsynced here as a local backup; git tracks only the active
+# darkmirage.com sites whitelisted below. See ../public_html_inventory_2026-10-12.md.
+
+# Ignore everything at the top level by default...
+/*
+
+# ...except the repo's own files
+!/.gitignore
+!/README.md
+!/.env.example
+!/LICENSE
+!/tools/
+
+# Active sites
+!/blog/
+!/lyrics/
+!/gallery/
+!/fansub-faq/
+
+# Root files that serve www.darkmirage.com (index.php boots blog/)
+!/index.php
+!/.htaccess
+!/robots.txt
+!/favicon.ico
+!/apple-touch-icon.png
+!/403.php
+!/404.php
+!/googlef45eb971d0691abc.html
+!/keybase.txt
+
+# --- Within tracked sites ---
+
+# Secrets: DB passwords / auth keys. Never commit.
+wp-config.php
+zp-config.php
+/lyrics/config.php
+
+# Logs, dumps, caches, cPanel leftovers
+error_log
+*.log
+*.sql
+*.sql.gz
+# Only the real cache dirs: a bare `cache/` also hides library code dirs named Cache/ (macOS is case-insensitive)
+/blog/wp-content/cache/
+/gallery/cache/
+.htaccess.phpupgrader*
+.htaccess.no_htaccess.phpupgrader
+php.ini.bak.migration
+/blog/wp-content/upgrade/
+/blog/wp-content/upgrade-temp-backup/
+/blog/wp-content/backup*/
+
+# Bulk media (kept in the rsync backup, too big for git)
+/blog/wp-content/uploads/
+# Themes and plugins are managed on the server (WP admin / WP-CLI), not in git.
+# Copies: ../backups/public_html_2026-10-12/blog/wp-content/. Note: lyrics.darkmirage.com
+# loads CSS and header art from themes/default2, so don't remove that theme on the server.
+/blog/wp-content/themes/
+/blog/wp-content/plugins/
+/gallery/albums/
+# Lyric text + cover art: content managed on the server (metadata lives in MySQL)
+/lyrics/txt/
+/lyrics/lyrics.zip
+
+# Local server connection settings
+.env
+
+# macOS
+.DS_Store
+
+# Found on first pass: crash dumps, audio, and old DB backup zips (contain DB data)
+core
+core.[0-9]*
+# ...but not directories named core (WordPress and Zenphoto have them)
+!core/
+*.mp3
+*.wav
+*.zip
+*.gz
+*.tar
+/blog/wpau-backup/
+
+# Page cache (rendered pages incl. commenter names) and cached commenter avatars
+/blog/wp-content/endurance-page-cache/
+/blog/wp-content/gravatars/
+Thumbs.db
+
+# 2006-era post images stored loose in wp-content (pre-uploads/), same as uploads/
+/blog/wp-content/*.jpg
+/blog/wp-content/*.jpeg
+/blog/wp-content/*.png
+/blog/wp-content/*.gif

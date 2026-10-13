@@ -1,0 +1,7 @@
+User-agent: googlebot
+Disallow: /*print.php*
+Disallow: /*display=jpn*
+Disallow: /*lang=j*
+Disallow: /*seriesid*
+Disallow: /*artistid*
+Disallow: /*view=*
