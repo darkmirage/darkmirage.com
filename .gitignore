@@ -104,3 +104,6 @@ Thumbs.db
 
 # Python bytecode
 __pycache__/
+
+# Zenphoto renames its setup scripts to *.xxx after setup runs (setup lock); rename back to rerun setup
+/gallery/zp-core/setup/*.xxx

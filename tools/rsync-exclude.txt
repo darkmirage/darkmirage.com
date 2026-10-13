@@ -34,3 +34,4 @@ Thumbs.db
 *.mp3
 *.zip
 *.gz
+/gallery/zp-core/setup/*.xxx
