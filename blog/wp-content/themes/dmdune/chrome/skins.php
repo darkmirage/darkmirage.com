@@ -25,7 +25,9 @@
  * from July 2003 (the April–July 2003 frames layout is lost, so it shows that era too), Aegis from
  * 2004-04-17 and Lacus from 2005-05-10. WordPress's first post went up at 13:36 on 2005-11-03, so
  * that day is split by time, not date. default2 is the customized WordPress Default (Kubrick with
- * DarkMirage's own anime headers) the blog wore until Kubrick DM in October 2006.
+ * DarkMirage's own anime headers) the blog wore until Kubrick DM in October 2006. dmbrickv2 went up
+ * with "DarkMirage.com - now with 100% more clutter!" at 20:03 on 2006-11-30, and Blocks with
+ * "DarkMirage.com v3.0 beta" at 15:02 on 2007-12-11.
  */
 function dmc_skins(): array {
 	return array(
@@ -34,8 +36,8 @@ function dmc_skins(): array {
 		'lacus'     => array( 'name' => 'Lacus', 'short' => 'Lacus', 'era' => '2005', 'years' => '2005', 'from' => '2005-05-10 00:00:00', 'span' => 'May – Nov 2005', 'blurb' => 'b2’s last look: Lacus in the corner, a tagboard, and ads.' ),
 		'default2'  => array( 'name' => 'default2', 'short' => 'default2', 'era' => '2005', 'years' => '2005–06', 'from' => '2005-11-03 13:00:00', 'span' => 'Nov 2005 – Sep 2006', 'blurb' => 'WordPress arrives: Kubrick with rotating anime headers.' ),
 		'kubrick'   => array( 'name' => 'Kubrick DM', 'short' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-09-18 21:00:00', 'span' => 'Sep – Nov 2006', 'blurb' => 'Kubrick in DarkMirage blue, under Haruhi’s “H”.' ),
-		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'short' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-12-01', 'span' => 'Dec 2006 – Nov 2007', 'blurb' => 'Kubrick DM widened to three columns on blue stripes.' ),
-		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–16', 'from' => '2007-12-01', 'span' => 'Dec 2007 – 2016', 'blurb' => 'A carbon banner, white cards and deep red links. The longest-running look.' ),
+		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'short' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-11-30 20:00:00', 'span' => 'Nov 2006 – Dec 2007', 'blurb' => 'Kubrick DM widened to three columns on blue stripes.' ),
+		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–16', 'from' => '2007-12-11 15:00:00', 'span' => 'Dec 2007 – 2016', 'blurb' => 'A carbon banner, white cards and deep red links. The longest-running look.' ),
 	);
 }
 

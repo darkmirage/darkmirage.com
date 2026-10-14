@@ -284,7 +284,8 @@ function dmdune_era( int $year, int $month = 0 ): string {
 	if ( $year <= 2005 || ( 2006 === $year && $month >= 1 && $month <= 9 ) ) {
 		return 'default';
 	}
-	if ( $year <= 2007 ) {
+	// Blocks went up on 2007-12-11, so December 2007 counts as Blocks; 2007 as a whole stays Kubrick.
+	if ( $year <= 2006 || ( 2007 === $year && $month <= 11 ) ) {
 		return 'kubrick';
 	}
 	return 'blocks';
