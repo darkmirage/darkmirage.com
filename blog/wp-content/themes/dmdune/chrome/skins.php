@@ -147,14 +147,11 @@ function dmc_skin_era( string $key ): string {
 }
 
 /**
- * default2 showed one of its five headers, and one of its taglines, at random on every page load.
- * Here the pick follows the page address instead, so each page keeps its header on reload while
- * moving around the site still cycles through them.
+ * default2 showed one of its five headers, and one of its taglines, at random on every page load,
+ * as it does here.
  */
 function dmc_default2_pick( array $list ) {
-	// Plain parse_url: lyrics and gallery load this file without WordPress.
-	$path = (string) parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
-	return $list[ crc32( $path ) % count( $list ) ];
+	return $list[ array_rand( $list ) ];
 }
 
 /**
