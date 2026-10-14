@@ -221,7 +221,7 @@ $side[] = array( 'Archives', '<ul class="kb-links">' . $years . '</ul>', '', $co
 if ( $dmkb_d2 ) {
 	// Comments on locked posts stay out, like the posts' own text.
 	// The newest comments as the sidebar showed them in 2006: none from after the era.
-	$recent = get_comments( array( 'number' => 5, 'status' => 'approve', 'type' => 'comment', 'post_status' => 'publish', 'has_password' => false, 'date_query' => array( array( 'before' => '2006-10-01 00:00:00', 'inclusive' => false ) ) ) );
+	$recent = get_comments( array( 'number' => 5, 'status' => 'approve', 'type' => 'comment', 'post_status' => 'publish', 'has_password' => false, 'date_query' => array( array( 'before' => '2006-09-18 21:00:00', 'inclusive' => false ) ) ) );
 	$html   = '';
 	foreach ( $recent as $rc ) {
 		$html .= sprintf( '<li><a href="%1$s">%2$s</a>: %3$s</li>', esc_url( get_comment_link( $rc ) ), esc_html( get_comment_author( $rc ) ), esc_html( dmc_summary( $rc->comment_content, 90 ) ) );

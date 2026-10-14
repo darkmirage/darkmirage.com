@@ -261,7 +261,7 @@ function dmdune_era( int $year, int $month = 0 ): string {
 	if ( $year <= 2004 || ( 2005 === $year && $month >= 1 && $month <= 10 ) ) {
 		return 'b2';
 	}
-	// default2 (a customized WordPress Default with anime headers) ran until Kubrick DM in October 2006.
+	// default2 (a customized WordPress Default with anime headers) ran until Kubrick DM on 2006-09-18 ("New Layout: Haruhi H"); September counts as default2 here, being mostly default2.
 	if ( $year <= 2005 || ( 2006 === $year && $month >= 1 && $month <= 9 ) ) {
 		return 'default';
 	}
