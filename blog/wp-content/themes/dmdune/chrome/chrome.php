@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.15.8' );
+define( 'DMC_VERSION', '1.15.9' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
@@ -57,8 +57,8 @@ function dmc_nav( array $c ): array {
 	$w = $c['www'];
 	return array(
 		'home'     => array( 'Home', $w, 'home' ),
-		'archives' => array( 'Archive', $w . 'archives/', 'archive' ),
 		'featured' => array( 'Featured', $w . 'featured/', 'star' ),
+		'archives' => array( 'Archive', $w . 'archives/', 'archive' ),
 		'tag'      => array( 'Tags', $w . 'tag/', 'tag' ),
 		'japanese' => array( '日本語', $w . 'beginners-japanese-lessons-by-darkmirage/', 'kana' ),
 		'lyrics'   => array( 'Lyrics', $c['lyrics'], 'music' ),
@@ -167,6 +167,10 @@ function dmc_header_html( array $c = array() ): string {
 	$links   = '';
 	$more    = '';
 	foreach ( dmc_nav( $c ) as $key => $item ) {
+		// Dune's logo sits right beside the links and already goes home; the old skins keep a Home tab.
+		if ( 'home' === $key ) {
+			continue;
+		}
 		$li = sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
 		// The Japanese lessons and the Capsule always sit under "More"; the rest fold in only when the bar runs out of room.
 		if ( in_array( $key, array( 'japanese', 'capsule' ), true ) ) {
