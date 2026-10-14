@@ -37,7 +37,10 @@
 	--dm-era-b2: #2a9dc8;
 	--dm-era-default: #5e4fb3;
 	--dm-era-kubrick: #4f78b3;
-	--dm-era-blocks: var(--dm-accent);
+	/* Literal, not var(--dm-accent): the old skins redefine the accent, and the era colours must
+	   stay the same in every era. */
+	--dm-era-blocks: #c45a1c;
+	--dm-era-now: #c45a1c;
 	--dm-hero-scrim: rgba(250, 245, 236, 0.82);
 	--dm-hero-fg: #241a12;
 	--dm-hero-muted: #5e4634;
@@ -64,6 +67,8 @@
 		--dm-era-b2: #4bbde3;
 		--dm-era-default: #8f84e6;
 		--dm-era-kubrick: #6f93c8;
+		--dm-era-blocks: #f09a4a;
+		--dm-era-now: #f09a4a;
 		--dm-hero-scrim: rgba(11, 15, 24, 0.72);
 		--dm-hero-fg: #f4eee4;
 		--dm-hero-muted: #b9b2a6;
@@ -87,6 +92,8 @@
 	--dm-era-b2: #4bbde3;
 	--dm-era-default: #8f84e6;
 	--dm-era-kubrick: #6f93c8;
+	--dm-era-blocks: #f09a4a;
+	--dm-era-now: #f09a4a;
 	--dm-hero-scrim: rgba(11, 15, 24, 0.72);
 	--dm-hero-fg: #f4eee4;
 	--dm-hero-muted: #b9b2a6;
@@ -357,7 +364,7 @@ h1, h2, h3, h4 { text-wrap: balance; }
 [data-era="default"] { --era: var(--dm-era-default); }
 [data-era="kubrick"] { --era: var(--dm-era-kubrick); }
 [data-era="blocks"] { --era: var(--dm-era-blocks); }
-[data-era="now"] { --era: var(--dm-accent); }
+[data-era="now"] { --era: var(--dm-era-now); }
 
 /* ---------- Footer, mobile tab bar ---------- */
 

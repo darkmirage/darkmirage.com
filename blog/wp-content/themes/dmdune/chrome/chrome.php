@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.15.2' );
+define( 'DMC_VERSION', '1.15.3' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
