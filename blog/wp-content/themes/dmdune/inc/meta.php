@@ -56,7 +56,8 @@ function dmdune_meta_fields(): array {
 		);
 	} elseif ( is_singular() ) {
 		$post             = get_queried_object();
-		$m['title']       = wp_strip_all_tags( get_the_title( $post ) );
+		// Plain text: old titles hold entities like &mdash;, which the tag escaping would double-encode.
+		$m['title']       = html_entity_decode( wp_strip_all_tags( get_the_title( $post ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 		$m['url']         = get_permalink( $post );
 		$body             = has_excerpt( $post ) ? $post->post_excerpt : $post->post_content;
 		// Captions sit above the first paragraph in old posts; they make poor descriptions.
@@ -68,8 +69,12 @@ function dmdune_meta_fields(): array {
 		}
 		$image            = dmdune_first_image( $post );
 		if ( $image ) {
-			$m['image']     = $image;
+			$m['image']     = dmdune_share_image( $image );
 			$m['image_alt'] = $m['title'];
+			$size           = dmdune_image_size( $m['image'] );
+			if ( $size ) {
+				list( $m['image_w'], $m['image_h'] ) = $size;
+			}
 		}
 		if ( 'post' === $post->post_type ) {
 			$cats              = get_the_category( $post->ID );

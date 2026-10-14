@@ -18,15 +18,17 @@ function dmdune_https( string $url ): string {
 /**
  * Old images replaced at render time by newer artwork. "So Raven" (2013) pointed readers to
  * soraven.com with a 256px palette PNG that stair-steps when scaled; it now shows So Raven's
- * current skyline (on cards) and raven logo (in the post).
+ * current skyline (on cards and, cropped to 1.91:1 as a JPEG, on social shares) and raven logo (in
+ * the post).
  *
- * @return array<string,array{card:string,content:string}> path fragment => replacements
+ * @return array<string,array{card:string,share:string,content:string}> path fragment => replacements
  */
 function dmdune_image_overrides(): array {
 	$base = get_template_directory_uri() . '/assets/brand/soraven/';
 	return array(
 		'/uploads/2013/06/sr.png' => array(
 			'card'    => $base . 'skyline-1600.webp',
+			'share'   => $base . 'skyline-share.jpg',
 			'content' => $base . 'raven-logo.webp',
 		),
 	);
@@ -39,6 +41,42 @@ function dmdune_override_image( string $src, string $where ): string {
 		}
 	}
 	return $src;
+}
+
+/**
+ * The share-card version of a card image: link previews want a JPEG or PNG near 1.91:1, not the
+ * WebP banners some cards use.
+ */
+function dmdune_share_image( string $card ): string {
+	foreach ( dmdune_image_overrides() as $new ) {
+		if ( $card === $new['card'] ) {
+			return $new['share'];
+		}
+	}
+	return $card;
+}
+
+/**
+ * Pixel size of an image this site serves, or null for anything elsewhere. Link previews draw on
+ * the first share only when og:image comes with its size.
+ *
+ * @return array{0:int,1:int}|null
+ */
+function dmdune_image_size( string $url ): ?array {
+	$base = dmdune_https( content_url( '/' ) );
+	$url  = dmdune_https( $url );
+	if ( 0 !== strpos( $url, $base ) ) {
+		return null;
+	}
+	$key  = 'dmdune_imgsize_' . md5( $url );
+	$size = get_transient( $key );
+	if ( false === $size ) {
+		$path = WP_CONTENT_DIR . '/' . rawurldecode( strtok( substr( $url, strlen( $base ) ), '?' ) );
+		$info = is_file( $path ) ? @getimagesize( $path ) : false;
+		$size = $info ? array( (int) $info[0], (int) $info[1] ) : array();
+		set_transient( $key, $size, MONTH_IN_SECONDS );
+	}
+	return $size ?: null;
 }
 
 /**
