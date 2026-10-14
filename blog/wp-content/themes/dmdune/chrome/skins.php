@@ -37,7 +37,7 @@ function dmc_skins(): array {
 		'default2'  => array( 'name' => 'default2', 'short' => 'default2', 'era' => '2005', 'years' => '2005–06', 'from' => '2005-11-03 13:00:00', 'span' => 'Nov 2005 – Sep 2006', 'blurb' => 'WordPress arrives: Kubrick with rotating anime headers.' ),
 		'kubrick'   => array( 'name' => 'Kubrick DM', 'short' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-09-18 21:00:00', 'span' => 'Sep – Nov 2006', 'blurb' => 'Kubrick in DarkMirage blue, under Haruhi’s “H”.' ),
 		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'short' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-11-30 20:00:00', 'span' => 'Nov 2006 – Dec 2007', 'blurb' => 'Kubrick DM widened to three columns on blue stripes.' ),
-		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–16', 'from' => '2007-12-11 15:00:00', 'span' => 'Dec 2007 – 2016', 'blurb' => 'A carbon banner, white cards and deep red links. The longest-running look.' ),
+		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–21', 'from' => '2007-12-11 15:00:00', 'span' => 'Dec 2007 – Mar 2021', 'blurb' => 'A carbon banner, white cards and deep red links. The longest-running look.' ),
 	);
 }
 
