@@ -205,7 +205,7 @@ foreach ( array_reverse( dmdune_year_counts(), true ) as $year => $n ) {
 $col    = $dmkb_v2 ? 'left' : 'right';
 if ( $dmkb_d2 ) {
 	// What Winamp was playing, as the last.fm box showed it on the Wayback Machine's 2005–06 captures.
-	$track  = dmc_default2_pick(
+	$track  = dmc_pick_random(
 		array(
 			array( 'もどるとき', '坂本真綾' ),
 			array( '瞳の欠片', 'FictionJunction YUUKA' ),
@@ -248,7 +248,12 @@ if ( $dmkb_v2 ) {
 </head>
 <body <?php body_class( 'kb-body' ); ?>>
 <?php wp_body_open(); ?>
-<?php echo dmc_header_html( $cfg + ( $dmkb_d2 ? array() : array( 'tagline' => $dmkb_v2 ? 'フリクリ' : 'エッチなのはいけないと思います！' ) ) ); // phpcs:ignore ?>
+<?php
+// Kubrick DM and dmbrickv2 drew a random tagline on every load (the Randomize plugin, whose list
+// is lost); they now draw from the same list Dune rotates through (the "Taglines" post).
+$dmkb_lines = dmdune_taglines();
+echo dmc_header_html( $cfg + ( $dmkb_d2 ? array() : array( 'tagline' => $dmkb_lines ? dmc_pick_random( $dmkb_lines ) : ( $dmkb_v2 ? 'フリクリ' : 'エッチなのはいけないと思います！' ) ) ) ); // phpcs:ignore
+?>
 <main id="dm-main" class="bk-main kb-main">
 <?php echo $main; // phpcs:ignore ?>
 </main>
