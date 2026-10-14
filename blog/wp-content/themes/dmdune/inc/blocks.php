@@ -401,15 +401,15 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 }
 
 /**
- * The Featured page's hand-picked posts: everything tagged "featured", in a fresh random order on
- * each visit, the first one largest. The tag itself stays out of sight elsewhere (see inc/featured.php).
+ * The Featured page's hand-picked posts: eight of those tagged "featured", picked at random on
+ * each visit. The tag itself stays out of sight elsewhere (see inc/featured.php).
  */
 function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 	$posts = get_posts(
 		array(
 			'tag'            => 'featured',
 			'orderby'        => 'rand',
-			'posts_per_page' => 24,
+			'posts_per_page' => 8,
 			'no_found_rows'  => true,
 			'has_password'   => false,
 		)
