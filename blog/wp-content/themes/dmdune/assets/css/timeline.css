@@ -4,6 +4,8 @@
 .tl-host > :not(.tl):not(.dm-log), .tl-host.tl-zoomed > .dm-log { display: none !important; }
 .tl-host > .tl { margin-block-start: 0; }
 .tl { position: relative; overflow-anchor: none; }
+.tl-morph { position: fixed; inset: 0; z-index: 25; overflow: hidden; pointer-events: none; contain: strict; }
+.tl-morph .tl-row { will-change: transform, opacity; }
 .tl-probe { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; }
 .tl-canvas { position: relative; contain: layout; }
 .tl-row { position: absolute; left: 0; right: 0; top: 0; overflow: hidden; contain: layout paint; }

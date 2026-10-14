@@ -398,6 +398,120 @@
 		}, 90);
 	}
 
+	/* Zooming morphs each row from where its posts were to where they are now: zooming in, a
+	   month's band unfolds into its posts; zooming out, they fold back into it. The old rows on
+	   screen become ghosts in an overlay that stretch or shrink toward their posts' new place and
+	   fade, while the new rows grow out of their posts' old place. Only transform and opacity
+	   animate, on the few dozen rows on screen, so it all runs on the compositor. */
+	var morphing = null;
+	function snap() {
+		return { rows: rows, offs: offs, postRow: postRow, top: canvasTop, scroll: window.scrollY, head: postLevel() };
+	}
+	// Where post k sat in layout L, in viewport px: a share of its row when the row holds many posts.
+	function slice(L, k) {
+		if (L.head && k < head.length) {
+			var a = head[k].closest('li') || head[k];
+			return { top: docTop(a) - L.scroll, h: a.offsetHeight };
+		}
+		var i = L.postRow[k];
+		if (i === undefined) return null;
+		var r = L.rows[i], y = L.top + L.offs[i] - L.scroll;
+		if (r.to && r.to - r.p > 1) {
+			var h = r.h / (r.to - r.p);
+			return { top: y + h * (k - r.p), h: h };
+		}
+		return { top: y, h: r.h };
+	}
+	// Where a row's posts were (or will be) in layout L, as a move and a stretch from `top`/`h`.
+	// The stretch is capped so text never distorts far; the move covers the rest.
+	function toward(L, r, top, h, vh, lo, hi) {
+		var a = slice(L, r.p);
+		if (!a) return null;
+		var single = r.t === 'yhdr' || r.t === 'mhdr' || r.t === 'end';
+		var b = single || !r.to ? a : slice(L, r.to - 1) || a;
+		var y = single ? a.top - (r.t === 'end' ? 0 : h) : a.top;
+		var s = single ? 1 : Math.max(lo, Math.min(hi, (b.top + b.h - a.top) / h));
+		return { d: Math.max(-1.2 * vh, Math.min(1.2 * vh, y - top)), s: s };
+	}
+	function endMorph() {
+		if (!morphing) return;
+		morphing.anims.forEach(function (a) { a.cancel(); });
+		morphing.ov.remove();
+		morphing = null;
+	}
+	function morph(fn) {
+		endMorph();
+		var vh = window.innerHeight;
+		var A = snap();
+		var ov = document.createElement('div');
+		ov.className = root.className + ' tl-morph';
+		ov.setAttribute('aria-hidden', 'true');
+		var ghosts = [];
+		nodes.forEach(function (el, i) {
+			var b = el.getBoundingClientRect();
+			if (b.bottom < 0 || b.top > vh) return;
+			nodes.delete(i);
+			el.style.left = b.left + 'px';
+			el.style.width = b.width + 'px';
+			el.style.right = 'auto';
+			el.style.transform = 'translateY(' + b.top + 'px)';
+			el.classList.remove('is-hit');
+			ov.appendChild(el);
+			ghosts.push({ el: el, r: A.rows[i], top: b.top, h: b.height });
+		});
+		if (A.head) {
+			var wrap = document.createElement('ol');
+			wrap.className = log.className;
+			wrap.style.cssText = 'position:absolute;inset:0;margin:0;display:block!important';
+			ov.appendChild(wrap);
+			head.forEach(function (art, k) {
+				var li = art.closest('li') || art;
+				var b = li.getBoundingClientRect();
+				if (b.bottom < 0 || b.top > vh) return;
+				var c = li.cloneNode(true);
+				c.style.cssText = 'position:absolute;margin:0;top:0;left:' + b.left + 'px;width:' + b.width + 'px;transform:translateY(' + b.top + 'px)';
+				wrap.appendChild(c);
+				ghosts.push({ el: c, r: { t: 'post', p: k }, top: b.top, h: b.height });
+			});
+		}
+		document.body.appendChild(ov);
+		fn();
+		var B = snap();
+		var anims = [];
+		var ease = 'cubic-bezier(.2,.75,.25,1)';
+		ghosts.forEach(function (g) {
+			var t = toward(B, g.r, g.top, g.h, vh, 0.2, 2.5);
+			g.el.style.transformOrigin = '0 0';
+			var base = 'translateY(' + g.top + 'px)';
+			var end = t ? base + ' translateY(' + t.d + 'px) scaleY(' + t.s + ')' : base;
+			anims.push(g.el.animate([{ transform: base, opacity: 1 }, { transform: end, opacity: 0 }], { duration: 340, easing: ease, fill: 'forwards' }));
+		});
+		function enter(el, r, top, h, base) {
+			if (top + h < 0 || top > vh) return;
+			var t = toward(A, r, top, h, vh, 0.35, 2);
+			if (!t) return;
+			el.style.transformOrigin = '0 0';
+			var delay = Math.round(Math.min(1, Math.abs(top + h / 2 - vh / 2) / vh) * 90);
+			anims.push(el.animate([
+				{ transform: base + ' translateY(' + t.d + 'px) scaleY(' + t.s + ')', opacity: 0 },
+				{ opacity: 1, offset: 0.55 },
+				{ transform: base + ' translateY(0) scaleY(1)', opacity: 1 }
+			], { duration: 480, delay: delay, easing: ease, fill: 'backwards' }));
+		}
+		nodes.forEach(function (el, i) {
+			enter(el, B.rows[i], B.top + B.offs[i] - B.scroll, B.rows[i].h, 'translateY(' + B.offs[i] + 'px)');
+		});
+		if (B.head) head.forEach(function (art, k) {
+			var li = art.closest('li') || art;
+			var b = li.getBoundingClientRect();
+			enter(li, { t: 'post', p: k }, b.top, b.height, '');
+		});
+		var m = morphing = { ov: ov, anims: anims };
+		Promise.all(anims.map(function (a) { return a.finished.catch(function () {}); })).then(function () {
+			if (morphing === m) { ov.remove(); morphing = null; }
+		});
+	}
+
 	function zoom(to, anchor) {
 		to = Math.max(0, Math.min(4, to));
 		if (to === level && anchor === undefined) return;
@@ -409,15 +523,14 @@
 		var screenY = postTop(i) - window.scrollY;
 		var frac = (window.innerHeight / 2 - screenY) / postH(i);
 		if (anchor !== undefined) { screenY = window.innerHeight * 0.3; frac = 0; }
-		var dir = to > level ? 1 : to < level ? -1 : 0;
-		fade(function () {
+		(reduce ? function (f) { f(); } : morph)(function () {
 			level = to;
 			build();
 			var y = anchor !== undefined ? screenY : window.innerHeight / 2 - Math.max(0.05, Math.min(0.95, frac)) * postH(i);
 			scrollToPost(i, y);
 			render();
 			settle();
-		}, dir);
+		});
 	}
 
 	/* A random post, in Posts view (or Cards, if that's where the reader is). */
