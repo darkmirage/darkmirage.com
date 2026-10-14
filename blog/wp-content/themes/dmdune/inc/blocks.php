@@ -334,8 +334,7 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 
 function dmdune_render_archive_index( array $attrs, WP_Block $block ): string {
 	global $wp_locale;
-	$era_names = array( 'b2' => 'b2 Weblog', 'default' => 'default2', 'kubrick' => 'Kubrick DM · dmbrickv2', 'blocks' => 'DarkMirage Blocks' );
-	$out       = '';
+	$out = '';
 	foreach ( dmdune_month_counts() as $year => $months ) {
 		$max   = max( $months );
 		$cells = '';
@@ -350,20 +349,18 @@ function dmdune_render_archive_index( array $attrs, WP_Block $block ): string {
 		foreach ( dmdune_loudest( $year, 3 ) as $id ) {
 			$p = get_post( $id );
 			if ( $p ) {
-				$loud .= '<li>' . dmdune_row_html( $p ) . '</li>';
+				$loud .= '<li>' . dmdune_row_html( $p, 'h3', false ) . '</li>';
 			}
 		}
 		$era  = dmdune_era( $year );
 		$out .= sprintf(
-			'<section class="dm-unit dm-yearbook" data-era="%1$s" aria-labelledby="dm-y%2$d"><header class="dm-yearbook__head"><h2 id="dm-y%2$d"><a href="%3$s">%2$d</a></h2><p class="dm-hud-code">// %4$s</p><p class="dm-yearbook__count">%5$s</p></header><div class="dm-heat">%6$s</div><div class="dm-yearbook__loud"><p class="dm-hud-code">// %7$s</p><ul class="dm-rows">%8$s</ul></div></section>',
+			'<section class="dm-unit dm-yearbook" data-era="%1$s" aria-labelledby="dm-y%2$d"><header class="dm-yearbook__head"><h2 id="dm-y%2$d"><a href="%3$s">%2$d</a></h2><p class="dm-yearbook__count">%4$s</p></header><div class="dm-heat">%5$s</div><div class="dm-yearbook__loud"><ul class="dm-rows">%6$s</ul></div></section>',
 			esc_attr( $era ),
 			$year,
 			esc_url( get_year_link( $year ) ),
-			esc_html( strtoupper( $era_names[ $era ] ) . ' ERA' ),
 			/* translators: %s: number of posts */
 			esc_html( sprintf( _n( '%s transmission', '%s transmissions', array_sum( $months ), 'dmdune' ), number_format_i18n( array_sum( $months ) ) ) ),
 			$cells,
-			esc_html__( 'LOUDEST', 'dmdune' ),
 			$loud
 		);
 	}

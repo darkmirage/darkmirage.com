@@ -62,16 +62,16 @@ function dmdune_frame( WP_Post $post, string $class = '', bool $stamp = true ): 
  * Compact log row: small frame, stamp line, title, signal. Used for search results, Keep reading,
  * and the archive page's loudest posts.
  */
-function dmdune_row_html( WP_Post $post, string $heading = 'h3' ): string {
+function dmdune_row_html( WP_Post $post, string $heading = 'h3', bool $number = true ): string {
 	$ts    = get_post_timestamp( $post );
 	$title = wp_strip_all_tags( get_the_title( $post ) );
 	return sprintf(
-		'<article class="dm-row" data-era="%1$s">%2$s<div class="dm-row__body"><p class="dm-row__stamp"><time datetime="%3$s">%4$s</time><span class="dm-row__no">TX·%5$d</span></p><%6$s class="dm-row__title"><a href="%7$s">%8$s</a></%6$s><p class="dm-row__meta">%9$s%10$s<span class="dm-sep" aria-hidden="true">·</span>%11$s</p></div></article>',
+		'<article class="dm-row" data-era="%1$s">%2$s<div class="dm-row__body"><p class="dm-row__stamp"><time datetime="%3$s">%4$s</time>%5$s</p><%6$s class="dm-row__title"><a href="%7$s">%8$s</a></%6$s><p class="dm-row__meta">%9$s%10$s<span class="dm-sep" aria-hidden="true">·</span>%11$s</p></div></article>',
 		esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ), (int) wp_date( 'n', $ts ) ) ),
 		dmdune_frame( $post, 'dm-frame--sm', false ),
 		esc_attr( wp_date( 'c', $ts ) ),
 		esc_html( wp_date( 'Y.m.d', $ts ) ),
-		$post->ID,
+		$number ? '<span class="dm-row__no">TX·' . (int) $post->ID . '</span>' : '',
 		tag_escape( $heading ),
 		esc_url( get_permalink( $post ) ),
 		esc_html( '' !== $title ? $title : __( '(untitled)', 'dmdune' ) ),
