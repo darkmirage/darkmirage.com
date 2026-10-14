@@ -39,6 +39,10 @@
 		var era = e.target.closest('[data-dm-skin]');
 		if (!era) return;
 		var skin = era.getAttribute('data-dm-skin');
+		// Picked from the time machine: reopen it on the next page (see dmc_time_machine_html).
+		if (era.closest('.dm-tmw')) {
+			try { sessionStorage.setItem('dm-tm-open', '1'); } catch (err) {}
+		}
 		var domain = /(^|\.)darkmirage\.com$/.test(location.hostname) ? '; domain=.darkmirage.com' : '';
 		document.cookie = 'dm-skin=' + skin + '; path=/; SameSite=Lax' + domain + (skin ? '; max-age=31536000' : '; max-age=0');
 		// A shared ?era= link would otherwise win over the era just picked.
