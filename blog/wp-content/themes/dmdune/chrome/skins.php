@@ -3,7 +3,7 @@
  * Era skins: the site's older themes, rebuilt over today's markup so they work on phones and
  * across all three sites (lyrics and gallery get the versions those eras never had).
  *
- * Readers pick an era from the time machine in the header (labelled by year, not theme name); the
+ * Readers pick an era from the time machine in the header (each labelled by name and years); the
  * choice is the dm-skin cookie on .darkmirage.com, so it follows them between sites until they
  * pick "Now". Blog posts also offer "see it as it looked then", which jumps to the era the post
  * was written in. Skinned pages keep their canonical URLs, so search engines only see Dune.
@@ -17,30 +17,76 @@
  */
 
 /**
- * key => name (the theme), era (what readers see), years, first moment it was live.
+ * key => name (the theme), short (its time machine label), era (the year it is named by), years,
+ * first moment it was live.
  *
- * b2 is the cafelog weblog that ran at darkmirage.com/blog/ before WordPress. WordPress's first
- * post went up at 13:36 on 2005-11-03, so that day is split by time, not date. default2 is the
- * customized WordPress Default (Kubrick with DarkMirage's own anime headers) the blog wore until
- * Kubrick DM in October 2006.
+ * The first three are DarkMirage's Weblog, the b2 (cafelog) blog at darkmirage.com/blog/ before
+ * WordPress, which changed its look twice (theme-archaeology/b2-era/ has the evidence): Nadesico
+ * from July 2003 (the April–July 2003 frames layout is lost, so it shows that era too), Aegis from
+ * 2004-04-17 and Lacus from 2005-05-10. WordPress's first post went up at 13:36 on 2005-11-03, so
+ * that day is split by time, not date. default2 is the customized WordPress Default (Kubrick with
+ * DarkMirage's own anime headers) the blog wore until Kubrick DM in October 2006.
  */
 function dmc_skins(): array {
 	return array(
-		'b2'        => array( 'name' => 'b2', 'era' => '2003', 'years' => '2003–2005', 'from' => '0000-00-00' ),
-		'default2'  => array( 'name' => 'default2', 'era' => '2005', 'years' => '2005–2006', 'from' => '2005-11-03 13:00:00' ),
-		'kubrick'   => array( 'name' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-10-01 00:00:00' ),
-		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-12-01' ),
-		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'era' => '2008', 'years' => '2008–2016', 'from' => '2007-12-01' ),
+		'nadesico'  => array( 'name' => 'Nadesico', 'short' => 'Nadesico', 'era' => '2003', 'years' => '2003–04', 'from' => '0000-00-00' ),
+		'aegis'     => array( 'name' => 'Aegis', 'short' => 'Aegis', 'era' => '2004', 'years' => '2004–05', 'from' => '2004-04-17 00:00:00' ),
+		'lacus'     => array( 'name' => 'Lacus', 'short' => 'Lacus', 'era' => '2005', 'years' => '2005', 'from' => '2005-05-10 00:00:00' ),
+		'default2'  => array( 'name' => 'default2', 'short' => 'default2', 'era' => '2005', 'years' => '2005–06', 'from' => '2005-11-03 13:00:00' ),
+		'kubrick'   => array( 'name' => 'Kubrick DM', 'short' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-10-01 00:00:00' ),
+		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'short' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-12-01' ),
+		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–16', 'from' => '2007-12-01' ),
 	);
+}
+
+/**
+ * Older names for a skin: until 1.12 the Aegis look was the only b2 era, keyed 'b2' (cookies and
+ * shared ?era=b2 links still carry it).
+ */
+function dmc_skin_key( string $key ): string {
+	return array( 'b2' => 'aegis' )[ $key ] ?? $key;
 }
 
 function dmc_skin(): string {
 	static $skin = null;
 	if ( null === $skin ) {
-		$want = (string) ( $_COOKIE['dm-skin'] ?? '' );
+		$want = dmc_skin_key( (string) ( $_COOKIE['dm-skin'] ?? '' ) );
 		$skin = isset( dmc_skins()[ $want ] ) ? $want : '';
 	}
 	return $skin;
+}
+
+/**
+ * Whether $skin (default: the active one) is one of the b2 weblog's looks.
+ */
+function dmc_is_b2( ?string $skin = null ): bool {
+	return in_array( $skin ?? dmc_skin(), array( 'nadesico', 'aegis', 'lacus' ), true );
+}
+
+/**
+ * The tagline the b2 weblog showed in its title bar on $date ('Y-m-d…'; '' = the era's last).
+ */
+function dmc_b2_tagline( string $skin, string $date = '' ): string {
+	$lines = array(
+		'nadesico' => array( '0000' => 'because you have nothing better to do' ),
+		'aegis'    => array(
+			'0000'       => 'because you have nothing better to do',
+			'2004-10-01' => 'where the impossible do not happen',
+			'2004-12-14' => 'making the world a better place one rant at a time.',
+			'2005-03-01' => 'I blog. Do you?',
+		),
+		'lacus'    => array(
+			'0000'       => 'Anime, J-Pop and Whatnot.',
+			'2005-10-01' => 'official fanboy of Maaya Sakamoto',
+		),
+	)[ $skin ] ?? array( '0000' => '' );
+	$found = '';
+	foreach ( $lines as $from => $line ) {
+		if ( '' === $date || $date >= $from ) {
+			$found = $line;
+		}
+	}
+	return $found;
 }
 
 /**
@@ -73,16 +119,16 @@ function dmc_era_buttons(): string {
 	$skin = dmc_skin();
 	$out  = '';
 	foreach ( dmc_skins() as $key => $s ) {
-		$out .= sprintf( '<button type="button" data-dm-skin="%1$s" data-era="%2$s"%3$s aria-label="%4$s: the site as it looked in %5$s">%4$s%6$s</button>', $key, dmc_skin_era( $key ), $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['era'] ), dmc_e( $s['years'] ), dmc_era_peek( $key, $s['name'], $s['years'] ) );
+		$out .= sprintf( '<button type="button" data-dm-skin="%1$s" data-era="%2$s"%3$s aria-label="%4$s, %5$s: the site as it looked then"><span class="dm-era__name">%6$s</span><span class="dm-era__yrs">%5$s</span>%7$s</button>', $key, dmc_skin_era( $key ), $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['name'] ), dmc_e( $s['years'] ), dmc_e( $s['short'] ), dmc_era_peek( $key, $s['name'], $s['years'] ) );
 	}
-	return $out . sprintf( '<button type="button" data-dm-skin="" data-era="now"%s aria-label="Now: today’s site">Now%s</button>', $skin ? '' : ' aria-pressed="true"', dmc_era_peek( 'now', 'Dune', '2026' ) );
+	return $out . sprintf( '<button type="button" data-dm-skin="" data-era="now"%s aria-label="Now: today’s site"><span class="dm-era__name">Now</span><span class="dm-era__yrs">Dune</span>%s</button>', $skin ? '' : ' aria-pressed="true"', dmc_era_peek( 'now', 'Dune', 'today' ) );
 }
 
 /**
  * The timeline colour each skin is drawn in (the chart groups Kubrick DM with dmbrickv2).
  */
 function dmc_skin_era( string $key ): string {
-	return array( 'b2' => 'b2', 'default2' => 'default', 'kubrick' => 'kubrick', 'dmbrickv2' => 'kubrick', 'blocks' => 'blocks' )[ $key ] ?? 'now';
+	return array( 'nadesico' => 'b2', 'aegis' => 'b2', 'lacus' => 'b2', 'default2' => 'default', 'kubrick' => 'kubrick', 'dmbrickv2' => 'kubrick', 'blocks' => 'blocks' )[ $key ] ?? 'now';
 }
 
 /**
@@ -143,7 +189,8 @@ function dmc_era_post_link( string $date ): string {
 	if ( ! $key || dmc_skin() === $key ) {
 		return '';
 	}
-	return sprintf( '<button type="button" class="dm-era-post" data-dm-skin="%s" data-era="%s">%s<span>See this post as it looked in %s</span></button>', $key, dmc_skin_era( $key ), dmc_icon( 'clock', 14 ), dmc_e( dmc_skins()[ $key ]['era'] ) );
+	$s = dmc_skins()[ $key ];
+	return sprintf( '<button type="button" class="dm-era-post" data-dm-skin="%s" data-era="%s">%s<span>See this post as it looked in %s (%s)</span></button>', $key, dmc_skin_era( $key ), dmc_icon( 'clock', 14 ), dmc_e( $s['era'] ), dmc_e( $s['short'] ) );
 }
 
 /**
@@ -153,7 +200,7 @@ function dmc_lineage_html(): string {
 	$skin  = dmc_skin();
 	$parts = array();
 	foreach ( dmc_skins() as $key => $s ) {
-		$parts[] = sprintf( '<button type="button" class="dm-era-switch" data-dm-skin="%s"%s title="%s (%s)">%s</button>', $key, $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['name'] ), dmc_e( $s['years'] ), dmc_e( array( 'blocks' => 'Blocks', 'b2' => 'b2 Weblog' )[ $key ] ?? $s['name'] ) );
+		$parts[] = sprintf( '<button type="button" class="dm-era-switch" data-dm-skin="%s"%s title="%s (%s)">%s</button>', $key, $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['name'] ), dmc_e( $s['years'] ), dmc_e( $s['short'] ) );
 	}
 	$parts[] = sprintf( '<button type="button" class="dm-era-switch dm-era-switch--now" data-dm-skin=""%s title="Today’s theme">Dune</button>', $skin ? '' : ' aria-pressed="true"' );
 	return implode( ' <span>→</span> ', $parts );
@@ -164,7 +211,7 @@ function dmc_lineage_html(): string {
  */
 function dmc_skin_header_html( array $c ): string {
 	$current = dmc_current( $c );
-	$b2      = 'b2' === dmc_skin();
+	$b2      = dmc_is_b2();
 	$d2      = 'default2' === dmc_skin();
 	$banner  = $d2 ? dmc_default2_pick( array( 'sage', 'nerine', 'nanaka', 'haruhi', 'bakuten' ) ) : '';
 	if ( $d2 && 'blog' === $c['site'] && ! isset( $c['tagline'] ) ) {
@@ -176,7 +223,9 @@ function dmc_skin_header_html( array $c ): string {
 		'lyrics'  => $b2 ? array( 'DarkMirage’s', 'Lyrics' ) : array( 'Lyrics of', 'DarkMirage' ),
 		'gallery' => $b2 ? array( 'DarkMirage’s', 'Gallery' ) : array( 'Gallery of', 'DarkMirage' ),
 	)[ $c['site'] ];
-	$tagline = $c['tagline'] ?? array( 'blog' => $b2 ? 'because you have nothing better to do' : 'Anime, J-pop and whatever else', 'lyrics' => '歌詞の翻訳', 'gallery' => '写真' )[ $c['site'] ];
+	$tagline = $c['tagline'] ?? array( 'blog' => $b2 ? dmc_b2_tagline( dmc_skin() ) : 'Anime, J-pop and whatever else', 'lyrics' => '歌詞の翻訳', 'gallery' => '写真' )[ $c['site'] ];
+	// Lacus put a tagboard where the banner had been. The blog fills it; elsewhere it says so.
+	$extra = 'lacus' === dmc_skin() ? dmc_b2_tagboard( $c['tagboard'] ?? '<p class="b2-tagboard__note">Tag-It! v0.6.1 · the shouts weren’t archived.</p>' ) : '';
 	$home    = array( 'blog' => $c['www'], 'lyrics' => $c['lyrics'], 'gallery' => $c['gallery'] )[ $c['site'] ];
 	$tabs    = '';
 	foreach ( dmc_nav( $c ) as $key => $item ) {
@@ -186,7 +235,7 @@ function dmc_skin_header_html( array $c ): string {
 		$tabs .= sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key || ( '' === $current && 'home' === $key ) ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
 	}
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><nav class="dm-skinbar" aria-label="Time machine"><span class="dm-skinbar__lead">%2$s<span>Time machine</span></span><span class="dm-skinbar__years">%3$s</span></nav><div class="bk-shell"><header class="bk-banner bk-banner--%4$s"%11$s><div class="bk-banner__text"><a class="bk-title" href="%5$s" rel="home"><span class="bk-title__of">%6$s</span> <span class="bk-title__name">%7$s</span></a><p class="bk-tagline">%8$s</p></div><nav class="bk-tabs" aria-label="Main"><ul>%9$s</ul></nav>%10$s</header><div class="bk-page">',
+		'<a class="dm-skip" href="%1$s">Skip to content</a><nav class="dm-skinbar" aria-label="Time machine"><span class="dm-skinbar__lead">%2$s<span>Time machine</span></span><span class="dm-skinbar__years">%3$s</span></nav><div class="bk-shell"><header class="bk-banner bk-banner--%4$s"%11$s><div class="bk-banner__text"><a class="bk-title" href="%5$s" rel="home"><span class="bk-title__of">%6$s</span> <span class="bk-title__name">%7$s</span></a><p class="bk-tagline">%8$s</p></div><nav class="bk-tabs" aria-label="Main"><ul>%9$s</ul></nav>%10$s%12$s</header><div class="bk-page">',
 		dmc_e( $c['skip'] ),
 		dmc_icon( 'clock', 14 ),
 		dmc_era_buttons(),
@@ -197,8 +246,35 @@ function dmc_skin_header_html( array $c ): string {
 		dmc_e( $tagline ),
 		$tabs,
 		'blog' === $c['site'] ? '<a class="bk-feed" href="' . dmc_e( $c['www'] . 'feed/' ) . '" title="RSS feed"><span>RSS</span></a>' : '',
-		$banner ? ' data-banner="' . dmc_e( $banner ) . '"' : ''
+		$banner ? ' data-banner="' . dmc_e( $banner ) . '"' : '',
+		$extra
 	);
+}
+
+/**
+ * Lacus's tagboard box (a Tag-It! iframe then; $html is already escaped).
+ */
+function dmc_b2_tagboard( string $html ): string {
+	return '<section class="b2-tagboard" aria-label="Tagboard"><h2 class="b2-tagboard__label">tagboard</h2><div class="b2-tagboard__body">' . $html . '</div></section>';
+}
+
+/**
+ * Lacus's 120 × 600 "advertisements" slot. In 2005 it held AdSense text ads; this is a joke
+ * recreation of the look, not ads: nothing links anywhere and the domain is reserved.
+ */
+function dmc_b2_fake_ads(): string {
+	$ads  = array(
+		array( 'Learn Japanese in 3 Days', 'Kanji are just pictures, right? JLPT level 1 by Friday.', 'kanji' ),
+		array( 'Download More RAM', 'Run Half-Life 2 on your Pentium 4. Totally legit.', 'ram' ),
+		array( 'Maaya Sakamoto CDs, Cheap!', 'You already own all of them. Buy them again anyway.', 'maaya' ),
+		array( 'Free iPod Shuffle*', '*After 48 easy offers and your firstborn.', 'ipod' ),
+		array( 'NAPFA Gold Guaranteed', 'Chin-ups not included. Neither is the 2.4 km.', 'napfa' ),
+	);
+	$list = '';
+	foreach ( $ads as $ad ) {
+		$list .= sprintf( '<li><span class="b2-ads__title">%s</span> <span class="b2-ads__text">%s</span> <span class="b2-ads__url">www.not-a-real-ad.example/%s</span></li>', dmc_e( $ad[0] ), dmc_e( $ad[1] ), dmc_e( $ad[2] ) );
+	}
+	return '<div class="b2-ads" role="note" aria-label="A joke recreation of the 2005 text ads that sat here. These are not real ads."><ul aria-hidden="true">' . $list . '</ul><p class="b2-ads__by" aria-hidden="true">Ads by Nobody™</p></div><p class="b2-ads__note">2005 had real ads here. These aren’t.</p>';
 }
 
 /**
@@ -224,20 +300,25 @@ function dmc_skin_footer_html( array $c, string $tabbar ): string {
 	}
 	$cols           = array( 'left' => '', 'right' => '' );
 	// b2 kept everything in one left "menu" column, navigation first.
-	if ( 'b2' === $skin ) {
+	if ( dmc_is_b2( $skin ) ) {
 		$cols['right'] .= dmc_bk_block( 'menu', '<ul class="bk-nav">' . $nav . '</ul>', 'bk-block--nav' );
 	}
 	$cols['right'] .= dmc_bk_block( 'Search', sprintf( '<form class="bk-search" role="search" method="get" action="%s"><label class="screen-reader-text" for="bk-s">Search</label><input id="bk-s" type="search" name="%s" placeholder="%s"><button type="submit" aria-label="Search">%s</button></form>', dmc_e( $c['search'] ), dmc_e( $field ), dmc_e( $c['placeholder'] ), dmc_icon( 'search', 14 ) ), 'bk-block--search' );
 	// Blocks kept its navigation in the sidebar; the 2007 theme listed it on the left.
-	if ( 'b2' !== $skin ) {
+	if ( ! dmc_is_b2( $skin ) ) {
 		// default2 had no tabs: its "Menu" list in the sidebar was the navigation.
 		$cols[ 'dmbrickv2' === $skin ? 'left' : 'right' ] .= dmc_bk_block( 'default2' === $skin ? 'Menu' : 'Navigation', '<ul class="bk-nav">' . $nav . '</ul>', 'bk-block--nav' );
 	}
 	foreach ( (array) ( $c['side'] ?? array() ) as $block ) {
 		$cols[ 'left' === ( $block[3] ?? '' ) ? 'left' : 'right' ] .= dmc_bk_block( $block[0], $block[1], $block[2] ?? '' );
 	}
+	if ( 'lacus' === $skin ) {
+		$cols['right'] .= dmc_bk_block( 'advertisements', dmc_b2_fake_ads(), 'bk-block--ads' );
+	}
 	$note = $c['note'] ?? array(
-		'b2'       => 'DarkMirage’s Weblog · 2003–2005 · powered by b2',
+		'nadesico' => 'DarkMirage’s Weblog · 2003–2004 · powered by b2',
+		'aegis'    => 'DarkMirage’s Weblog · 2004–2005 · powered by b2',
+		'lacus'    => 'DarkMirage’s Weblog · 2005 · powered by b2',
 		'default2' => 'Ramblings of DarkMirage is proudly powered by WordPress · 2005–2006',
 	)[ $skin ] ?? 'Ramblings of DarkMirage · 2003–' . date( 'Y' );
 	return sprintf(

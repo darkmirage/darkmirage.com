@@ -32,9 +32,13 @@ add_action(
 );
 
 /**
- * A post's "see it as it looked then" switch. Posts imported from b2 (tagged _dm_b2_id) belong to
- * that era even on 2005-11-03, when b2's farewell post went up hours after WordPress's first.
+ * A post's "see it as it looked then" switch. Posts imported from b2 (tagged _dm_b2_id) keep to the
+ * b2 looks even on 2005-11-03, when b2's farewell post went up hours after WordPress's first.
  */
 function dmdune_era_post_link( WP_Post $post ): string {
-	return dmc_era_post_link( get_post_meta( $post->ID, '_dm_b2_id', true ) ? '0000-00-00' : get_the_date( 'Y-m-d H:i:s', $post ) );
+	$date = get_the_date( 'Y-m-d H:i:s', $post );
+	if ( get_post_meta( $post->ID, '_dm_b2_id', true ) ) {
+		$date = min( $date, '2005-11-03 12:59:59' );
+	}
+	return dmc_era_post_link( $date );
 }
