@@ -1,0 +1,180 @@
+/* The zoomable home timeline (assets/js/timeline.js). Every row has a fixed height so the script
+   can place rows by arithmetic; anything that could grow (titles, excerpts) is clamped. */
+
+.tl-host > :not(.tl):not(.dm-log), .tl-host.tl-zoomed > .dm-log { display: none !important; }
+.tl-host > .tl { margin-block-start: 0; }
+.tl { position: relative; overflow-anchor: none; }
+.tl-probe { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; }
+.tl-canvas { position: relative; contain: layout; }
+.tl-row { position: absolute; left: 0; right: 0; top: 0; overflow: hidden; contain: layout paint; }
+
+/* The vertical line of the log, behind the date rails (Cards and Posts). */
+.tl--l3 .tl-canvas::before, .tl--l4 .tl-canvas::before {
+	content: "";
+	position: absolute;
+	left: 59px;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: linear-gradient(var(--dm-era-blocks), var(--dm-era-blocks) 55%, var(--dm-era-kubrick) 75%, var(--dm-era-b2));
+	opacity: 0.35;
+}
+.tl-row--yhdr .dm-tx-year { height: 100%; box-sizing: border-box; padding: 0; }
+.tl--l2 .tl-row--yhdr .dm-tx-year a, .tl--l1 .tl-row--yhdr .dm-tx-year a { font-size: 48px; }
+/* Years and Months are about the shape of the whole run, so they stay neutral: no era colours. */
+.tl--l1 .dm-tx-year, .tl-year[data-era=""] { --era: var(--dm-fg); }
+
+/* Posts: today's rows at a fixed height. */
+.tl-post.dm-tx { height: 100%; box-sizing: border-box; }
+.tl-post .dm-tx__title { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+@media (min-width: 601px) { .tl-post .dm-tx__excerpt { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; min-height: 0; } }
+.tl-post .dm-tx__media img { width: 100%; height: 100%; object-fit: cover; }
+.tl-locked { position: absolute; inset: 0; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #1a1d26 0 10px, #141720 10px 20px); color: #8b93a6; font: 500 12px var(--wp--preset--font-family--mono); letter-spacing: 0.3em; }
+.tl-locked span { display: inline-flex; align-items: center; gap: 8px; }
+.tl-lock { flex: none; margin-right: 6px; vertical-align: -1px; color: var(--dm-muted); }
+.is-hit > * { animation: tl-hit 2.2s ease-out; }
+@keyframes tl-hit { 0%, 30% { background: var(--dm-accent-soft); box-shadow: 0 0 0 2px var(--dm-accent-line); } 100% { background: transparent; box-shadow: 0 0 0 0 transparent; } }
+
+/* Cards: date, a small picture, title and a line of the post. */
+.tl-card { display: grid; grid-template-columns: 120px 120px minmax(0, 1fr); gap: 0 22px; align-items: center; height: 100%; box-sizing: border-box; padding: 10px 0; border-radius: 10px; }
+.tl-card__rail { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+.tl-card__rail::before { content: ""; width: 10px; height: 10px; margin-bottom: 6px; border-radius: 50%; background: var(--dm-bg); border: 2px solid var(--era); box-shadow: 0 0 0 3px var(--dm-bg); }
+.tl-card__d { font: 600 26px/1 var(--wp--preset--font-family--display); color: var(--dm-fg); background: var(--dm-bg); padding: 0 4px; font-variant-numeric: tabular-nums; }
+.tl-card__m { font: 500 10px/1.5 var(--wp--preset--font-family--mono); letter-spacing: 0.24em; color: var(--dm-muted); background: var(--dm-bg); padding: 0 4px; }
+.tl-card__frame { position: relative; display: block; width: 120px; height: 72px; overflow: hidden; border-radius: 7px; background: #0c0e13; box-shadow: 0 0 0 1px var(--dm-line); }
+.tl-card__media { position: absolute; inset: 0; }
+.tl-card__media img { width: 100%; height: 100%; object-fit: cover; }
+.tl-card__media.dm-tx__nosignal { font-size: 9px; letter-spacing: 0.2em; }
+.tl-card__media.tl-locked { font-size: 9px; letter-spacing: 0.16em; }
+.tl-card__body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tl-card__body .dm-tx__cat { margin: 0; font-size: 11px; }
+.tl-card__title { margin: 0; overflow: hidden; font: 600 18px/1.2 var(--wp--preset--font-family--display); white-space: nowrap; text-overflow: ellipsis; }
+.tl-card__title a { color: var(--dm-fg); text-decoration: none; }
+.tl-card__title a:hover { color: var(--dm-accent); }
+.tl-card__ex { margin: 0; overflow: hidden; color: var(--dm-body); font-size: 13px; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis; min-height: 1.5em; }
+
+/* Titles: one line a post under month headers. */
+.tl-mhdr { display: flex; align-items: center; gap: 12px; height: 100%; padding-left: 132px; box-sizing: border-box; }
+.tl-mhdr span { font: 500 11px var(--wp--preset--font-family--mono); letter-spacing: 0.2em; color: var(--dm-muted); }
+.tl-mhdr i { flex: 1; height: 1px; background: var(--dm-line); }
+.tl-title { display: flex; align-items: center; gap: 12px; height: 100%; padding: 0 12px 0 132px; box-sizing: border-box; color: var(--dm-fg); text-decoration: none; border-radius: 8px; }
+.tl-title:hover { background: var(--dm-accent-soft); }
+.tl-title time { flex: none; width: 22px; font: 500 12px var(--wp--preset--font-family--mono); color: var(--dm-muted); font-variant-numeric: tabular-nums; }
+.tl-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--era); }
+.tl-title__t { flex: 1; min-width: 0; overflow: hidden; font-size: 15px; white-space: nowrap; text-overflow: ellipsis; }
+.tl-title__n { flex: none; font: 500 11px var(--wp--preset--font-family--mono); color: var(--dm-muted); }
+
+/* Months: a band a month, its size, and its first titles. Clicking zooms in there. */
+.tl-band { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 52px 120px 36px minmax(0, 1fr); gap: 14px; align-items: center; width: 100%; height: 100%; padding: 0 12px 0 132px; cursor: pointer; border-radius: 10px; }
+.tl-band:hover, .tl-band:focus-visible { background: var(--dm-accent-soft); }
+.tl-band__m { font: 500 12px var(--wp--preset--font-family--mono); letter-spacing: 0.2em; color: var(--dm-muted); }
+.tl-band__bar { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--dm-accent) calc(var(--w) * 100%), var(--dm-line) 0); }
+.tl-band__n { font: 600 15px var(--wp--preset--font-family--display); color: var(--dm-fg); font-variant-numeric: tabular-nums; }
+.tl-band__titles { overflow: hidden; color: var(--dm-body); font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Years: the whole run on about one screen. */
+.tl-y0 { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 150px minmax(0, 1fr) minmax(0, 300px); gap: 28px; align-items: center; width: 100%; height: 100%; padding: 10px 14px; cursor: pointer; border-bottom: 1px dashed var(--dm-line); }
+.tl-y0:hover, .tl-y0:focus-visible { background: var(--dm-accent-soft); border-radius: 12px; }
+.tl-y0__year { font: 600 64px/0.9 var(--wp--preset--font-family--display); letter-spacing: 0.02em; color: transparent; -webkit-text-stroke: 1.5px var(--dm-fg); }
+.tl-y0:hover .tl-y0__year, .tl-y0:focus-visible .tl-y0__year { -webkit-text-stroke-color: var(--dm-accent); color: var(--dm-accent); }
+.tl-y0__spark { display: flex; align-items: flex-end; gap: 4px; height: 64px; }
+.tl-y0__spark i { flex: 1; height: calc(var(--h) * 100%); min-height: 2px; border-radius: 2px 2px 0 0; background: var(--dm-accent); opacity: 0.75; }
+.tl-y0__meta { font-size: 14px; color: var(--dm-body); line-height: 1.5; overflow: hidden; }
+.tl-y0__meta b { font: 600 22px var(--wp--preset--font-family--display); color: var(--dm-fg); }
+.tl-y0__meta span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--dm-muted); font-size: 13px; }
+
+.tl-end { display: grid; place-items: center; height: 100%; padding: 0 16px; text-align: center; color: var(--dm-muted); font-size: 14px; }
+.tl-end b { display: block; font: 600 22px var(--wp--preset--font-family--display); color: var(--dm-fg); }
+
+/* Controls, top right under the sticky header. */
+.tl-ctl { position: fixed; z-index: 40; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--dm-line); border-radius: 999px; background: color-mix(in srgb, var(--dm-surface) 92%, transparent); box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.tl-ctl button { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--dm-fg); cursor: pointer; }
+.tl-ctl button:hover:not(:disabled), .tl-ctl button:focus-visible { background: var(--dm-accent-soft); color: var(--dm-accent); }
+.tl-ctl button:disabled { opacity: 0.3; cursor: default; }
+.tl-ctl { opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+/* Out of sight on the first screen; quiet once the reader is into the log. */
+.tl-ctl.is-in { opacity: 0.55; pointer-events: auto; }
+/* Floating over the log, a see-through pill reads as a smudge: solid once the reader is well in. */
+.tl-ctl:not(.tl-ctl--nav).is-deep { opacity: 1; background: var(--dm-surface); }
+.tl-ctl.is-in:hover, .tl-ctl.is-in:focus-within, .tl-ctl--nav.is-in { opacity: 1; pointer-events: auto; }
+.tl-ctl.is-off, .tl-ui.is-off .tl-scrub, .tl-ui.is-off .tl-year { opacity: 0; pointer-events: none; }
+.tl-ctl__level { min-width: 64px; text-align: center; font: 500 11px var(--wp--preset--font-family--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dm-muted); }
+/* On wide screens it sits in the header beside search, out of the layout (so adding it shifts
+   nothing), invisible until the reader reaches the log. Narrower, it floats bottom left, opposite
+   the Time machine button. */
+.dm-nav__tools { position: relative; }
+.tl-ctl--nav { position: absolute; top: 50%; bottom: auto; left: auto; right: calc(100% + 8px); transform: translateY(-50%); height: 40px; box-sizing: border-box; padding: 0 3px; background: var(--dm-surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tl-ctl--nav button { width: 32px; height: 32px; }
+.tl-ctl__rand { margin-left: 4px; border-left: 1px solid var(--dm-line) !important; border-radius: 0 50% 50% 0 !important; }
+
+/* Scrubber: a rail on the right edge; years take room in proportion to their posts. */
+.tl-scrub { position: fixed; z-index: 35; top: calc(env(safe-area-inset-top, 0px) + 136px); bottom: 90px; right: 6px; width: 44px; opacity: 0; transition: opacity 0.3s; }
+/* Hidden on the first screen; it appears past the first few posts, or when the edge is hovered. */
+.tl-ui.is-deep .tl-scrub, .tl-scrub:hover, .tl-scrub.is-dragging { opacity: 1; }
+.tl-scrub__track { position: absolute; inset: 0; cursor: ns-resize; touch-action: none; }
+.tl-scrub__track::before { content: ""; position: absolute; top: 0; bottom: 0; right: 8px; width: 2px; border-radius: 1px; background: var(--dm-line); }
+.tl-scrub__y { position: absolute; right: 14px; transform: translateY(-50%); font: 500 10px var(--wp--preset--font-family--mono); color: var(--dm-muted); cursor: pointer; }
+.tl-scrub__y:hover { color: var(--dm-accent); }
+.tl-scrub__y::after { content: ""; position: absolute; right: -9px; top: 50%; width: 6px; height: 1px; background: var(--dm-muted); }
+.tl-scrub__thumb { position: absolute; right: 4px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--dm-accent); box-shadow: 0 0 0 3px var(--dm-bg); pointer-events: none; }
+.tl-scrub__bubble { position: absolute; right: 26px; margin-top: -13px; padding: 5px 9px; border-radius: 8px; background: var(--dm-fg); color: var(--dm-bg); font: 500 11px var(--wp--preset--font-family--mono); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+.tl-scrub.is-dragging .tl-scrub__bubble { opacity: 1; }
+@media (hover: hover) {
+	.tl-scrub:hover .tl-scrub__bubble { opacity: 1; }
+}
+
+/* The year the reader is in, pinned under the header in the same outlined numerals as the log's
+   year markers; it steps aside while a marker passes (see updateUi() in timeline.js). */
+.tl-year { position: fixed; z-index: 30; top: 0; width: 120px; padding: 10px 0 14px; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.15s; background: linear-gradient(var(--dm-bg) 70%, transparent); }
+.tl-year.is-on { opacity: 1; }
+.tl-year a { font-size: 44px; pointer-events: auto; background: none; }
+.tl-ui.is-off .tl-year { opacity: 0; }
+
+/* Leave room for the scrubber beside the content on wide screens. */
+@media (min-width: 1240px) { .tl { margin-right: 0; } }
+@media (max-width: 1240px) and (min-width: 601px) { .tl-canvas { margin-right: 36px; } }
+
+@media (max-width: 900px) {
+	.tl-ctl { bottom: calc(var(--dm-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); left: 12px; }
+	.tl--l3 .tl-canvas::before, .tl--l4 .tl-canvas::before { left: 47px; }
+	.tl-card { grid-template-columns: 96px 104px minmax(0, 1fr); gap: 0 16px; }
+	.tl-card__frame { width: 104px; height: 62px; }
+	.tl-title, .tl-band, .tl-mhdr { padding-left: 108px; }
+	.tl-y0 { grid-template-columns: 120px minmax(0, 1fr); }
+	.tl-y0__meta { display: none; }
+}
+@media (max-width: 600px) {
+	.tl--l3 .tl-canvas::before, .tl--l4 .tl-canvas::before { left: 21px; }
+	.tl-card { grid-template-columns: 44px 84px minmax(0, 1fr); gap: 0 12px; }
+	.tl-card__d { font-size: 18px; }
+	.tl-card__frame { width: 84px; height: 60px; }
+	.tl-card__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 15px; }
+	.tl-card__ex { display: none; }
+	.tl-title { padding-left: 4px; gap: 10px; }
+	.tl-mhdr { padding-left: 4px; }
+	.tl-title__t { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 14px; line-height: 1.3; }
+	.tl-band { grid-template-columns: 40px 1fr 28px; padding-left: 4px; gap: 10px; }
+	.tl-band__titles { grid-column: 1 / -1; grid-row: 2; font-size: 12px; }
+	.tl-y0 { grid-template-columns: 92px minmax(0, 1fr); gap: 14px; padding: 8px 4px; }
+	.tl-y0__year { font-size: 40px; }
+	.tl-y0__spark { height: 48px; gap: 2px; }
+	.tl-post .dm-tx__title { -webkit-line-clamp: 3; }
+
+	.tl-ctl { background: var(--dm-surface); }
+	.tl-ctl button { width: 34px; height: 34px; }
+	.tl-ctl__level { display: none; }
+	.tl-ctl.is-in { opacity: 0; pointer-events: none; }
+	.tl-ctl.is-deep { opacity: 1; pointer-events: auto; }
+	/* Phones: turned on its side in the date rail, clear of the pictures. */
+	.tl-ui[data-level="1"] .tl-year, .tl-ui[data-level="2"] .tl-year { display: none; }
+	.tl-year { width: 44px; padding: 8px 0 16px; justify-content: center; background: linear-gradient(var(--dm-bg) 80%, transparent); }
+	.tl-year a { width: auto; font-size: 30px; line-height: 1; writing-mode: vertical-rl; transform: rotate(180deg); -webkit-text-stroke-width: 1.2px; }
+	/* Phones: a thin handle on the edge, only while scrolling or dragging. */
+	.tl-scrub, .tl-ui.is-deep .tl-scrub { top: 120px; bottom: calc(var(--dm-tabbar-h) + 90px); width: 28px; right: 0; opacity: 0; transition: opacity 0.3s 0.6s; }
+	.tl-ui.is-deep.is-scrolling .tl-scrub, .tl-scrub.is-dragging { opacity: 1; transition-delay: 0s; }
+	.tl-scrub__y { display: none; }
+	.tl-scrub__thumb { right: 3px; width: 6px; height: 36px; margin-top: -18px; border-radius: 3px; }
+	.tl-scrub__track::before { right: 5px; }
+	.tl-scrub__bubble { right: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .tl-canvas, .tl-scrub, .tl-year, .tl-ctl, .is-hit > * { transition: none; animation: none; } }

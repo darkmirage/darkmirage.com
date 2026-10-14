@@ -20,3 +20,4 @@ require __DIR__ . '/inc/meta.php';
 require __DIR__ . '/inc/skins.php';
 require __DIR__ . '/inc/b2.php';
 require __DIR__ . '/inc/featured.php';
+require __DIR__ . '/inc/timeline.php';
