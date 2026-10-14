@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.10.1' );
+define( 'DMC_VERSION', '1.10.2' );
 
 require __DIR__ . '/skins.php';
 

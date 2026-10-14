@@ -70,9 +70,28 @@ function dmc_era_buttons(): string {
 	$skin = dmc_skin();
 	$out  = '';
 	foreach ( dmc_skins() as $key => $s ) {
-		$out .= sprintf( '<button type="button" data-dm-skin="%s"%s title="The site as it looked in %s">%s</button>', $key, $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['years'] ), dmc_e( $s['era'] ) );
+		$out .= sprintf( '<button type="button" data-dm-skin="%1$s" data-era="%2$s"%3$s aria-label="%4$s: the site as it looked in %5$s">%4$s%6$s</button>', $key, dmc_skin_era( $key ), $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['era'] ), dmc_e( $s['years'] ), dmc_era_peek( $key, $s['name'], $s['years'] ) );
 	}
-	return $out . sprintf( '<button type="button" data-dm-skin=""%s title="Today’s site">Now</button>', $skin ? '' : ' aria-pressed="true"' );
+	return $out . sprintf( '<button type="button" data-dm-skin="" data-era="now"%s aria-label="Now: today’s site">Now%s</button>', $skin ? '' : ' aria-pressed="true"', dmc_era_peek( 'now', 'Dune', '2026' ) );
+}
+
+/**
+ * The timeline colour each skin is drawn in (the chart groups Kubrick DM with dmbrickv2).
+ */
+function dmc_skin_era( string $key ): string {
+	return array( 'b2' => 'b2', 'kubrick' => 'kubrick', 'dmbrickv2' => 'kubrick', 'blocks' => 'blocks' )[ $key ] ?? 'now';
+}
+
+/**
+ * A small screenshot of the era's home page, shown while a year button is hovered or focused.
+ */
+function dmc_era_peek( string $key, string $name, string $years ): string {
+	return sprintf(
+		'<span class="dm-era-peek" aria-hidden="true"><img src="%1$s" alt="" width="240" height="150" loading="lazy" decoding="async"><span class="dm-era-peek__cap"><b>%2$s</b> %3$s</span></span>',
+		dmc_e( dmc_config()['assets'] . 'skins/previews/' . $key . '.webp?v=' . DMC_VERSION ),
+		dmc_e( $name ),
+		dmc_e( $years )
+	);
 }
 
 /**
@@ -95,7 +114,7 @@ function dmc_era_post_link( string $date ): string {
 	if ( ! $key || dmc_skin() === $key ) {
 		return '';
 	}
-	return sprintf( '<button type="button" class="dm-era-post" data-dm-skin="%s">%s<span>See this post as it looked in %s</span></button>', $key, dmc_icon( 'clock', 14 ), dmc_e( dmc_skins()[ $key ]['era'] ) );
+	return sprintf( '<button type="button" class="dm-era-post" data-dm-skin="%s" data-era="%s">%s<span>See this post as it looked in %s</span></button>', $key, dmc_skin_era( $key ), dmc_icon( 'clock', 14 ), dmc_e( dmc_skins()[ $key ]['era'] ) );
 }
 
 /**
