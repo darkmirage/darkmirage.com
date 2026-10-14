@@ -1,9 +1,17 @@
 /* Fonts (SIL OFL 1.1). The blog also declares these through theme.json; lyrics and gallery rely on
    these rules, and fonts/.htaccess allows the cross-subdomain requests. */
-@font-face { font-family: "Chakra Petch"; font-weight: 500; font-display: swap; src: url("../fonts/chakra-petch-latin-500-normal.woff2") format("woff2"); }
-@font-face { font-family: "Chakra Petch"; font-weight: 600; font-display: swap; src: url("../fonts/chakra-petch-latin-600-normal.woff2") format("woff2"); }
-@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: swap; src: url("../fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
-@font-face { font-family: "JetBrains Mono"; font-weight: 500; font-display: swap; src: url("../fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 500; font-display: block; src: url("../fonts/chakra-petch-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; font-display: block; src: url("../fonts/chakra-petch-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-display: block; src: url("../fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 500; font-display: block; src: url("../fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2"); }
+/* The fonts are preloaded and small, so text waits for them (block) rather than painting in a
+   stand-in and reflowing. If they're slow (browsers give up after ~3s) or blocked, these stand-ins
+   are sized to the real fonts' metrics, so text barely moves when they arrive.
+   Chakra Petch's capitals are far narrower than Arial's: 500 is matched on the uppercase header
+   labels, 600 on mixed-case titles (they wrap, so they matter more than the few bold labels). */
+@font-face { font-family: "Chakra Petch Fallback"; font-weight: 500; src: local("Arial"), local("ArialMT"); size-adjust: 91.95%; ascent-override: 107.88%; descent-override: 33.5%; line-gap-override: 0%; }
+@font-face { font-family: "Chakra Petch Fallback"; font-weight: 600; src: local("Arial Bold"), local("Arial-BoldMT"); size-adjust: 97.58%; ascent-override: 101.66%; descent-override: 31.56%; line-gap-override: 0%; }
+@font-face { font-family: "JetBrains Mono Fallback"; font-weight: 100 900; src: local("Menlo"), local("Menlo-Regular"), local("Consolas"), local("Courier New"); size-adjust: 99.66%; ascent-override: 102.35%; descent-override: 30.1%; line-gap-override: 0%; }
 
 /* DarkMirage chrome: the design system shared by www, lyrics and gallery.darkmirage.com.
    Tokens, type, header/footer/tab bar, and the transmission-log primitives (HUD heads, signal
@@ -12,9 +20,9 @@
    desert day/night palette from the banner art. */
 
 :root {
-	--dm-font-display: "Chakra Petch", "Avenir Next", "Hiragino Sans", system-ui, sans-serif;
+	--dm-font-display: "Chakra Petch", "Chakra Petch Fallback", "Avenir Next", "Hiragino Sans", system-ui, sans-serif;
 	--dm-font-body: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
-	--dm-font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+	--dm-font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, Menlo, Consolas, monospace;
 	--dm-bg: #f2efe9;
 	--dm-surface: #fbfaf7;
 	--dm-sunk: #ebe6dd;

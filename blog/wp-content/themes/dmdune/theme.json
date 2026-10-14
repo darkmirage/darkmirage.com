@@ -48,10 +48,10 @@
 				{
 					"slug": "display",
 					"name": "Chakra Petch",
-					"fontFamily": "\"Chakra Petch\", \"Avenir Next\", \"Hiragino Sans\", system-ui, sans-serif",
+					"fontFamily": "\"Chakra Petch\", \"Chakra Petch Fallback\", \"Avenir Next\", \"Hiragino Sans\", system-ui, sans-serif",
 					"fontFace": [
-						{ "fontFamily": "Chakra Petch", "fontWeight": "500", "fontStyle": "normal", "fontDisplay": "swap", "src": [ "file:./assets/fonts/chakra-petch-latin-500-normal.woff2" ] },
-						{ "fontFamily": "Chakra Petch", "fontWeight": "600", "fontStyle": "normal", "fontDisplay": "swap", "src": [ "file:./assets/fonts/chakra-petch-latin-600-normal.woff2" ] }
+						{ "fontFamily": "Chakra Petch", "fontWeight": "500", "fontStyle": "normal", "fontDisplay": "block", "src": [ "file:./assets/fonts/chakra-petch-latin-500-normal.woff2" ] },
+						{ "fontFamily": "Chakra Petch", "fontWeight": "600", "fontStyle": "normal", "fontDisplay": "block", "src": [ "file:./assets/fonts/chakra-petch-latin-600-normal.woff2" ] }
 					]
 				},
 				{
@@ -62,10 +62,10 @@
 				{
 					"slug": "mono",
 					"name": "JetBrains Mono",
-					"fontFamily": "\"JetBrains Mono\", ui-monospace, Menlo, Consolas, monospace",
+					"fontFamily": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", ui-monospace, Menlo, Consolas, monospace",
 					"fontFace": [
-						{ "fontFamily": "JetBrains Mono", "fontWeight": "400", "fontStyle": "normal", "fontDisplay": "swap", "src": [ "file:./assets/fonts/jetbrains-mono-latin-400-normal.woff2" ] },
-						{ "fontFamily": "JetBrains Mono", "fontWeight": "500", "fontStyle": "normal", "fontDisplay": "swap", "src": [ "file:./assets/fonts/jetbrains-mono-latin-500-normal.woff2" ] }
+						{ "fontFamily": "JetBrains Mono", "fontWeight": "400", "fontStyle": "normal", "fontDisplay": "block", "src": [ "file:./assets/fonts/jetbrains-mono-latin-400-normal.woff2" ] },
+						{ "fontFamily": "JetBrains Mono", "fontWeight": "500", "fontStyle": "normal", "fontDisplay": "block", "src": [ "file:./assets/fonts/jetbrains-mono-latin-500-normal.woff2" ] }
 					]
 				}
 			]

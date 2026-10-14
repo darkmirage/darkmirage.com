@@ -4,7 +4,7 @@
    while the reader has picked this era. Banner art: assets/skins/blocks/ (all rights reserved).
    Jura: SIL OFL 1.1, assets/fonts/OFL-Jura.txt. */
 
-@font-face { font-family: "Jura"; font-weight: 300 700; font-display: swap; src: url("../../fonts/jura-latin-wght.woff2") format("woff2"); }
+@font-face { font-family: "Jura"; font-weight: 300 700; font-display: block; src: url("../../fonts/jura-latin-wght.woff2") format("woff2"); }
 
 :root[data-skin][data-skin] {
 	color-scheme: light;

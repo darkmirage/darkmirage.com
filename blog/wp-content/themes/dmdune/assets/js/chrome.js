@@ -103,9 +103,11 @@
 		requestAnimationFrame(function () { fitQueued = false; fitNav(); });
 	});
 	function start() {
-		fitNav();
 		label();
-		if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNav);
+		// Measured in the stand-in font, the links can fold into More only to come back out when the
+		// real font lands a moment later; that jump is worse than waiting for it.
+		if (document.fonts && document.fonts.ready && document.fonts.status !== 'loaded') document.fonts.ready.then(fitNav);
+		else fitNav();
 	}
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 	if (media.addEventListener) media.addEventListener('change', label);

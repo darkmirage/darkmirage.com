@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.9.1' );
+define( 'DMC_VERSION', '1.9.2' );
 
 require __DIR__ . '/skins.php';
 
@@ -123,6 +123,12 @@ function dmc_head_early(): void {
 		// Era skins are single-scheme, as the originals were.
 		printf( "<meta name=\"color-scheme\" content=\"light\">\n<script>document.documentElement.setAttribute('data-skin','%s');</script>\n", dmc_skin() );
 		return;
+	}
+	// The fonts are only found once chrome.css arrives (from www, for the subsites); asking now
+	// usually has them ready for the first paint.
+	$fonts = dmc_config()['assets'] . 'fonts/';
+	foreach ( array( 'chakra-petch-latin-500-normal', 'chakra-petch-latin-600-normal', 'jetbrains-mono-latin-400-normal' ) as $font ) {
+		printf( '<link rel="preload" href="%s.woff2" as="font" type="font/woff2" crossorigin>' . "\n", dmc_e( $fonts . $font ) );
 	}
 	echo '<meta name="color-scheme" content="light dark">' . "\n";
 	echo '<meta name="theme-color" content="#f2efe9" media="(prefers-color-scheme: light)">' . "\n";
