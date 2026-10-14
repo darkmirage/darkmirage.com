@@ -529,7 +529,7 @@ function dmdune_render_archive_head( array $attrs, WP_Block $block ): string {
 		$points = dmdune_year_points( dmdune_year_counts_for( 'term', $tt ), static fn( $y ) => add_query_arg( 'year', $y, $link ) );
 	} elseif ( is_year() ) {
 		$y      = (int) get_query_var( 'year' );
-		$code   = 'ARCHIVE · ' . strtoupper( str_replace( 'default', 'default2', dmdune_era( $y ) ) ) . ' ERA';
+		$code   = 'ARCHIVE · ' . strtoupper( strtr( dmdune_era( $y ), array( 'default' => 'default2', 'now' => 'dune' ) ) ) . ' ERA';
 		$title  = (string) $y;
 		$months = dmdune_month_counts()[ $y ] ?? array();
 		for ( $m = 1; $m <= 12; $m++ ) {

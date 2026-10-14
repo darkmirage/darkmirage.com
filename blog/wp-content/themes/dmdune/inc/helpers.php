@@ -258,6 +258,9 @@ add_action( 'wp_update_comment_count', 'dmdune_flush_counts' );
  * year WordPress arrived.
  */
 function dmdune_era( int $year, int $month = 0 ): string {
+	if ( $year >= (int) substr( DMC_DUNE_FROM, 0, 4 ) ) {
+		return 'now';
+	}
 	if ( $year <= 2004 || ( 2005 === $year && $month >= 1 && $month <= 10 ) ) {
 		return 'b2';
 	}

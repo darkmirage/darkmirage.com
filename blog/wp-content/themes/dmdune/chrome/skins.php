@@ -90,10 +90,18 @@ function dmc_b2_tagline( string $skin, string $date = '' ): string {
 }
 
 /**
+ * Posts from here on were written in Dune's era, so they have no older look to switch to.
+ */
+const DMC_DUNE_FROM = '2026-01-01 00:00:00';
+
+/**
  * The era a post written at $date ('Y-m-d H:i:s'; a bare date counts as its midnight) was first
  * shown in.
  */
 function dmc_skin_for_date( string $date ): string {
+	if ( $date >= DMC_DUNE_FROM ) {
+		return '';
+	}
 	$found = '';
 	foreach ( dmc_skins() as $key => $s ) {
 		if ( $date >= $s['from'] ) {
@@ -117,7 +125,7 @@ function dmc_skin_css( array $c ): string {
  */
 function dmc_era_buttons(): string {
 	$skin  = dmc_skin();
-	$stops = dmc_skins() + array( '' => array( 'name' => 'Dune', 'era' => 'Now', 'span' => 'Today', 'blurb' => 'Today’s design.' ) );
+	$stops = dmc_skins() + array( '' => array( 'name' => 'Dune', 'era' => 'Now', 'span' => '2026 – today', 'blurb' => 'Today’s design.' ) );
 	$out   = '';
 	$prev  = '';
 	foreach ( $stops as $key => $s ) {
