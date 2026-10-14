@@ -17,9 +17,10 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.10.2' );
+define( 'DMC_VERSION', '1.10.3' );
 
 require __DIR__ . '/skins.php';
+require __DIR__ . '/era-link.php';
 
 function dmc_e( $s ): string {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );

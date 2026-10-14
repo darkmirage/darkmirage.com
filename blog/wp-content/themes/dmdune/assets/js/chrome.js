@@ -41,7 +41,14 @@
 		var skin = era.getAttribute('data-dm-skin');
 		var domain = /(^|\.)darkmirage\.com$/.test(location.hostname) ? '; domain=.darkmirage.com' : '';
 		document.cookie = 'dm-skin=' + skin + '; path=/; SameSite=Lax' + domain + (skin ? '; max-age=31536000' : '; max-age=0');
-		location.reload();
+		// A shared ?era= link would otherwise win over the era just picked.
+		var url = new URL(location.href);
+		if (url.searchParams.has('era')) {
+			url.searchParams.delete('era');
+			location.replace(url.toString());
+		} else {
+			location.reload();
+		}
 	});
 
 	document.addEventListener('click', function (e) {
