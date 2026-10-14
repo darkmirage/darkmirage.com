@@ -1,0 +1,7 @@
+# Browser caching. Pages load these with ?v=<theme version>, so a deploy busts them; the few
+# unversioned images (icons, banners) rarely change.
+<IfModule mod_headers.c>
+	<FilesMatch "\.(css|js|woff2|jpe?g|png|gif|webp|svg)$">
+		Header set Cache-Control "public, max-age=2592000"
+	</FilesMatch>
+</IfModule>

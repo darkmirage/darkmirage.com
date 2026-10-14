@@ -16,3 +16,10 @@ RewriteCond %{ENV:REDIRECT_STATUS} ^$
 RewriteCond %{REQUEST_URI} !^/\.well-known/
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 </IfModule>
+
+# Browser caching. lyrics.css is versioned by its mtime; covers rarely change.
+<IfModule mod_headers.c>
+	<FilesMatch "\.(css|js|jpe?g|png|webp)$">
+		Header set Cache-Control "public, max-age=2592000"
+	</FilesMatch>
+</IfModule>
