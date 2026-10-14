@@ -147,10 +147,10 @@ function dmc_skin_era( string $key ): string {
 }
 
 /**
- * default2 showed one of its five headers, and one of its taglines, at random on every page load,
- * as it does here.
+ * default2, Kubrick DM and dmbrickv2 showed a random header (and default2 a random tagline) on
+ * every page load, as they do here. Blocks always opened on Miku.
  */
-function dmc_default2_pick( array $list ) {
+function dmc_pick_random( array $list ) {
 	return $list[ array_rand( $list ) ];
 }
 
@@ -225,9 +225,14 @@ function dmc_skin_header_html( array $c ): string {
 	$current = dmc_current( $c );
 	$b2      = dmc_is_b2();
 	$d2      = 'default2' === dmc_skin();
-	$banner  = $d2 ? dmc_default2_pick( array( 'sage', 'nerine', 'nanaka', 'haruhi', 'bakuten' ) ) : '';
+	$banner  = array(
+		'default2'  => array( 'sage', 'nerine', 'nanaka', 'haruhi', 'bakuten' ),
+		'kubrick'   => array( 'haruhi', 'tsuruya' ),
+		'dmbrickv2' => array( 'bunny', 'haruhi', 'rei', 'tsuruya', 'zettai' ),
+	)[ dmc_skin() ] ?? array();
+	$banner  = $banner ? dmc_pick_random( $banner ) : '';
 	if ( $d2 && 'blog' === $c['site'] && ! isset( $c['tagline'] ) ) {
-		$c['tagline'] = dmc_default2_pick( dmc_default2_taglines() );
+		$c['tagline'] = dmc_pick_random( dmc_default2_taglines() );
 	}
 	// Before WordPress the site was "DarkMirage's Weblog".
 	$title   = array(

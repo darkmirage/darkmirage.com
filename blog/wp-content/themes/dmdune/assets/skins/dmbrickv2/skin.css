@@ -15,8 +15,12 @@
 html[data-skin] body { background: #2f3f55 url("stripes.gif") repeat center top; }
 .bk-shell { border: 0; }
 .bk-banner { aspect-ratio: 790 / 225; background-image: url("banner-bunny.webp"); border-bottom-color: #000; }
-.bk-banner--lyrics { background-image: url("banner-rei.webp"); background-color: #5aa5ff; }
-.bk-banner--gallery { background-image: url("banner-zettai.webp"); }
+/* A random banner on every load, as the Randomize plugin did. Haruhi and Tsuruya are cut-out
+   figures that sat at the bottom right of the blue #top band. */
+.bk-banner[data-banner="rei"] { background-image: url("banner-rei.webp"); background-color: #5aa5ff; }
+.bk-banner[data-banner="zettai"] { background-image: url("banner-zettai.webp"); }
+.bk-banner[data-banner="haruhi"], .bk-banner[data-banner="tsuruya"] { background: #325e94 url("banner-haruhi.webp") right bottom / auto 100% no-repeat; }
+.bk-banner[data-banner="tsuruya"] { background-image: url("banner-tsuruya.webp"); }
 .bk-banner__text { top: 46%; }
 .bk-title { font-size: clamp(1.25rem, 3.9cqw, 2rem); }
 
