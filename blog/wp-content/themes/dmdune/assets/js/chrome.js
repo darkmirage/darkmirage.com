@@ -143,6 +143,14 @@
   }
   var tm = query(document, ".dm-tmw", HTMLElement);
   if (tm) {
+    const previews = () => {
+      for (const img of queryAll(tm, "img[data-dm-src]", HTMLImageElement)) {
+        img.src = img.getAttribute("data-dm-src") ?? "";
+        img.removeAttribute("data-dm-src");
+      }
+    };
+    if (tm.classList.contains("is-open")) previews();
+    else for (const type of ["pointerenter", "focusin", "click"]) tm.addEventListener(type, previews, { once: true });
     const btn = query(tm, ".dm-tmw__btn", HTMLElement);
     if (btn) timeMachine(tm, btn);
     const share = query(tm, ".dm-tmw__share", HTMLElement);

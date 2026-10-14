@@ -106,11 +106,19 @@ function dmdune_reading_minutes( WP_Post $post ): int {
  * Thumbnail for a post: its first image, or a tinted plate with the category name.
  */
 function dmdune_thumb( WP_Post $post, string $class = 'dm-thumb' ): string {
+	static $shown = 0;
 	$src = dmdune_first_image( $post );
 	if ( $src ) {
+		// The first few pictures on a page load as usual. Later ones wait for dmdune.js to fetch them
+		// as they near the screen: the browser's own lazy loading starts 1,250–2,500px early, which
+		// on the home page meant nearly every post's picture loaded up front.
+		// Editor previews (REST) and feeds have no dmdune.js, so they always get plain pictures.
+		$hold = ++$shown > 3 && ! is_admin() && ! is_feed() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST );
+		$attr = $hold ? 'data-dm-src="%2$s"' : 'src="%2$s" loading="lazy"';
+		$late = $hold ? '<noscript><img class="dm-media__img" src="%2$s" alt="" loading="lazy"></noscript>' : '';
 		// The blurred copy only shows when the picture is letterboxed (see .is-fit and dmdune.js).
 		return sprintf(
-			'<div class="%1$s dm-media%3$s"><img class="dm-media__bg" src="%2$s" alt="" aria-hidden="true" loading="lazy" decoding="async"><img class="dm-media__img" src="%2$s" alt="" loading="lazy" decoding="async"></div>',
+			'<div class="%1$s dm-media%3$s"><img class="dm-media__bg" ' . $attr . ' alt="" aria-hidden="true" decoding="async"><img class="dm-media__img" ' . $attr . ' alt="" decoding="async">' . $late . '</div>',
 			esc_attr( $class ),
 			esc_url( $src ),
 			false !== strpos( $src, '/hqdefault.jpg' ) ? ' dm-media--yt' : ''

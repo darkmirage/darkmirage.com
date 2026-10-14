@@ -95,7 +95,7 @@
       });
       dlg.appendChild(b);
     }
-    function show(i) {
+    function show2(i) {
       index = (i + set.length) % set.length;
       const a = set[index];
       if (!a) return;
@@ -111,10 +111,10 @@
     });
     if (set.length > 1) {
       button("dm-lightbox__prev", t("prev", "Previous picture"), "‹", () => {
-        show(index - 1);
+        show2(index - 1);
       });
       button("dm-lightbox__next", t("next", "Next picture"), "›", () => {
-        show(index + 1);
+        show2(index + 1);
       });
     }
     dlg.appendChild(fig);
@@ -122,22 +122,22 @@
       if (ev.target === dlg || ev.target === fig) dlg.close();
     });
     dlg.addEventListener("keydown", (ev) => {
-      if (ev.key === "ArrowLeft") show(index - 1);
-      if (ev.key === "ArrowRight") show(index + 1);
+      if (ev.key === "ArrowLeft") show2(index - 1);
+      if (ev.key === "ArrowRight") show2(index + 1);
     });
     let x0 = null;
     fig.addEventListener("pointerdown", (ev) => {
       x0 = ev.clientX;
     });
     fig.addEventListener("pointerup", (ev) => {
-      if (x0 !== null && set.length > 1 && Math.abs(ev.clientX - x0) > 50) show(index + (ev.clientX < x0 ? 1 : -1));
+      if (x0 !== null && set.length > 1 && Math.abs(ev.clientX - x0) > 50) show2(index + (ev.clientX < x0 ? 1 : -1));
       x0 = null;
     });
     dlg.addEventListener("close", () => {
       dlg.remove();
     });
     document.body.appendChild(dlg);
-    show(index);
+    show2(index);
     dlg.showModal();
   }
   function markGone(img) {
@@ -165,6 +165,26 @@
       tag.textContent = line;
       tag.lang = /[぀-ヿ一-鿿]/.test(line) ? "ja" : "en";
     }
+  }
+  var show = (box) => {
+    for (const img of queryAll(box, "img[data-dm-src]", HTMLImageElement)) {
+      const src = img.getAttribute("data-dm-src");
+      img.removeAttribute("data-dm-src");
+      if (src !== null) img.src = src;
+    }
+  };
+  var late = queryAll(document, ".dm-media__img[data-dm-src]", HTMLImageElement);
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        show(e.target.closest(".dm-media") ?? e.target.parentElement ?? document);
+      }
+    }, { rootMargin: "600px 0px" });
+    for (const img of late) io.observe(img);
+  } else {
+    for (const img of late) show(img.closest(".dm-media") ?? img.parentElement ?? document);
   }
   function fitMedia(img) {
     const box = img.parentElement;

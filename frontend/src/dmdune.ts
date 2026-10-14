@@ -127,6 +127,29 @@ if (tag) {
   }
 }
 
+// Post pictures the server held back (data-dm-src) load about a screen before they scroll into
+// view, together with their blurred backdrop copy.
+const show = (box: ParentNode): void => {
+  for (const img of queryAll(box, 'img[data-dm-src]', HTMLImageElement)) {
+    const src = img.getAttribute('data-dm-src');
+    img.removeAttribute('data-dm-src');
+    if (src !== null) img.src = src;
+  }
+};
+const late = queryAll(document, '.dm-media__img[data-dm-src]', HTMLImageElement);
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      show(e.target.closest('.dm-media') ?? e.target.parentElement ?? document);
+    }
+  }, { rootMargin: '600px 0px' });
+  for (const img of late) io.observe(img);
+} else {
+  for (const img of late) show(img.closest('.dm-media') ?? img.parentElement ?? document);
+}
+
 // Card pictures: crop to fill when that looks fine, otherwise show the whole picture letterboxed.
 function fitMedia(img: HTMLImageElement): void {
   const box = img.parentElement;

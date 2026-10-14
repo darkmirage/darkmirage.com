@@ -125,7 +125,7 @@ function dmc_era_buttons(): string {
 		$year = 'Now' === $s['era'] ? 'Now' : ( $s['era'] === $prev ? '' : '’' . substr( $s['era'], 2 ) );
 		$prev = $s['era'];
 		$out .= sprintf(
-			'<li class="dm-tm__stop" data-era="%1$s"><button type="button" data-dm-skin="%2$s"%3$s aria-label="%4$s, %5$s"><span class="dm-tm__dot"></span><span class="dm-tm__yr">%6$s</span></button><span class="dm-tm__card" aria-hidden="true"><img src="%7$s" alt="" width="230" height="144" loading="lazy" decoding="async"><b>%4$s</b><span class="dm-tm__span">%5$s</span><span class="dm-tm__blurb">%8$s</span></span></li>',
+			'<li class="dm-tm__stop" data-era="%1$s"><button type="button" data-dm-skin="%2$s"%3$s aria-label="%4$s, %5$s"><span class="dm-tm__dot"></span><span class="dm-tm__yr">%6$s</span></button><span class="dm-tm__card" aria-hidden="true"><img data-dm-src="%7$s" alt="" width="230" height="144" decoding="async"><b>%4$s</b><span class="dm-tm__span">%5$s</span><span class="dm-tm__blurb">%8$s</span></span></li>',
 			'' === $key ? 'now' : dmc_skin_era( $key ),
 			$key,
 			$skin === $key ? ' aria-pressed="true"' : '',
