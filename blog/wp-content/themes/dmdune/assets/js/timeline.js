@@ -1,781 +1,867 @@
-/*
- * The home page's zoomable timeline: every post from 2003 to 2013 in one continuous list, at
- * five levels of zoom (Years, Months, Titles, Cards, Posts), with a date scrubber on the right,
- * a "random" button and the current year pinned at the top.
- *
- * It opens at Posts, looking exactly like the plain home page: the server-rendered rows stay
- * where they are (so taking over moves nothing on screen) and the list simply carries on below
- * them. /wp-json/dmdune/v1/timeline gives one compact row per post (~55 KB gzipped).
- *
- * Performance: every generated row at a level has a fixed height, so each row's position is a
- * prefix sum and the row at any scroll offset is a binary search; nothing is measured while
- * scrolling. Only rows within a screen of the viewport exist in the DOM (well under 100 at any
- * zoom), placed with transforms. Excerpts load a year at a time; pictures load lazily. Zooming
- * keeps the post at the middle of the screen in place.
- */
-(function () {
-	'use strict';
-	var cfg = window.dmTimeline;
-	var feed = document.querySelector('.dm-feed');
-	var log = feed && feed.querySelector('.dm-log');
-	if (!cfg || !log || !window.fetch) return;
+/* Built from frontend/src by `npm run build`; edit the TypeScript there, not this file. */
+"use strict";
+(() => {
+  // src/lib/data.ts
+  function isRecord(v) {
+    return typeof v === "object" && v !== null && !Array.isArray(v);
+  }
+  function str(obj, key, fallback) {
+    if (!isRecord(obj)) return fallback;
+    const v = obj[key];
+    return typeof v === "string" ? v : fallback;
+  }
+  function num(obj, key, fallback) {
+    if (!isRecord(obj)) return fallback;
+    const v = obj[key];
+    const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+    return Number.isFinite(n) ? n : fallback;
+  }
+  function parseJson(text) {
+    const v = JSON.parse(text);
+    return v;
+  }
+  async function fetchJson(url, init) {
+    const r = await fetch(url, init);
+    if (!r.ok) throw new Error(`HTTP ${String(r.status)}`);
+    return parseJson(await r.text());
+  }
+  function isArray(v) {
+    return Array.isArray(v);
+  }
+  function orIfZero(n, fallback) {
+    return Number.isFinite(n) && n !== 0 ? n : fallback;
+  }
 
-	var LEVELS = ['Years', 'Months', 'Titles', 'Cards', 'Posts'];
-	var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-	var JA = { anime: 'アニメ', blog: 'ブログ', otaku: 'オタク', games: 'ゲーム', music: '音楽', money: 'お金', reviews: 'レビュー', tech: '技術', rant: '愚痴', figures: 'フィギュア', manga: '漫画', world: '世界', japanese: '日本語', news: 'ニュース' };
-	var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	var tz = (+cfg.tz || 0) * 1000;
+  // src/lib/dom.ts
+  function query(root, selector, type) {
+    const el = root.querySelector(selector);
+    return el instanceof type ? el : null;
+  }
+  function queryAll(root, selector, type) {
+    const out = [];
+    for (const el of root.querySelectorAll(selector)) if (el instanceof type) out.push(el);
+    return out;
+  }
+  function closest(target, selector, type) {
+    if (!(target instanceof Element)) return null;
+    const el = target.closest(selector);
+    return el instanceof type ? el : null;
+  }
 
-	var posts = [];
-	var level = 4;
-	var rows = [];
-	var offs = [];
-	var postRow = [];
-	var total = 0;
-	var nodes = new Map();
-	var excerpts = {};
-	var asked = {};
-	var head = [];   // the server-rendered rows (Posts level only): their <article>s, newest first
-	var root, canvas, ui, ctl, scrub, scrubThumb, bubble, label, btnOut, btnIn, stickyYear;
-	var canvasTop = 0;
-	var queued = false;
-	var settleTimer = 0;
-	var highlightId = 0;
-	var focus = -1;  // the post a zoom started from, so zooming back in returns to it
-
-	function esc(s) {
-		return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
-	}
-	function pad(n) { return n < 10 ? '0' + n : String(n); }
-	function docTop(el) {
-		var y = 0;
-		for (; el; el = el.offsetParent) y += el.offsetTop;
-		return y;
-	}
-
-	function parse(data) {
-		posts = data.map(function (r) {
-			var d = new Date(r[1] * 1000 + tz);
-			return {
-				id: r[0], title: r[2] || '(untitled)', cat: r[3], era: r[4], n: r[5], locked: !!r[6], thumb: r[7], url: r[8],
-				y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(),
-				date: d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate())
-			};
-		});
-	}
-
-	/* ---------- Layout: rows and their fixed heights for the current level ---------- */
-
-	var H = null;
-	/* Heights come from rendering a sample of each row type off screen, so they follow the CSS
-	   at every width. A post row takes the height of the server-rendered ones when they agree. */
-	function heights() {
-		var probe = document.createElement('div');
-		probe.className = 'tl-probe tl tl--l' + level;
-		probe.style.width = canvas.clientWidth + 'px';
-		canvas.appendChild(probe);
-		function measureHtml(t, extra) {
-			probe.innerHTML = '<div class="tl-row tl-row--' + t + '" style="position:static">' + html(extra) + '</div>';
-			var x = probe.querySelector('[data-x]');
-			if (x) x.textContent = new Array(60).join('wwww ');
-			return probe.firstChild.offsetHeight;
-		}
-		var sample = { id: 0, title: new Array(30).join('Wwww '), cat: 'blog', era: 'now', n: 9, locked: false, thumb: '', url: '#', y: 2013, m: 0, d: 1, date: '2013-01-01' };
-		posts.push(sample);
-		var p = posts.length - 1;
-		var h = {
-			yhdr: measureHtml('yhdr', { t: 'yhdr', y: 2013, p: p }),
-			post: measureHtml('post', { t: 'post', p: p }),
-			titleCss: (function (cs) { return { fontWeight: cs.fontWeight, fontSize: cs.fontSize, fontFamily: cs.fontFamily, lineHeight: cs.lineHeight }; })(getComputedStyle(probe.querySelector('.dm-tx__title'))),
-			titleWidth: probe.querySelector('.dm-tx__title').clientWidth,
-			card: measureHtml('card', { t: 'card', p: p }),
-			title: measureHtml('title', { t: 'title', p: p }),
-			mhdr: measureHtml('mhdr', { t: 'mhdr', y: 2013, m: 0, p: p }),
-			band: measureHtml('band', { t: 'band', y: 2013, m: 0, p: p, to: p + 1 }),
-			year0: measureHtml('year0', { t: 'year0', y: 2013, p: p, to: p + 1, months: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], top: p }),
-			end: 150
-		};
-		// Where a title's wrapping changes a post row's height (phones), rows are sized per title.
-		sample.title = 'W';
-		var one = measureHtml('post', { t: 'post', p: p });
-		var tc = h.titleCss;
-		h.titleFont = tc.fontWeight + ' ' + tc.fontSize + ' ' + tc.fontFamily;
-		h.titleLine = h.post > one ? parseFloat(tc.lineHeight) : 0;
-		delete h.titleCss;
-		h.postOne = one;
-		posts.pop();
-		probe.remove();
-		if (level === 4 && head.length) {
-			var hs = head.map(function (a) { return a.offsetHeight; });
-			if (!h.titleLine && hs.every(function (v) { return v === hs[0]; })) h.post = hs[0];
-		}
-		return h;
-	}
-
-	var ctx2d = null;
-	/* Lines a title wraps to in a post row, by measuring its words in the title font. */
-	function titleLines(p) {
-		ctx2d = ctx2d || document.createElement('canvas').getContext('2d');
-		ctx2d.font = H.titleFont;
-		var max = H.titleWidth;
-		var lines = 1, x = p.locked ? 19 : 0;
-		var space = ctx2d.measureText(' ').width;
-		p.title.split(/\s+/).forEach(function (word) {
-			var w = ctx2d.measureText(word).width;
-			if (w > max) {
-				// No spaces to break at (Japanese, long URLs): it breaks between characters.
-				for (var c = 0; c < word.length; c++) {
-					var cw = ctx2d.measureText(word[c]).width;
-					if (x + cw > max) { lines++; x = 0; }
-					x += cw;
-				}
-				x += space;
-				return;
-			}
-			if (x > 0 && x + w > max) { lines++; x = 0; }
-			x += w + space;
-		});
-		return Math.min(3, lines);
-	}
-	function postHeight(k) { return H.titleLine ? H.postOne + (titleLines(posts[k]) - 1) * H.titleLine : H.post; }
-
-	function postLevel() { return level === 4 && head.length > 0; }
-
-	function build() {
-		root.className = 'tl tl--l' + level;
-		ui.setAttribute('data-level', level);
-		feed.classList.toggle('tl-zoomed', !postLevel());
-		var h = H = heights();
-		rows = [];
-		postRow = new Array(posts.length);
-		var start = postLevel() ? head.length : 0;
-		var i = start;
-		while (i < posts.length) {
-			var y = posts[i].y;
-			var j = i;
-			while (j < posts.length && posts[j].y === y) j++;
-			if (level === 0) {
-				var months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-				var top = i;
-				for (var k = i; k < j; k++) { months[posts[k].m]++; if (!posts[k].locked && posts[k].n > posts[top].n) top = k; }
-				rows.push({ t: 'year0', y: y, p: i, to: j, months: months, top: top, h: h.year0 });
-				for (k = i; k < j; k++) postRow[k] = rows.length - 1;
-			} else {
-				// After the server-rendered rows the year carries on without a second marker.
-				if (i > 0 && i === start && posts[i - 1].y === y) {
-					// no marker
-				} else {
-					rows.push({ t: 'yhdr', y: y, p: i, h: h.yhdr });
-				}
-				var a = i;
-				while (a < j) {
-					var m = posts[a].m;
-					var b = a;
-					while (b < j && posts[b].m === m) b++;
-					if (level === 1) {
-						rows.push({ t: 'band', y: y, m: m, p: a, to: b, h: h.band });
-						for (k = a; k < b; k++) postRow[k] = rows.length - 1;
-					} else {
-						if (level === 2) rows.push({ t: 'mhdr', y: y, m: m, p: a, h: h.mhdr });
-						for (k = a; k < b; k++) {
-							rows.push({ t: level === 2 ? 'title' : level === 3 ? 'card' : 'post', p: k, h: level === 2 ? h.title : level === 3 ? h.card : postHeight(k) });
-							postRow[k] = rows.length - 1;
-						}
-					}
-					a = b;
-				}
-			}
-			i = j;
-		}
-		rows.push({ t: 'end', p: posts.length - 1, h: h.end });
-		offs = new Array(rows.length + 1);
-		offs[0] = 0;
-		for (var r = 0; r < rows.length; r++) offs[r + 1] = offs[r] + rows[r].h;
-		total = offs[rows.length];
-		canvas.style.height = total + 'px';
-		label.textContent = LEVELS[level];
-		btnOut.disabled = level === 0;
-		btnIn.disabled = level === 4;
-		nodes.forEach(function (n) { n.remove(); });
-		nodes.clear();
-		measure();
-	}
-
-	function rowAt(y) {
-		var lo = 0, hi = rows.length - 1;
-		while (lo < hi) {
-			var mid = (lo + hi + 1) >> 1;
-			if (offs[mid] <= y) lo = mid; else hi = mid - 1;
-		}
-		return lo;
-	}
-
-	/* Where post i's row starts on the page, and how tall it is. */
-	function postTop(i) { return postLevel() && i < head.length ? docTop(head[i]) : canvasTop + offs[postRow[i]]; }
-	function postH(i) { return postLevel() && i < head.length ? head[i].offsetHeight : rows[postRow[i]].h; }
-
-	/* ---------- Rows to HTML ---------- */
-
-	var LOCK = '<svg class="tl-lock" viewBox="0 0 24 24" width="13" height="13" aria-label="Locked" role="img"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-
-	function catLabel(p) {
-		if (!p.cat) return '';
-		var name = p.cat.charAt(0).toUpperCase() + p.cat.slice(1);
-		return '<span class="dm-cat" data-cat="' + esc(p.cat) + '">' + esc(name) + '</span>';
-	}
-	function title(p) { return (p.locked ? LOCK : '') + esc(p.title); }
-	function excerpt(p) {
-		if (p.locked || !p.id) return '';
-		var x = excerpts[p.y];
-		if (!x) { want(p.y); return ''; }
-		return esc(x[p.id] || '');
-	}
-	function signal(n) {
-		var bars = n ? Math.min(5, Math.max(1, Math.round(Math.log(n + 1) / Math.LN2))) : 0;
-		var s = '';
-		for (var i = 0; i < 5; i++) s += '<b class="' + (i < bars ? 'on' : '') + '" style="height:' + (4 + i * 3) + 'px"></b>';
-		return s;
-	}
-	function frame(p, cls) {
-		if (p.locked) return '<div class="' + cls + ' tl-locked"><span>' + LOCK + ' LOCKED</span></div>';
-		if (!p.thumb) return '<div class="' + cls + ' dm-tx__nosignal"><span>NO SIGNAL</span></div>';
-		return '<div class="' + cls + ' dm-media"><img class="dm-media__img" src="' + esc(p.thumb) + '" alt="" loading="lazy" decoding="async"></div>';
-	}
-
-	function html(r) {
-		var p = posts[r.p];
-		switch (r.t) {
-			case 'year0': {
-				var max = Math.max.apply(null, r.months) || 1;
-				var eras = [];
-				for (var q = r.p; q < r.to; q++) eras[posts[q].m] = eras[posts[q].m] || posts[q].era;
-				var era = posts[r.to - 1].era;
-				var bars = r.months.map(function (n, m) {
-					era = eras[m] || era;
-					return '<i data-era="' + esc(era) + '" style="--h:' + (n / max).toFixed(3) + '" title="' + MON[m] + ' ' + r.y + ': ' + n + '"></i>';
-				}).join('');
-				var top = posts[r.top];
-				return '<button type="button" class="tl-y0" data-zoom="1" data-p="' + r.p + '">' +
-					'<span class="tl-y0__year">' + r.y + '</span>' +
-					'<span class="tl-y0__spark" aria-hidden="true">' + bars + '</span>' +
-					'<span class="tl-y0__meta"><b>' + (r.to - r.p) + '</b> ' + (r.to - r.p === 1 ? 'post' : 'posts') + '<br><span>Most replies: ' + esc(top.title) + '</span></span></button>';
-			}
-			case 'yhdr':
-				return '<div class="dm-tx-year tl-yhdr" data-era="' + esc(p.era) + '"><a href="/' + r.y + '/">' + r.y + '</a><i aria-hidden="true"></i></div>';
-			case 'mhdr':
-				return '<div class="tl-mhdr"><span>' + MON[r.m].toUpperCase() + ' ' + r.y + '</span><i aria-hidden="true"></i></div>';
-			case 'band': {
-				var titles = [];
-				for (var k = r.p; k < r.to && titles.length < 3; k++) titles.push(title(posts[k]));
-				var n = r.to - r.p;
-				return '<button type="button" class="tl-band" data-zoom="2" data-era="' + esc(p.era) + '" data-p="' + r.p + '">' +
-					'<span class="tl-band__m">' + MON[r.m].toUpperCase() + '</span>' +
-					'<span class="tl-band__bar" style="--w:' + Math.min(1, n / 60).toFixed(3) + '"></span>' +
-					'<span class="tl-band__n">' + n + '</span>' +
-					'<span class="tl-band__titles">' + titles.join('<span class="dm-sep"> · </span>') + '</span></button>';
-			}
-			case 'title':
-				return '<a class="tl-title" data-era="' + esc(p.era) + '" href="' + esc(p.url) + '">' +
-					'<time>' + pad(p.d) + '</time><span class="tl-dot" data-cat="' + esc(p.cat) + '"></span>' +
-					'<span class="tl-title__t">' + title(p) + '</span>' +
-					(p.n ? '<span class="tl-title__n">' + p.n + '</span>' : '') + '</a>';
-			case 'card':
-				return '<article class="tl-card" data-era="' + esc(p.era) + '">' +
-					'<div class="tl-card__rail"><span class="tl-card__d">' + pad(p.d) + '</span><span class="tl-card__m">' + MON[p.m].toUpperCase() + '</span></div>' +
-					'<a class="tl-card__frame" href="' + esc(p.url) + '" tabindex="-1" aria-hidden="true">' + frame(p, 'tl-card__media') + '</a>' +
-					'<div class="tl-card__body"><p class="dm-tx__cat">' + catLabel(p) + '</p>' +
-					'<h3 class="tl-card__title"><a href="' + esc(p.url) + '">' + title(p) + '</a></h3>' +
-					'<p class="tl-card__ex" data-x="' + p.id + '">' + excerpt(p) + '</p></div></article>';
-			case 'post':
-				return '<article class="dm-tx tl-post" data-era="' + esc(p.era) + '">' +
-					'<div class="dm-tx__rail"><time datetime="' + p.date + '"><span class="dm-tx__day">' + pad(p.d) + '</span><span class="dm-tx__mon">' + MON[p.m].toUpperCase() + '</span></time><span class="dm-tx__no">TX·' + p.id + '</span></div>' +
-					'<a class="dm-tx__frame" href="' + esc(p.url) + '" tabindex="-1" aria-hidden="true">' + frame(p, 'dm-tx__media') + '<span class="dm-tx__scan"></span><span class="dm-tx__rec">REC ' + p.date.replace(/-/g, '.') + '</span></a>' +
-					'<div class="dm-tx__body"><p class="dm-tx__cat">' + catLabel(p) + (JA[p.cat] ? '<span class="dm-tx__ja" lang="ja">' + JA[p.cat] + '</span>' : '') + '</p>' +
-					'<h2 class="dm-tx__title"><a href="' + esc(p.url) + '">' + title(p) + '</a></h2>' +
-					'<p class="dm-tx__excerpt" data-x="' + p.id + '">' + excerpt(p) + '</p>' +
-					'<p class="dm-tx__meta"><span class="dm-tx__sig" aria-hidden="true">' + signal(p.n) + '</span><a href="' + esc(p.url) + '#comments">' + (p.n ? p.n + (p.n === 1 ? ' reply' : ' replies') : 'No replies') + '</a></p></div></article>';
-			case 'end':
-				return '<div class="tl-end"><b>2003.04.01</b> “This blog is live!” The first transmission. That’s everything.</div>';
-		}
-		return '';
-	}
-
-	/* ---------- Excerpts, a year at a time ---------- */
-
-	function want(y) {
-		if (asked[y]) return;
-		asked[y] = true;
-		fetch(cfg.api + (cfg.api.indexOf('?') < 0 ? '/excerpts?year=' : '/excerpts&year=') + y)
-			.then(function (r) { return r.json(); })
-			.then(function (x) {
-				excerpts[y] = x;
-				canvas.querySelectorAll('[data-x]').forEach(function (el) {
-					var id = el.getAttribute('data-x');
-					if (x[id] !== undefined && !el.textContent) el.textContent = x[id];
-				});
-			})
-			.catch(function () { asked[y] = false; });
-	}
-
-	/* ---------- Rendering the visible window ---------- */
-
-	// Offsets rather than getBoundingClientRect(), which would include the zoom's transform.
-	function measure() { canvasTop = docTop(canvas); }
-
-	function render() {
-		queued = false;
-		var top = window.scrollY - canvasTop;
-		var vh = window.innerHeight;
-		var a = rowAt(Math.max(0, top - vh));
-		var b = top + vh * 2 < 0 ? -1 : rowAt(top + vh * 2);
-		nodes.forEach(function (n, i) {
-			if (i < a || i > b) { n.remove(); nodes.delete(i); }
-		});
-		var frag = null;
-		for (var i = a; i <= b; i++) {
-			if (nodes.has(i)) continue;
-			var r = rows[i];
-			var el = document.createElement('div');
-			el.className = 'tl-row tl-row--' + r.t;
-			el.style.height = r.h + 'px';
-			el.style.transform = 'translateY(' + offs[i] + 'px)';
-			el.innerHTML = html(r);
-			if (r.t !== 'yhdr' && r.t !== 'mhdr' && r.t !== 'end' && posts[r.p].id === highlightId) el.classList.add('is-hit');
-			nodes.set(i, el);
-			(frag = frag || document.createDocumentFragment()).appendChild(el);
-		}
-		if (frag) canvas.appendChild(frag);
-		updateUi();
-	}
-	function queue() {
-		if (!queued) { queued = true; requestAnimationFrame(render); }
-		clearTimeout(settleTimer);
-		settleTimer = setTimeout(settle, 350);
-		flag('is-scrolling', true);
-	}
-
-	/* The post whose row is at page position y. */
-	function postAt(y) {
-		if (postLevel() && y < canvasTop) {
-			for (var s = head.length - 1; s > 0; s--) if (docTop(head[s]) <= y) return s;
-			return 0;
-		}
-		var r = rows[rowAt(Math.max(0, Math.min(total - 1, y - canvasTop)))];
-		return r ? r.p : 0;
-	}
-	function centerPost() { return postAt(window.scrollY + window.innerHeight / 2); }
-
-	/* Put post i's row at viewport position `screenY` (px from the top of the window). */
-	function scrollToPost(i, screenY) {
-		window.scrollTo(0, Math.max(0, postTop(i) - screenY));
-	}
-
-	/* ---------- Zoom, keeping the post in the middle of the screen where it is ---------- */
-
-	/* Out of the old level and into the new one, scaling about the middle of the screen so the
-	   change reads as a zoom (dir: 1 in, -1 out, 0 a jump). */
-	function fade(fn, dir) {
-		if (reduce) { fn(); return; }
-		var k = 0.04 * (dir || 0);
-		var els = [log, canvas];
-		function set(prop, v) { els.forEach(function (e) { e.style[prop] = v; }); }
-		function origin() {
-			els.forEach(function (e) { e.style.transformOrigin = '50% ' + Math.round(window.scrollY - docTop(e) + window.innerHeight / 2) + 'px'; });
-		}
-		origin();
-		set('transition', 'opacity 0.09s ease-in, transform 0.09s ease-in');
-		set('opacity', '0');
-		set('transform', 'scale(' + (1 + k) + ')');
-		setTimeout(function () {
-			fn();
-			set('transition', 'none');
-			origin();
-			set('transform', 'scale(' + (1 - k) + ')');
-			void canvas.offsetWidth;
-			set('transition', 'opacity 0.18s ease-out, transform 0.22s cubic-bezier(.2,.7,.3,1)');
-			set('opacity', '');
-			set('transform', '');
-		}, 90);
-	}
-
-	/* Zooming morphs each row from where its posts were to where they are now: zooming in, a
-	   month's band unfolds into its posts; zooming out, they fold back into it. The old rows on
-	   screen become ghosts in an overlay that stretch or shrink toward their posts' new place and
-	   fade, while the new rows grow out of their posts' old place. Only transform and opacity
-	   animate, on the few dozen rows on screen, so it all runs on the compositor. */
-	var morphing = null;
-	function snap() {
-		return { rows: rows, offs: offs, postRow: postRow, top: canvasTop, scroll: window.scrollY, head: postLevel() };
-	}
-	// Where post k sat in layout L, in viewport px: a share of its row when the row holds many posts.
-	function slice(L, k) {
-		if (L.head && k < head.length) {
-			var a = head[k].closest('li') || head[k];
-			return { top: docTop(a) - L.scroll, h: a.offsetHeight };
-		}
-		var i = L.postRow[k];
-		if (i === undefined) return null;
-		var r = L.rows[i], y = L.top + L.offs[i] - L.scroll;
-		if (r.to && r.to - r.p > 1) {
-			var h = r.h / (r.to - r.p);
-			return { top: y + h * (k - r.p), h: h };
-		}
-		return { top: y, h: r.h };
-	}
-	// Where a row's posts were (or will be) in layout L, as a move and a stretch from `top`/`h`.
-	// The stretch is capped so text never distorts far; the move covers the rest.
-	function toward(L, r, top, h, vh, lo, hi) {
-		var a = slice(L, r.p);
-		if (!a) return null;
-		var single = r.t === 'yhdr' || r.t === 'mhdr' || r.t === 'end';
-		var b = single || !r.to ? a : slice(L, r.to - 1) || a;
-		var y = single ? a.top - (r.t === 'end' ? 0 : h) : a.top;
-		var s = single ? 1 : Math.max(lo, Math.min(hi, (b.top + b.h - a.top) / h));
-		return { d: Math.max(-1.2 * vh, Math.min(1.2 * vh, y - top)), s: s };
-	}
-	function endMorph() {
-		if (!morphing) return;
-		morphing.anims.forEach(function (a) { a.cancel(); });
-		morphing.ov.remove();
-		morphing = null;
-	}
-	function morph(fn) {
-		endMorph();
-		var vh = window.innerHeight;
-		var A = snap();
-		var ov = document.createElement('div');
-		ov.className = root.className + ' tl-morph';
-		ov.setAttribute('aria-hidden', 'true');
-		var ghosts = [];
-		nodes.forEach(function (el, i) {
-			var b = el.getBoundingClientRect();
-			if (b.bottom < 0 || b.top > vh) return;
-			nodes.delete(i);
-			el.style.left = b.left + 'px';
-			el.style.width = b.width + 'px';
-			el.style.right = 'auto';
-			el.style.transform = 'translateY(' + b.top + 'px)';
-			el.classList.remove('is-hit');
-			ov.appendChild(el);
-			ghosts.push({ el: el, r: A.rows[i], top: b.top, h: b.height });
-		});
-		if (A.head) {
-			var wrap = document.createElement('ol');
-			wrap.className = log.className;
-			wrap.style.cssText = 'position:absolute;inset:0;margin:0;display:block!important';
-			ov.appendChild(wrap);
-			head.forEach(function (art, k) {
-				var li = art.closest('li') || art;
-				var b = li.getBoundingClientRect();
-				if (b.bottom < 0 || b.top > vh) return;
-				var c = li.cloneNode(true);
-				c.style.cssText = 'position:absolute;margin:0;top:0;left:' + b.left + 'px;width:' + b.width + 'px;transform:translateY(' + b.top + 'px)';
-				wrap.appendChild(c);
-				ghosts.push({ el: c, r: { t: 'post', p: k }, top: b.top, h: b.height });
-			});
-		}
-		document.body.appendChild(ov);
-		fn();
-		var B = snap();
-		var anims = [];
-		var ease = 'cubic-bezier(.2,.75,.25,1)';
-		ghosts.forEach(function (g) {
-			var t = toward(B, g.r, g.top, g.h, vh, 0.2, 2.5);
-			g.el.style.transformOrigin = '0 0';
-			var base = 'translateY(' + g.top + 'px)';
-			var end = t ? base + ' translateY(' + t.d + 'px) scaleY(' + t.s + ')' : base;
-			anims.push(g.el.animate([{ transform: base, opacity: 1 }, { transform: end, opacity: 0 }], { duration: 340, easing: ease, fill: 'forwards' }));
-		});
-		function enter(el, r, top, h, base) {
-			if (top + h < 0 || top > vh) return;
-			var t = toward(A, r, top, h, vh, 0.35, 2);
-			if (!t) return;
-			el.style.transformOrigin = '0 0';
-			var delay = Math.round(Math.min(1, Math.abs(top + h / 2 - vh / 2) / vh) * 90);
-			anims.push(el.animate([
-				{ transform: base + ' translateY(' + t.d + 'px) scaleY(' + t.s + ')', opacity: 0 },
-				{ opacity: 1, offset: 0.55 },
-				{ transform: base + ' translateY(0) scaleY(1)', opacity: 1 }
-			], { duration: 480, delay: delay, easing: ease, fill: 'backwards' }));
-		}
-		nodes.forEach(function (el, i) {
-			enter(el, B.rows[i], B.top + B.offs[i] - B.scroll, B.rows[i].h, 'translateY(' + B.offs[i] + 'px)');
-		});
-		if (B.head) head.forEach(function (art, k) {
-			var li = art.closest('li') || art;
-			var b = li.getBoundingClientRect();
-			enter(li, { t: 'post', p: k }, b.top, b.height, '');
-		});
-		var m = morphing = { ov: ov, anims: anims };
-		Promise.all(anims.map(function (a) { return a.finished.catch(function () {}); })).then(function () {
-			if (morphing === m) { ov.remove(); morphing = null; }
-		});
-	}
-
-	function zoom(to, anchor) {
-		to = Math.max(0, Math.min(4, to));
-		if (to === level && anchor === undefined) return;
-		var i = anchor !== undefined ? anchor : centerPost();
-		// A Months or Years row holds many posts; if it still holds the one we zoomed out from, go back to that.
-		if (anchor === undefined && focus >= 0 && postRow[focus] === postRow[i] && !(postLevel() && i < head.length)) i = focus;
-		else if (anchor !== undefined && focus >= 0 && postRow[focus] === postRow[anchor]) i = anchor = focus;
-		focus = i;
-		var screenY = postTop(i) - window.scrollY;
-		var frac = (window.innerHeight / 2 - screenY) / postH(i);
-		if (anchor !== undefined) { screenY = window.innerHeight * 0.3; frac = 0; }
-		(reduce ? function (f) { f(); } : morph)(function () {
-			level = to;
-			build();
-			var y = anchor !== undefined ? screenY : window.innerHeight / 2 - Math.max(0.05, Math.min(0.95, frac)) * postH(i);
-			scrollToPost(i, y);
-			render();
-			settle();
-		});
-	}
-
-	/* A random post, in Posts view (or Cards, if that's where the reader is). */
-	function random() {
-		var pool = [];
-		for (var i = 0; i < posts.length; i++) if (!posts[i].locked) pool.push(i);
-		var pick = pool[Math.floor(Math.random() * pool.length)];
-		highlightId = posts[pick].id;
-		var to = level === 3 ? 3 : 4;
-		fade(function () {
-			if (to !== level) { level = to; build(); }
-			nodes.forEach(function (n) { n.remove(); });
-			nodes.clear();
-			scrollToPost(pick, window.innerHeight * 0.28);
-			render();
-			if (postLevel() && pick < head.length) hit(head[pick].closest('li') || head[pick]);
-			settle();
-		}, 0);
-		setTimeout(function () { highlightId = 0; document.querySelectorAll('.is-hit').forEach(function (n) { n.classList.remove('is-hit'); }); }, 2400);
-	}
-	function hit(el) { el.classList.add('is-hit'); }
-
-	function step(dir) {
-		var i = Math.max(0, Math.min(posts.length - 1, centerPost() + dir));
-		scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
-	}
-
-	/* ---------- Scrubber: years spaced by how many posts they hold ---------- */
-
-	function buildScrub() {
-		scrub = document.createElement('div');
-		scrub.className = 'tl-scrub';
-		scrub.setAttribute('aria-hidden', 'true');
-		var html = '';
-		var seen = {};
-		var last = -1;
-		posts.forEach(function (p, i) {
-			if (seen[p.y]) return;
-			seen[p.y] = 1;
-			// The quiet later years are only a sliver of the rail; label them only where there's room.
-			if (last >= 0 && (i - last) / posts.length < 0.035) return;
-			last = i;
-			html += '<span class="tl-scrub__y" data-p="' + i + '" style="top:' + (i / posts.length * 100).toFixed(2) + '%">' + "'" + String(p.y).slice(2) + '</span>';
-		});
-		scrub.innerHTML = '<div class="tl-scrub__track">' + html + '<span class="tl-scrub__thumb"></span><span class="tl-scrub__bubble"></span></div>';
-		ui.appendChild(scrub);
-		scrubThumb = scrub.querySelector('.tl-scrub__thumb');
-		bubble = scrub.querySelector('.tl-scrub__bubble');
-		var track = scrub.querySelector('.tl-scrub__track');
-		var dragging = false;
-		function at(e) {
-			var b = track.getBoundingClientRect();
-			var f = Math.max(0, Math.min(1, (e.clientY - b.top) / b.height));
-			var i = Math.min(posts.length - 1, Math.floor(f * posts.length));
-			bubble.textContent = MON[posts[i].m] + ' ' + posts[i].y;
-			bubble.style.top = (f * 100) + '%';
-			scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
-		}
-		track.addEventListener('pointerdown', function (e) {
-			dragging = true;
-			track.setPointerCapture(e.pointerId);
-			scrub.classList.add('is-dragging');
-			var y = e.target.closest('.tl-scrub__y');
-			if (y) {
-				var i = +y.getAttribute('data-p');
-				scrollToPost(i, Math.max(90, window.innerHeight * 0.18));
-				bubble.textContent = posts[i].y;
-				return;
-			}
-			at(e);
-		});
-		track.addEventListener('pointermove', function (e) { if (dragging) at(e); });
-		function end() { dragging = false; scrub.classList.remove('is-dragging'); }
-		track.addEventListener('pointerup', end);
-		track.addEventListener('pointercancel', end);
-	}
-
-	function flag(name, on) {
-		ui.classList.toggle(name, on);
-		ctl.classList.toggle(name, on);
-	}
-
-	/* Scrubber position, the pinned year, and whether the reader is deep enough in to show them. */
-	function headerBottom() {
-		var hdr = document.querySelector('.dm-header');
-		return hdr ? Math.max(0, hdr.getBoundingClientRect().bottom) : 0;
-	}
-	function updateUi() {
-		var i = centerPost();
-		var firstRow = postTop(Math.min(3, posts.length - 1));
-		// Past the first few posts (or anywhere once zoomed), the scrubber and controls wake up.
-		flag('is-deep', level !== 4 || window.scrollY + window.innerHeight / 2 > firstRow);
-		flag('is-in', level !== 4 || docTop(log) - window.scrollY < window.innerHeight * 0.4);
-		flag('is-off', window.scrollY + window.innerHeight < docTop(postLevel() ? log : canvas));
-		scrubThumb.style.top = (i / posts.length * 100) + '%';
-		if (scrubThumb.getAttribute('data-era') !== posts[i].era) scrubThumb.setAttribute('data-era', posts[i].era);
-		if (!scrub.classList.contains('is-dragging')) bubble.textContent = MON[posts[i].m] + ' ' + posts[i].y;
-
-		var hb = headerBottom();
-		var y = window.scrollY + hb + 8;
-		var listTop = postLevel() ? docTop(log) : canvasTop;
-		var show = level !== 0 && y > listTop + 40;
-		if (show) {
-			var p = posts[postAt(y)];
-			var a = stickyYear.firstChild;
-			if (a.textContent !== String(p.y)) { a.textContent = p.y; a.href = '/' + p.y + '/'; }
-			stickyYear.setAttribute('data-era', level === 1 ? '' : p.era);
-			stickyYear.style.top = hb + 'px';
-			stickyYear.style.left = Math.round(root.getBoundingClientRect().left) + 'px';
-			// Step aside while the year's own marker passes underneath.
-			var near = canvas.querySelectorAll('.tl-yhdr, .dm-tx-year');
-			var mark = log.querySelectorAll('.dm-tx-year');
-			[].concat([].slice.call(near), postLevel() ? [].slice.call(mark) : []).forEach(function (m) {
-				var b = m.getBoundingClientRect();
-				if (b.bottom > hb - 10 && b.top < hb + stickyYear.offsetHeight + 24) show = false;
-			});
-		}
-		stickyYear.classList.toggle('is-on', show);
-	}
-
-	/* ---------- Deep links: ?at=YYYY-MM-DD&z=N ---------- */
-
-	function settle() {
-		flag('is-scrolling', false);
-		var url = new URL(location.href);
-		var i = centerPost();
-		// Reading the first page as a plain home page keeps the address plain too.
-		if (level === 4 && (i < Math.min(head.length, 12) || window.scrollY + window.innerHeight / 2 < docTop(log))) {
-			url.searchParams.delete('at');
-			url.searchParams.delete('z');
-		} else {
-			url.searchParams.set('at', posts[i].date);
-			url.searchParams.set('z', String(level));
-		}
-		if (url.href !== location.href) history.replaceState(history.state, '', url.href);
-	}
-
-	/* ---------- Controls ---------- */
-
-	function icon(d) { return '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
-	function buildControls() {
-		var c = document.createElement('div');
-		c.className = 'tl-ctl';
-		c.setAttribute('role', 'toolbar');
-		c.setAttribute('aria-label', 'Timeline zoom');
-		c.innerHTML =
-			'<button type="button" class="tl-ctl__out" aria-label="Zoom out" title="Zoom out (−)">' + icon('<path d="M5 12h14"/>') + '</button>' +
-			'<span class="tl-ctl__level" aria-live="polite"></span>' +
-			'<button type="button" class="tl-ctl__in" aria-label="Zoom in" title="Zoom in (+)">' + icon('<path d="M12 5v14M5 12h14"/>') + '</button>' +
-			'<button type="button" class="tl-ctl__rand" aria-label="Random post" title="Random post (R)">' + icon('<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/>') + '</button>';
-		ctl = c;
-		// Wide screens: in the header beside search, where it covers nothing. Otherwise it floats.
-		var tools = document.querySelector('.dm-nav__tools');
-		var wide = window.matchMedia('(min-width: 1240px)');
-		function place() {
-			if (wide.matches && tools) { tools.insertBefore(c, tools.firstChild); c.classList.add('tl-ctl--nav'); }
-			else { ui.appendChild(c); c.classList.remove('tl-ctl--nav'); }
-		}
-		place();
-		if (wide.addEventListener) wide.addEventListener('change', place);
-		label = c.querySelector('.tl-ctl__level');
-		btnOut = c.querySelector('.tl-ctl__out');
-		btnIn = c.querySelector('.tl-ctl__in');
-		btnOut.addEventListener('click', function () { zoom(level - 1); });
-		btnIn.addEventListener('click', function () { zoom(level + 1); });
-		c.querySelector('.tl-ctl__rand').addEventListener('click', random);
-	}
-
-	/* ---------- Start ---------- */
-
-	function start(data) {
-		parse(data);
-		if (!posts.length) return;
-		// The server-rendered rows stay only if they are exactly the newest posts, in order.
-		var arts = [].slice.call(log.querySelectorAll('.dm-tx'));
-		var ok = arts.length > 0 && arts.every(function (a, k) {
-			var no = a.querySelector('.dm-tx__no');
-			return no && posts[k] && posts[k].id === parseInt(no.textContent.replace(/\D/g, ''), 10);
-		});
-		head = ok ? arts : [];
-
-		var q = new URLSearchParams(location.search);
-		if (q.has('z')) level = Math.max(0, Math.min(4, parseInt(q.get('z'), 10) || 0));
-		var at = q.get('at');
-
-		root = document.createElement('div');
-		canvas = document.createElement('div');
-		canvas.className = 'tl-canvas';
-		root.appendChild(canvas);
-		ui = document.createElement('div');
-		ui.className = 'tl-ui';
-		stickyYear = document.createElement('div');
-		stickyYear.className = 'tl-year dm-tx-year';
-		stickyYear.setAttribute('aria-hidden', 'true');
-		stickyYear.innerHTML = '<a tabindex="-1" href="#"></a>';
-		ui.appendChild(stickyYear);
-		buildControls();
-		buildScrub();
-		document.body.appendChild(ui);
-		// Below the server-rendered rows, so nothing already on screen moves.
-		log.parentNode.insertBefore(root, log.nextSibling);
-		feed.classList.add('tl-host');
-		build();
-		if (at) {
-			var i = posts.findIndex(function (p) { return p.date <= at; });
-			if (i < 0) i = posts.length - 1;
-			scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
-		}
-		render();
-
-		window.addEventListener('scroll', queue, { passive: true });
-		var rt = 0;
-		var lastW = window.innerWidth;
-		window.addEventListener('resize', function () {
-			if (window.innerWidth === lastW) { queue(); return; } // phones resize height as their toolbars slide
-			lastW = window.innerWidth;
-			clearTimeout(rt);
-			rt = setTimeout(function () {
-				var i = centerPost();
-				build();
-				scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
-				render();
-			}, 150);
-		});
-		root.addEventListener('click', function (e) {
-			var z = e.target.closest('[data-zoom]');
-			if (z) zoom(+z.getAttribute('data-zoom'), +z.getAttribute('data-p'));
-		});
-		document.addEventListener('keydown', function (e) {
-			if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(e.target.tagName || '') || e.target.isContentEditable) return;
-			if (window.scrollY + window.innerHeight < docTop(postLevel() ? log : canvas)) return;
-			var k = e.key;
-			if (k === '+' || k === '=') zoom(level + 1);
-			else if (k === '-' || k === '_') zoom(level - 1);
-			else if (k === 'r' || k === 'R') random();
-			else if (k === 'j' || k === 'J') step(1);
-			else if (k === 'k' || k === 'K') step(-1);
-			else return;
-			e.preventDefault();
-		});
-		document.dispatchEvent(new CustomEvent('dm:timeline-ready', { detail: { posts: posts.length } }));
-	}
-
-	fetch(cfg.api, { credentials: 'same-origin' })
-		.then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-		.then(function (data) { return (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () { start(data); }); })
-		.catch(function () { /* Keep the server-rendered page. */ });
+  // src/timeline.ts
+  var LEVELS = ["Years", "Months", "Titles", "Cards", "Posts"];
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var JA = { anime: "アニメ", blog: "ブログ", otaku: "オタク", games: "ゲーム", music: "音楽", money: "お金", reviews: "レビュー", tech: "技術", rant: "愚痴", figures: "フィギュア", manga: "漫画", world: "世界", japanese: "日本語", news: "ニュース" };
+  function toLevel(n) {
+    return n <= 0 ? 0 : n >= 4 ? 4 : n === 1 ? 1 : n === 2 ? 2 : 3;
+  }
+  function mon(m) {
+    return MON[m] ?? "";
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, (c) => c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;");
+  }
+  function pad(n) {
+    return n < 10 ? `0${String(n)}` : String(n);
+  }
+  function docTop(start) {
+    let y = 0;
+    for (let el = start; el instanceof HTMLElement; el = el.offsetParent) y += el.offsetTop;
+    return y;
+  }
+  function parsePost(r, tz2) {
+    if (!isArray(r)) return null;
+    const [id, ts, title, cat, era, n, locked, thumb, url] = r;
+    if (typeof id !== "number" || typeof ts !== "number" || typeof title !== "string" || typeof cat !== "string" || typeof era !== "string" || typeof n !== "number" || typeof thumb !== "string" || typeof url !== "string") return null;
+    const d = new Date(ts * 1e3 + tz2);
+    return {
+      id,
+      title: title !== "" ? title : "(untitled)",
+      cat,
+      era,
+      n,
+      locked: locked === 1 || locked === true,
+      thumb,
+      url,
+      y: d.getUTCFullYear(),
+      m: d.getUTCMonth(),
+      d: d.getUTCDate(),
+      date: `${String(d.getUTCFullYear())}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+    };
+  }
+  function parseExcerpts(x) {
+    const out = /* @__PURE__ */ new Map();
+    if (!isRecord(x)) return out;
+    for (const [k, v] of Object.entries(x)) if (typeof v === "string") out.set(Number(k), v);
+    return out;
+  }
+  function run(api2, feed2, log2, posts) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const post = (i) => {
+      const p = posts[i];
+      if (!p) throw new RangeError(`no post ${String(i)}`);
+      return p;
+    };
+    const arts = queryAll(log2, ".dm-tx", HTMLElement);
+    const ok = arts.length > 0 && arts.every((a, k) => {
+      const no = query(a, ".dm-tx__no", HTMLElement);
+      return no !== null && posts[k]?.id === parseInt(no.textContent.replace(/\D/g, ""), 10);
+    });
+    const head = ok ? arts : [];
+    const headEl = (k) => {
+      const a = head[k];
+      if (!a) throw new RangeError(`no server row ${String(k)}`);
+      return a.closest("li") ?? a;
+    };
+    let level = 4;
+    let rows = [];
+    let offs = [0];
+    let postRow = [];
+    let total = 0;
+    const nodes = /* @__PURE__ */ new Map();
+    const excerpts = /* @__PURE__ */ new Map();
+    const asked = /* @__PURE__ */ new Set();
+    let canvasTop = 0;
+    let queued = false;
+    let settleTimer = 0;
+    let highlightId = 0;
+    let focus = -1;
+    const row = (i) => {
+      const r = rows[i];
+      if (!r) throw new RangeError(`no row ${String(i)}`);
+      return r;
+    };
+    const off = (i) => offs[i] ?? total;
+    const root = document.createElement("div");
+    const canvas = document.createElement("div");
+    canvas.className = "tl-canvas";
+    root.appendChild(canvas);
+    const ui = document.createElement("div");
+    ui.className = "tl-ui";
+    const stickyYear = document.createElement("div");
+    stickyYear.className = "tl-year dm-tx-year";
+    stickyYear.setAttribute("aria-hidden", "true");
+    const stickyLink = document.createElement("a");
+    stickyLink.tabIndex = -1;
+    stickyLink.href = "#";
+    stickyYear.appendChild(stickyLink);
+    ui.appendChild(stickyYear);
+    function icon(d) {
+      return `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    }
+    function ctlButton(cls, labelText, title2, svg) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = cls;
+      b.setAttribute("aria-label", labelText);
+      b.title = title2;
+      b.innerHTML = icon(svg);
+      return b;
+    }
+    const ctl = document.createElement("div");
+    ctl.className = "tl-ctl";
+    ctl.setAttribute("role", "toolbar");
+    ctl.setAttribute("aria-label", "Timeline zoom");
+    const btnOut = ctlButton("tl-ctl__out", "Zoom out", "Zoom out (−)", '<path d="M5 12h14"/>');
+    const label = document.createElement("span");
+    label.className = "tl-ctl__level";
+    label.setAttribute("aria-live", "polite");
+    const btnIn = ctlButton("tl-ctl__in", "Zoom in", "Zoom in (+)", '<path d="M12 5v14M5 12h14"/>');
+    const btnRand = ctlButton("tl-ctl__rand", "Random post", "Random post (R)", '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/>');
+    ctl.append(btnOut, label, btnIn, btnRand);
+    const scrub = document.createElement("div");
+    scrub.className = "tl-scrub";
+    scrub.setAttribute("aria-hidden", "true");
+    const track = document.createElement("div");
+    track.className = "tl-scrub__track";
+    const scrubThumb = document.createElement("span");
+    scrubThumb.className = "tl-scrub__thumb";
+    const bubble = document.createElement("span");
+    bubble.className = "tl-scrub__bubble";
+    scrub.appendChild(track);
+    let H = { yhdr: 0, post: 0, postOne: 0, titleLine: 0, titleFont: "", titleWidth: 0, card: 0, title: 0, mhdr: 0, band: 0, year0: 0, end: 150 };
+    function heights() {
+      const probe = document.createElement("div");
+      probe.className = `tl-probe tl tl--l${String(level)}`;
+      probe.style.width = `${String(canvas.clientWidth)}px`;
+      canvas.appendChild(probe);
+      function measureHtml(r) {
+        const box = document.createElement("div");
+        box.className = `tl-row tl-row--${r.t}`;
+        box.style.position = "static";
+        box.innerHTML = html(r);
+        probe.replaceChildren(box);
+        const x = query(probe, "[data-x]", HTMLElement);
+        if (x) x.textContent = "wwww ".repeat(59);
+        return box.offsetHeight;
+      }
+      const sample = { id: 0, title: "Wwww ".repeat(29), cat: "blog", era: "now", n: 9, locked: false, thumb: "", url: "#", y: 2013, m: 0, d: 1, date: "2013-01-01" };
+      posts.push(sample);
+      const p = posts.length - 1;
+      const yhdr = measureHtml({ t: "yhdr", y: 2013, p, h: 0 });
+      const full = measureHtml({ t: "post", p, h: 0 });
+      const titleEl = query(probe, ".dm-tx__title", HTMLElement);
+      const tc = titleEl ? getComputedStyle(titleEl) : null;
+      const h = {
+        yhdr,
+        post: full,
+        postOne: full,
+        titleLine: 0,
+        titleFont: tc ? `${tc.fontWeight} ${tc.fontSize} ${tc.fontFamily}` : "",
+        titleWidth: titleEl ? titleEl.clientWidth : 0,
+        card: measureHtml({ t: "card", p, h: 0 }),
+        title: measureHtml({ t: "title", p, h: 0 }),
+        mhdr: measureHtml({ t: "mhdr", y: 2013, m: 0, p, h: 0 }),
+        band: measureHtml({ t: "band", y: 2013, m: 0, p, to: p + 1, h: 0 }),
+        year0: measureHtml({ t: "year0", y: 2013, p, to: p + 1, months: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], top: p, h: 0 }),
+        end: 150
+      };
+      sample.title = "W";
+      h.postOne = measureHtml({ t: "post", p, h: 0 });
+      h.titleLine = tc && h.post > h.postOne ? orIfZero(parseFloat(tc.lineHeight), 0) : 0;
+      posts.pop();
+      probe.remove();
+      if (level === 4 && head.length > 0) {
+        const hs = head.map((a) => a.offsetHeight);
+        const first = hs[0];
+        if (h.titleLine === 0 && first !== void 0 && hs.every((v) => v === first)) h.post = first;
+      }
+      return h;
+    }
+    let ctx2d = null;
+    function titleLines(p) {
+      ctx2d ?? (ctx2d = document.createElement("canvas").getContext("2d"));
+      if (!ctx2d) return 1;
+      const c2 = ctx2d;
+      c2.font = H.titleFont;
+      const max = H.titleWidth;
+      let lines = 1, x = p.locked ? 19 : 0;
+      const space = c2.measureText(" ").width;
+      for (const word of p.title.split(/\s+/)) {
+        const w = c2.measureText(word).width;
+        if (w > max) {
+          for (const ch of word) {
+            const cw = c2.measureText(ch).width;
+            if (x + cw > max) {
+              lines++;
+              x = 0;
+            }
+            x += cw;
+          }
+          x += space;
+          continue;
+        }
+        if (x > 0 && x + w > max) {
+          lines++;
+          x = 0;
+        }
+        x += w + space;
+      }
+      return Math.min(3, lines);
+    }
+    function postHeight(k) {
+      return H.titleLine > 0 ? H.postOne + (titleLines(post(k)) - 1) * H.titleLine : H.post;
+    }
+    function postLevel() {
+      return level === 4 && head.length > 0;
+    }
+    function build() {
+      root.className = `tl tl--l${String(level)}`;
+      ui.setAttribute("data-level", String(level));
+      feed2.classList.toggle("tl-zoomed", !postLevel());
+      const h = H = heights();
+      rows = [];
+      postRow = new Array(posts.length);
+      const start = postLevel() ? head.length : 0;
+      let i = start;
+      while (i < posts.length) {
+        const y = post(i).y;
+        let j = i;
+        while (j < posts.length && post(j).y === y) j++;
+        if (level === 0) {
+          const months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          let top = i;
+          for (let k = i; k < j; k++) {
+            const p = post(k);
+            months[p.m] = (months[p.m] ?? 0) + 1;
+            if (!p.locked && p.n > post(top).n) top = k;
+          }
+          rows.push({ t: "year0", y, p: i, to: j, months, top, h: h.year0 });
+          for (let k = i; k < j; k++) postRow[k] = rows.length - 1;
+        } else {
+          if (!(i > 0 && i === start && post(i - 1).y === y)) rows.push({ t: "yhdr", y, p: i, h: h.yhdr });
+          let a = i;
+          while (a < j) {
+            const m = post(a).m;
+            let b = a;
+            while (b < j && post(b).m === m) b++;
+            if (level === 1) {
+              rows.push({ t: "band", y, m, p: a, to: b, h: h.band });
+              for (let k = a; k < b; k++) postRow[k] = rows.length - 1;
+            } else {
+              if (level === 2) rows.push({ t: "mhdr", y, m, p: a, h: h.mhdr });
+              for (let k = a; k < b; k++) {
+                rows.push(level === 2 ? { t: "title", p: k, h: h.title } : level === 3 ? { t: "card", p: k, h: h.card } : { t: "post", p: k, h: postHeight(k) });
+                postRow[k] = rows.length - 1;
+              }
+            }
+            a = b;
+          }
+        }
+        i = j;
+      }
+      rows.push({ t: "end", p: posts.length - 1, h: h.end });
+      offs = [0];
+      let sum = 0;
+      for (const r of rows) {
+        sum += r.h;
+        offs.push(sum);
+      }
+      total = sum;
+      canvas.style.height = `${String(total)}px`;
+      label.textContent = LEVELS[level];
+      btnOut.disabled = level === 0;
+      btnIn.disabled = level === 4;
+      for (const n of nodes.values()) n.remove();
+      nodes.clear();
+      measure();
+    }
+    function rowAt(y) {
+      let lo = 0, hi = rows.length - 1;
+      while (lo < hi) {
+        const mid = lo + hi + 1 >> 1;
+        if (off(mid) <= y) lo = mid;
+        else hi = mid - 1;
+      }
+      return lo;
+    }
+    function postTop(i) {
+      if (postLevel() && i < head.length) return docTop(headEl(i));
+      return canvasTop + off(postRow[i] ?? 0);
+    }
+    function postH(i) {
+      if (postLevel() && i < head.length) return headEl(i).offsetHeight;
+      return rows[postRow[i] ?? -1]?.h ?? 0;
+    }
+    const LOCK = '<svg class="tl-lock" viewBox="0 0 24 24" width="13" height="13" aria-label="Locked" role="img"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+    function catLabel(p) {
+      if (p.cat === "") return "";
+      const name = p.cat.charAt(0).toUpperCase() + p.cat.slice(1);
+      return `<span class="dm-cat" data-cat="${esc(p.cat)}">${esc(name)}</span>`;
+    }
+    function title(p) {
+      return (p.locked ? LOCK : "") + esc(p.title);
+    }
+    function excerpt(p) {
+      if (p.locked || p.id === 0) return "";
+      const x = excerpts.get(p.y);
+      if (!x) {
+        want(p.y);
+        return "";
+      }
+      return esc(x.get(p.id) ?? "");
+    }
+    function signal(n) {
+      const bars = n > 0 ? Math.min(5, Math.max(1, Math.round(Math.log(n + 1) / Math.LN2))) : 0;
+      let s = "";
+      for (let i = 0; i < 5; i++) s += `<b class="${i < bars ? "on" : ""}" style="height:${String(4 + i * 3)}px"></b>`;
+      return s;
+    }
+    function frame(p, cls) {
+      if (p.locked) return `<div class="${cls} tl-locked"><span>${LOCK} LOCKED</span></div>`;
+      if (p.thumb === "") return `<div class="${cls} dm-tx__nosignal"><span>NO SIGNAL</span></div>`;
+      return `<div class="${cls} dm-media"><img class="dm-media__img" src="${esc(p.thumb)}" alt="" loading="lazy" decoding="async"></div>`;
+    }
+    function html(r) {
+      var _a;
+      const p = post(r.p);
+      switch (r.t) {
+        case "year0": {
+          const max = orIfZero(Math.max(...r.months), 1);
+          const eras = [];
+          for (let q2 = r.p; q2 < r.to; q2++) {
+            const e = post(q2);
+            eras[_a = e.m] ?? (eras[_a] = e.era);
+          }
+          let era = post(r.to - 1).era;
+          const bars = r.months.map((n, m) => {
+            era = eras[m] ?? era;
+            return `<i data-era="${esc(era)}" style="--h:${(n / max).toFixed(3)}" title="${mon(m)} ${String(r.y)}: ${String(n)}"></i>`;
+          }).join("");
+          const count = r.to - r.p;
+          return `<button type="button" class="tl-y0" data-zoom="1" data-p="${String(r.p)}"><span class="tl-y0__year">${String(r.y)}</span><span class="tl-y0__spark" aria-hidden="true">${bars}</span><span class="tl-y0__meta"><b>${String(count)}</b> ${count === 1 ? "post" : "posts"}<br><span>Most replies: ${esc(post(r.top).title)}</span></span></button>`;
+        }
+        case "yhdr":
+          return `<div class="dm-tx-year tl-yhdr" data-era="${esc(p.era)}"><a href="/${String(r.y)}/">${String(r.y)}</a><i aria-hidden="true"></i></div>`;
+        case "mhdr":
+          return `<div class="tl-mhdr"><span>${mon(r.m).toUpperCase()} ${String(r.y)}</span><i aria-hidden="true"></i></div>`;
+        case "band": {
+          const titles = [];
+          for (let k = r.p; k < r.to && titles.length < 3; k++) titles.push(title(post(k)));
+          const n = r.to - r.p;
+          return `<button type="button" class="tl-band" data-zoom="2" data-era="${esc(p.era)}" data-p="${String(r.p)}"><span class="tl-band__m">${mon(r.m).toUpperCase()}</span><span class="tl-band__bar" style="--w:${Math.min(1, n / 60).toFixed(3)}"></span><span class="tl-band__n">${String(n)}</span><span class="tl-band__titles">${titles.join('<span class="dm-sep"> · </span>')}</span></button>`;
+        }
+        case "title":
+          return `<a class="tl-title" data-era="${esc(p.era)}" href="${esc(p.url)}"><time>${pad(p.d)}</time><span class="tl-dot" data-cat="${esc(p.cat)}"></span><span class="tl-title__t">${title(p)}</span>` + (p.n > 0 ? `<span class="tl-title__n">${String(p.n)}</span>` : "") + "</a>";
+        case "card":
+          return `<article class="tl-card" data-era="${esc(p.era)}"><div class="tl-card__rail"><span class="tl-card__d">${pad(p.d)}</span><span class="tl-card__m">${mon(p.m).toUpperCase()}</span></div><a class="tl-card__frame" href="${esc(p.url)}" tabindex="-1" aria-hidden="true">${frame(p, "tl-card__media")}</a><div class="tl-card__body"><p class="dm-tx__cat">${catLabel(p)}</p><h3 class="tl-card__title"><a href="${esc(p.url)}">${title(p)}</a></h3><p class="tl-card__ex" data-x="${String(p.id)}">${excerpt(p)}</p></div></article>`;
+        case "post": {
+          const ja = JA[p.cat];
+          return `<article class="dm-tx tl-post" data-era="${esc(p.era)}"><div class="dm-tx__rail"><time datetime="${p.date}"><span class="dm-tx__day">${pad(p.d)}</span><span class="dm-tx__mon">${mon(p.m).toUpperCase()}</span></time><span class="dm-tx__no">TX·${String(p.id)}</span></div><a class="dm-tx__frame" href="${esc(p.url)}" tabindex="-1" aria-hidden="true">${frame(p, "dm-tx__media")}<span class="dm-tx__scan"></span><span class="dm-tx__rec">REC ${p.date.replace(/-/g, ".")}</span></a><div class="dm-tx__body"><p class="dm-tx__cat">${catLabel(p)}${ja !== void 0 ? `<span class="dm-tx__ja" lang="ja">${ja}</span>` : ""}</p><h2 class="dm-tx__title"><a href="${esc(p.url)}">${title(p)}</a></h2><p class="dm-tx__excerpt" data-x="${String(p.id)}">${excerpt(p)}</p><p class="dm-tx__meta"><span class="dm-tx__sig" aria-hidden="true">${signal(p.n)}</span><a href="${esc(p.url)}#comments">${p.n > 0 ? `${String(p.n)}${p.n === 1 ? " reply" : " replies"}` : "No replies"}</a></p></div></article>`;
+        }
+        case "end":
+          return '<div class="tl-end"><b>2003.04.01</b> “This blog is live!” The first transmission. That’s everything.</div>';
+      }
+    }
+    function want(y) {
+      if (asked.has(y)) return;
+      asked.add(y);
+      const sep = api2.includes("?") ? "/excerpts&year=" : "/excerpts?year=";
+      fetchJson(api2 + sep + String(y)).then((data) => {
+        const x = parseExcerpts(data);
+        excerpts.set(y, x);
+        for (const el of queryAll(canvas, "[data-x]", HTMLElement)) {
+          const text = x.get(Number(el.getAttribute("data-x")));
+          if (text !== void 0 && el.textContent === "") el.textContent = text;
+        }
+      }).catch(() => {
+        asked.delete(y);
+      });
+    }
+    function measure() {
+      canvasTop = docTop(canvas);
+    }
+    function render() {
+      queued = false;
+      const top = window.scrollY - canvasTop;
+      const vh = window.innerHeight;
+      const a = rowAt(Math.max(0, top - vh));
+      const b = top + vh * 2 < 0 ? -1 : rowAt(top + vh * 2);
+      for (const [i, n] of nodes) {
+        if (i < a || i > b) {
+          n.remove();
+          nodes.delete(i);
+        }
+      }
+      const frag = document.createDocumentFragment();
+      for (let i = a; i <= b; i++) {
+        if (nodes.has(i)) continue;
+        const r = row(i);
+        const el = document.createElement("div");
+        el.className = `tl-row tl-row--${r.t}`;
+        el.style.height = `${String(r.h)}px`;
+        el.style.transform = `translateY(${String(off(i))}px)`;
+        el.innerHTML = html(r);
+        if (r.t !== "yhdr" && r.t !== "mhdr" && r.t !== "end" && post(r.p).id === highlightId) el.classList.add("is-hit");
+        nodes.set(i, el);
+        frag.appendChild(el);
+      }
+      canvas.appendChild(frag);
+      updateUi();
+    }
+    function queue() {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(render);
+      }
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(settle, 350);
+      flag("is-scrolling", true);
+    }
+    function postAt(y) {
+      if (postLevel() && y < canvasTop) {
+        for (let s = head.length - 1; s > 0; s--) if (docTop(headEl(s)) <= y) return s;
+        return 0;
+      }
+      return rows[rowAt(Math.max(0, Math.min(total - 1, y - canvasTop)))]?.p ?? 0;
+    }
+    function centerPost() {
+      return postAt(window.scrollY + window.innerHeight / 2);
+    }
+    function scrollToPost(i, screenY) {
+      window.scrollTo(0, Math.max(0, postTop(i) - screenY));
+    }
+    function fade(fn) {
+      if (reduce) {
+        fn();
+        return;
+      }
+      const els = [log2, canvas];
+      const set = (transition, opacity) => {
+        for (const e of els) {
+          e.style.transition = transition;
+          e.style.opacity = opacity;
+        }
+      };
+      set("opacity 0.09s ease-in", "0");
+      setTimeout(() => {
+        fn();
+        set("none", "0");
+        canvas.getBoundingClientRect();
+        set("opacity 0.18s ease-out", "");
+      }, 90);
+    }
+    let morphing = null;
+    function snap() {
+      return { rows, offs, postRow, top: canvasTop, scroll: window.scrollY, head: postLevel() };
+    }
+    function slice(L, k) {
+      if (L.head && k < head.length) {
+        const a = headEl(k);
+        return { top: docTop(a) - L.scroll, h: a.offsetHeight };
+      }
+      const i = L.postRow[k];
+      const r = i === void 0 ? void 0 : L.rows[i];
+      if (i === void 0 || !r) return null;
+      const y = L.top + (L.offs[i] ?? 0) - L.scroll;
+      if ((r.t === "band" || r.t === "year0") && r.to - r.p > 1) {
+        const h = r.h / (r.to - r.p);
+        return { top: y + h * (k - r.p), h };
+      }
+      return { top: y, h: r.h };
+    }
+    function toward(L, r, top, h, vh, lo, hi) {
+      const a = slice(L, r.p);
+      if (!a) return null;
+      const single = r.t === "yhdr" || r.t === "mhdr" || r.t === "end";
+      const last = r.t === "band" || r.t === "year0" ? slice(L, r.to - 1) : null;
+      const b = last ?? a;
+      const y = single ? a.top - (r.t === "end" ? 0 : h) : a.top;
+      const s = single ? 1 : Math.max(lo, Math.min(hi, (b.top + b.h - a.top) / h));
+      return { d: Math.max(-1.2 * vh, Math.min(1.2 * vh, y - top)), s };
+    }
+    function endMorph() {
+      if (!morphing) return;
+      for (const a of morphing.anims) a.cancel();
+      morphing.ov.remove();
+      morphing = null;
+    }
+    function morph(fn) {
+      endMorph();
+      const vh = window.innerHeight;
+      const A = snap();
+      const ov = document.createElement("div");
+      ov.className = `${root.className} tl-morph`;
+      ov.setAttribute("aria-hidden", "true");
+      const ghosts = [];
+      for (const [i, el] of nodes) {
+        const b = el.getBoundingClientRect();
+        const r = A.rows[i];
+        if (b.bottom < 0 || b.top > vh || !r) continue;
+        nodes.delete(i);
+        el.style.left = `${String(b.left)}px`;
+        el.style.width = `${String(b.width)}px`;
+        el.style.right = "auto";
+        el.style.transform = `translateY(${String(b.top)}px)`;
+        el.classList.remove("is-hit");
+        ov.appendChild(el);
+        ghosts.push({ el, r, top: b.top, h: b.height });
+      }
+      if (A.head) {
+        const wrap = document.createElement("ol");
+        wrap.className = log2.className;
+        wrap.style.cssText = "position:absolute;inset:0;margin:0;display:block!important";
+        ov.appendChild(wrap);
+        head.forEach((_, k) => {
+          const li = headEl(k);
+          const b = li.getBoundingClientRect();
+          if (b.bottom < 0 || b.top > vh) return;
+          const c = li.cloneNode(true);
+          if (!(c instanceof HTMLElement)) return;
+          c.style.cssText = `position:absolute;margin:0;top:0;left:${String(b.left)}px;width:${String(b.width)}px;transform:translateY(${String(b.top)}px)`;
+          wrap.appendChild(c);
+          ghosts.push({ el: c, r: { t: "post", p: k, h: b.height }, top: b.top, h: b.height });
+        });
+      }
+      document.body.appendChild(ov);
+      fn();
+      const B = snap();
+      const anims = [];
+      const ease = "cubic-bezier(.2,.75,.25,1)";
+      for (const g of ghosts) {
+        const t = toward(B, g.r, g.top, g.h, vh, 0.2, 2.5);
+        g.el.style.transformOrigin = "0 0";
+        const base = `translateY(${String(g.top)}px)`;
+        const end = t ? `${base} translateY(${String(t.d)}px) scaleY(${String(t.s)})` : base;
+        anims.push(g.el.animate([{ transform: base, opacity: 1 }, { transform: end, opacity: 0 }], { duration: 340, easing: ease, fill: "forwards" }));
+      }
+      const enter = (el, r, top, h, base) => {
+        if (top + h < 0 || top > vh) return;
+        const t = toward(A, r, top, h, vh, 0.35, 2);
+        if (!t) return;
+        el.style.transformOrigin = "0 0";
+        const delay = Math.round(Math.min(1, Math.abs(top + h / 2 - vh / 2) / vh) * 90);
+        anims.push(el.animate([
+          { transform: `${base} translateY(${String(t.d)}px) scaleY(${String(t.s)})`, opacity: 0 },
+          { opacity: 1, offset: 0.55 },
+          { transform: `${base} translateY(0) scaleY(1)`, opacity: 1 }
+        ], { duration: 480, delay, easing: ease, fill: "backwards" }));
+      };
+      for (const [i, el] of nodes) {
+        const r = B.rows[i];
+        const o = B.offs[i];
+        if (r && o !== void 0) enter(el, r, B.top + o - B.scroll, r.h, `translateY(${String(o)}px)`);
+      }
+      if (B.head) {
+        head.forEach((_, k) => {
+          const li = headEl(k);
+          const b = li.getBoundingClientRect();
+          enter(li, { t: "post", p: k, h: b.height }, b.top, b.height, "");
+        });
+      }
+      const m = morphing = { ov, anims };
+      void Promise.all(anims.map((a) => a.finished.catch(() => null))).then(() => {
+        if (morphing === m) {
+          ov.remove();
+          morphing = null;
+        }
+      });
+    }
+    function zoom(toRaw, anchorIn) {
+      const to = toLevel(toRaw);
+      let anchor = anchorIn;
+      if (to === level && anchor === void 0) return;
+      let i = anchor ?? centerPost();
+      if (anchor === void 0 && focus >= 0 && postRow[focus] === postRow[i] && !(postLevel() && i < head.length)) i = focus;
+      else if (anchor !== void 0 && focus >= 0 && postRow[focus] === postRow[anchor]) i = anchor = focus;
+      focus = i;
+      let screenY = postTop(i) - window.scrollY;
+      let frac = (window.innerHeight / 2 - screenY) / orIfZero(postH(i), 1);
+      if (anchor !== void 0) {
+        screenY = window.innerHeight * 0.3;
+        frac = 0;
+      }
+      const target = i;
+      const apply = () => {
+        level = to;
+        build();
+        const y = anchor !== void 0 ? screenY : window.innerHeight / 2 - Math.max(0.05, Math.min(0.95, frac)) * postH(target);
+        scrollToPost(target, y);
+        render();
+        settle();
+      };
+      if (reduce) apply();
+      else morph(apply);
+    }
+    function random() {
+      const pool = [];
+      posts.forEach((p, i) => {
+        if (!p.locked) pool.push(i);
+      });
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      if (pick === void 0) return;
+      highlightId = post(pick).id;
+      const to = level === 3 ? 3 : 4;
+      fade(() => {
+        if (to !== level) {
+          level = to;
+          build();
+        }
+        for (const n of nodes.values()) n.remove();
+        nodes.clear();
+        scrollToPost(pick, window.innerHeight * 0.28);
+        render();
+        if (postLevel() && pick < head.length) headEl(pick).classList.add("is-hit");
+        settle();
+      });
+      setTimeout(() => {
+        highlightId = 0;
+        for (const n of queryAll(document, ".is-hit", Element)) n.classList.remove("is-hit");
+      }, 2400);
+    }
+    function step(dir) {
+      const i = Math.max(0, Math.min(posts.length - 1, centerPost() + dir));
+      scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
+    }
+    function buildScrub() {
+      let marks = "";
+      const seen = /* @__PURE__ */ new Set();
+      let last = -1;
+      posts.forEach((p, i) => {
+        if (seen.has(p.y)) return;
+        seen.add(p.y);
+        if (last >= 0 && (i - last) / posts.length < 0.035) return;
+        last = i;
+        marks += `<span class="tl-scrub__y" data-p="${String(i)}" style="top:${(i / posts.length * 100).toFixed(2)}%">'${String(p.y).slice(2)}</span>`;
+      });
+      track.innerHTML = marks;
+      track.append(scrubThumb, bubble);
+      ui.appendChild(scrub);
+      let dragging = false;
+      function at2(e) {
+        const b = track.getBoundingClientRect();
+        const f = Math.max(0, Math.min(1, (e.clientY - b.top) / b.height));
+        const i = Math.min(posts.length - 1, Math.floor(f * posts.length));
+        bubble.textContent = `${mon(post(i).m)} ${String(post(i).y)}`;
+        bubble.style.top = `${String(f * 100)}%`;
+        scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
+      }
+      track.addEventListener("pointerdown", (e) => {
+        dragging = true;
+        track.setPointerCapture(e.pointerId);
+        scrub.classList.add("is-dragging");
+        const y = closest(e.target, ".tl-scrub__y", HTMLElement);
+        if (y) {
+          const i = Number(y.getAttribute("data-p"));
+          if (Number.isInteger(i) && posts[i]) {
+            scrollToPost(i, Math.max(90, window.innerHeight * 0.18));
+            bubble.textContent = String(post(i).y);
+          }
+          return;
+        }
+        at2(e);
+      });
+      track.addEventListener("pointermove", (e) => {
+        if (dragging) at2(e);
+      });
+      const end = () => {
+        dragging = false;
+        scrub.classList.remove("is-dragging");
+      };
+      track.addEventListener("pointerup", end);
+      track.addEventListener("pointercancel", end);
+    }
+    function flag(name, on) {
+      ui.classList.toggle(name, on);
+      ctl.classList.toggle(name, on);
+    }
+    function headerBottom() {
+      const hdr = query(document, ".dm-header", HTMLElement);
+      return hdr ? Math.max(0, hdr.getBoundingClientRect().bottom) : 0;
+    }
+    function updateUi() {
+      const i = centerPost();
+      const p = post(i);
+      const firstRow = postTop(Math.min(3, posts.length - 1));
+      flag("is-deep", level !== 4 || window.scrollY + window.innerHeight / 2 > firstRow);
+      flag("is-in", level !== 4 || docTop(log2) - window.scrollY < window.innerHeight * 0.4);
+      flag("is-off", window.scrollY + window.innerHeight < docTop(postLevel() ? log2 : canvas));
+      scrubThumb.style.top = `${String(i / posts.length * 100)}%`;
+      if (scrubThumb.getAttribute("data-era") !== p.era) scrubThumb.setAttribute("data-era", p.era);
+      if (!scrub.classList.contains("is-dragging")) bubble.textContent = `${mon(p.m)} ${String(p.y)}`;
+      const hb = headerBottom();
+      const y = window.scrollY + hb + 8;
+      const listTop = postLevel() ? docTop(log2) : canvasTop;
+      let show = level !== 0 && y > listTop + 40;
+      if (show) {
+        const at2 = post(postAt(y));
+        if (stickyLink.textContent !== String(at2.y)) {
+          stickyLink.textContent = String(at2.y);
+          stickyLink.href = `/${String(at2.y)}/`;
+        }
+        stickyYear.setAttribute("data-era", level === 1 ? "" : at2.era);
+        stickyYear.style.top = `${String(hb)}px`;
+        stickyYear.style.left = `${String(Math.round(root.getBoundingClientRect().left))}px`;
+        const marks = [...queryAll(canvas, ".tl-yhdr, .dm-tx-year", Element), ...postLevel() ? queryAll(log2, ".dm-tx-year", Element) : []];
+        for (const m of marks) {
+          const b = m.getBoundingClientRect();
+          if (b.bottom > hb - 10 && b.top < hb + stickyYear.offsetHeight + 24) show = false;
+        }
+      }
+      stickyYear.classList.toggle("is-on", show);
+    }
+    function settle() {
+      flag("is-scrolling", false);
+      const url = new URL(location.href);
+      const i = centerPost();
+      if (level === 4 && (i < Math.min(head.length, 12) || window.scrollY + window.innerHeight / 2 < docTop(log2))) {
+        url.searchParams.delete("at");
+        url.searchParams.delete("z");
+      } else {
+        url.searchParams.set("at", post(i).date);
+        url.searchParams.set("z", String(level));
+      }
+      if (url.href !== location.href) history.replaceState(history.state, "", url.href);
+    }
+    function placeControls() {
+      const tools = query(document, ".dm-nav__tools", HTMLElement);
+      const wide = window.matchMedia("(min-width: 1240px)");
+      const place = () => {
+        if (wide.matches && tools) {
+          tools.insertBefore(ctl, tools.firstChild);
+          ctl.classList.add("tl-ctl--nav");
+        } else {
+          ui.appendChild(ctl);
+          ctl.classList.remove("tl-ctl--nav");
+        }
+      };
+      place();
+      wide.addEventListener("change", place);
+      btnOut.addEventListener("click", () => {
+        zoom(level - 1);
+      });
+      btnIn.addEventListener("click", () => {
+        zoom(level + 1);
+      });
+      btnRand.addEventListener("click", random);
+    }
+    const q = new URLSearchParams(location.search);
+    const z = q.get("z");
+    if (z !== null) level = toLevel(orIfZero(parseInt(z, 10), 0));
+    const at = q.get("at");
+    placeControls();
+    buildScrub();
+    document.body.appendChild(ui);
+    log2.after(root);
+    feed2.classList.add("tl-host");
+    build();
+    if (at !== null) {
+      let i = posts.findIndex((p) => p.date <= at);
+      if (i < 0) i = posts.length - 1;
+      scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
+    }
+    render();
+    window.addEventListener("scroll", queue, { passive: true });
+    let rt = 0;
+    let lastW = window.innerWidth;
+    window.addEventListener("resize", () => {
+      if (window.innerWidth === lastW) {
+        queue();
+        return;
+      }
+      lastW = window.innerWidth;
+      clearTimeout(rt);
+      rt = window.setTimeout(() => {
+        const i = centerPost();
+        build();
+        scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
+        render();
+      }, 150);
+    });
+    root.addEventListener("click", (e) => {
+      const zb = closest(e.target, "[data-zoom]", HTMLElement);
+      if (!zb) return;
+      const toZ = Number(zb.getAttribute("data-zoom"));
+      const p = Number(zb.getAttribute("data-p"));
+      if (Number.isInteger(toZ) && Number.isInteger(p) && posts[p]) zoom(toZ, p);
+    });
+    document.addEventListener("keydown", (e) => {
+      const t = e.target;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t instanceof HTMLElement && (/^(input|textarea|select)$/i.test(t.tagName) || t.isContentEditable)) return;
+      if (window.scrollY + window.innerHeight < docTop(postLevel() ? log2 : canvas)) return;
+      const k = e.key;
+      if (k === "+" || k === "=") zoom(level + 1);
+      else if (k === "-" || k === "_") zoom(level - 1);
+      else if (k === "r" || k === "R") random();
+      else if (k === "j" || k === "J") step(1);
+      else if (k === "k" || k === "K") step(-1);
+      else return;
+      e.preventDefault();
+    });
+    document.dispatchEvent(new CustomEvent("dm:timeline-ready", { detail: { posts: posts.length } }));
+  }
+  var cfg = window.dmTimeline;
+  var api = str(cfg, "api", "");
+  var tz = num(cfg, "tz", 0) * 1e3;
+  var feed = query(document, ".dm-feed", HTMLElement);
+  var log = feed && query(feed, ".dm-log", HTMLElement);
+  if (api !== "" && feed && log) {
+    fetchJson(api, { credentials: "same-origin" }).then(async (data) => {
+      const posts = isArray(data) ? data.map((r) => parsePost(r, tz)).filter((p) => p !== null) : [];
+      await document.fonts.ready;
+      if (posts.length > 0) run(api, feed, log, posts);
+    }).catch(() => {
+    });
+  }
 })();

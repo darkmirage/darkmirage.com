@@ -44,7 +44,7 @@ HOST = ENV.get("DEPLOY_HOST") or sys.exit("DEPLOY_HOST not set in .env")
 REMOTE_ROOT = ENV.get("DEPLOY_ROOT", "public_html")
 TAG = "deployed"
 # Repo bookkeeping that must never land in public_html.
-REPO_ONLY = (".gitignore", "README.md", "LICENSE", ".env.example", "tools/")
+REPO_ONLY = (".gitignore", "README.md", "LICENSE", ".env.example", "tools/", "frontend/")
 
 
 def git(*args, binary=False):
@@ -87,12 +87,29 @@ def md5_at(rev, path):
         return None
 
 
+FRONTEND = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
+BUILT_JS = "blog/wp-content/themes/dmdune/assets/js"
+
+
+def check_frontend():
+    """The theme's scripts are built from frontend/src (TypeScript). Refuse to deploy scripts that
+    don't type-check, fail the lint rules, or don't match their sources."""
+    if git("status", "--porcelain", "--", "frontend", BUILT_JS).strip():
+        sys.exit(f"Uncommitted changes in frontend/ or {BUILT_JS}: build, commit, then deploy.")
+    if not os.path.isdir(os.path.join(FRONTEND, "node_modules")):
+        subprocess.run(["npm", "ci", "--silent"], cwd=FRONTEND, check=True)
+    for step in (["npx", "tsc", "--noEmit"], ["npx", "eslint", "src"], ["node", "build.mjs", "--check"]):
+        if subprocess.run(step, cwd=FRONTEND).returncode:
+            sys.exit(f"Front-end check failed ({' '.join(step)}); nothing deployed.")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--go", action="store_true", help="actually deploy (default is a dry run)")
     ap.add_argument("--delete-removed", action="store_true", help="delete files that were removed from git")
     ap.add_argument("--force", action="store_true", help="skip the server-unchanged check (dangerous)")
     args = ap.parse_args()
+    check_frontend()
 
     if git("status", "--porcelain").strip():
         sys.exit("Working tree has uncommitted changes. Commit or stash first.")

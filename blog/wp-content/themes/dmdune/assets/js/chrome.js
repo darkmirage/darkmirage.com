@@ -1,193 +1,224 @@
-/* DarkMirage chrome (www, lyrics, gallery): light/dark toggle, header overflow menu, mobile sheet. */
-(function () {
-	'use strict';
-	var root = document.documentElement;
-	var media = window.matchMedia('(prefers-color-scheme: dark)');
+/* Built from frontend/src by `npm run build`; edit the TypeScript there, not this file. */
+"use strict";
+(() => {
+  // src/lib/dom.ts
+  function query(root2, selector, type) {
+    const el = root2.querySelector(selector);
+    return el instanceof type ? el : null;
+  }
+  function queryAll(root2, selector, type) {
+    const out = [];
+    for (const el of root2.querySelectorAll(selector)) if (el instanceof type) out.push(el);
+    return out;
+  }
+  function closest(target, selector, type) {
+    if (!(target instanceof Element)) return null;
+    const el = target.closest(selector);
+    return el instanceof type ? el : null;
+  }
+  function isNode(target) {
+    return target instanceof Node;
+  }
+  function cookieDomain() {
+    return /(^|\.)darkmirage\.com$/.test(location.hostname) ? "; domain=.darkmirage.com" : "";
+  }
+  function onReady(fn) {
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+    else fn();
+  }
 
-	function isDark() {
-		var forced = root.getAttribute('data-theme');
-		return forced ? forced === 'dark' : media.matches;
-	}
-
-	function label() {
-		var text = isDark() ? 'Switch to light mode' : 'Switch to dark mode';
-		document.querySelectorAll('[data-dm-toggle]').forEach(function (b) { b.setAttribute('aria-label', text); });
-	}
-
-	// One cookie for all *.darkmirage.com sites, so the choice follows the reader between them.
-	// "system" is stored rather than deleted, or another site's localStorage fallback would win.
-	function save(mode) {
-		var value = mode || 'system';
-		var domain = /(^|\.)darkmirage\.com$/.test(location.hostname) ? '; domain=.darkmirage.com' : '';
-		document.cookie = 'dm-theme=' + value + '; path=/; SameSite=Lax; max-age=31536000' + domain;
-		try { localStorage.setItem('dm-theme', value); } catch (err) {}
-	}
-
-	// A page restored by Back, or a tab left open, may predate a change made on another site.
-	function sync() {
-		var m = (document.cookie.match(/(?:^|; )dm-theme=(light|dark|system)/) || [])[1];
-		if (!m) return;
-		if (m === 'system') root.removeAttribute('data-theme');
-		else root.setAttribute('data-theme', m);
-		label();
-	}
-	window.addEventListener('pageshow', sync);
-	document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
-
-	// Era skins: one cookie across the three sites, then reload so the server sends that era.
-	document.addEventListener('click', function (e) {
-		var era = e.target.closest('[data-dm-skin]');
-		if (!era) return;
-		var skin = era.getAttribute('data-dm-skin');
-		// Picked from the time machine: reopen it on the next page (see dmc_time_machine_html).
-		if (era.closest('.dm-tmw')) {
-			try { sessionStorage.setItem('dm-tm-open', '1'); } catch (err) {}
-		}
-		var domain = /(^|\.)darkmirage\.com$/.test(location.hostname) ? '; domain=.darkmirage.com' : '';
-		document.cookie = 'dm-skin=' + skin + '; path=/; SameSite=Lax' + domain + (skin ? '; max-age=31536000' : '; max-age=0');
-		// A shared ?era= link would otherwise win over the era just picked.
-		var url = new URL(location.href);
-		if (url.searchParams.has('era')) {
-			url.searchParams.delete('era');
-			location.replace(url.toString());
-		} else {
-			location.reload();
-		}
-	});
-
-	// The time machine grows out of its button: on hover with a mouse (closing a moment after the
-	// pointer leaves, so crossing the gap doesn't snap it shut), or on tap / Enter. Escape or a
-	// click elsewhere closes it.
-	(function () {
-		var tm = document.querySelector('.dm-tmw');
-		if (!tm) return;
-		var btn = tm.querySelector('.dm-tmw__btn');
-		var timer = null;
-		var pointer = '';
-		var set = function (open) {
-			clearTimeout(timer);
-			if (open !== tm.classList.contains('is-open')) tm.classList.remove('is-still');
-			tm.classList.toggle('is-open', open);
-			btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-		};
-		tm.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') set(true); });
-		tm.addEventListener('pointerleave', function (e) {
-			if (e.pointerType !== 'mouse') return;
-			clearTimeout(timer);
-			timer = setTimeout(function () { set(false); }, 350);
-		});
-		// A mouse has already opened it by hovering, so its click keeps it open; touch and keys toggle.
-		tm.addEventListener('pointerdown', function (e) { pointer = e.pointerType; });
-		btn.addEventListener('click', function (e) {
-			if (pointer === 'mouse' && e.detail) set(true);
-			else set(!tm.classList.contains('is-open'));
-			pointer = '';
-		});
-		document.addEventListener('click', function (e) { if (!tm.contains(e.target)) set(false); });
-		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tm.classList.contains('is-open')) { set(false); btn.focus(); } });
-	})();
-
-	// In an old era, "Copy link" shares this page in that era (?era=<theme>): the share sheet on
-	// phones, the clipboard elsewhere.
-	(function () {
-		var tm = document.querySelector('.dm-tmw');
-		var btn = tm && tm.querySelector('.dm-tmw__share');
-		var cur = tm && tm.querySelector('[data-dm-skin][aria-pressed="true"]');
-		var skin = cur && cur.getAttribute('data-dm-skin');
-		if (!btn || !skin) return;
-		var text = btn.textContent;
-		btn.addEventListener('click', function () {
-			var canon = document.querySelector('link[rel="canonical"]');
-			var url = new URL(canon ? canon.href : location.href);
-			url.searchParams.set('era', skin);
-			var link = url.toString();
-			var done = function (msg) {
-				btn.textContent = msg;
-				setTimeout(function () { btn.textContent = text; }, 1800);
-			};
-			if (navigator.share && matchMedia('(pointer: coarse)').matches) {
-				navigator.share({ title: document.title, url: link }).catch(function () {});
-			} else if (navigator.clipboard) {
-				navigator.clipboard.writeText(link).then(function () { done('Copied!'); }, function () { window.prompt('Copy this link:', link); });
-			} else {
-				window.prompt('Copy this link:', link);
-			}
-		});
-	})();
-
-	document.addEventListener('click', function (e) {
-		var toggle = e.target.closest('[data-dm-toggle]');
-		if (toggle) {
-			var next = isDark() ? 'light' : 'dark';
-			// Choosing the mode the OS already uses means "follow the OS" again.
-			if ((next === 'dark') === media.matches) {
-				root.removeAttribute('data-theme');
-				save(null);
-			} else {
-				root.setAttribute('data-theme', next);
-				save(next);
-			}
-			label();
-			return;
-		}
-		// Tapping outside an open menu closes it.
-		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) {
-			if (!d.contains(e.target)) d.removeAttribute('open');
-		});
-	});
-
-	document.addEventListener('keydown', function (e) {
-		if (e.key === 'Escape') {
-			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) { d.removeAttribute('open'); });
-		}
-	});
-
-	// Header: "More" always holds the links the server put there (Japanese lessons, Capsule); links
-	// that don't fit on one line join them, so the bar never wraps.
-	function fitNav() {
-		var navList = document.querySelector('.dm-nav__links');
-		var navMore = document.querySelector('.dm-nav__more');
-		if (!navList || !navMore) return;
-		var menu = navMore.querySelector('ul');
-		if (!navMore.dmPinned) navMore.dmPinned = Array.prototype.slice.call(menu.children);
-		var pinned = navMore.dmPinned;
-		navList.classList.add('is-managed');
-		var items = Array.prototype.slice.call(navList.children);
-		items.forEach(function (li) { li.hidden = false; });
-		navMore.hidden = !pinned.length;
-		navMore.removeAttribute('open');
-		menu.textContent = '';
-		if (navList.offsetParent && navList.scrollWidth > navList.clientWidth) {
-			navMore.hidden = false;
-			for (var i = items.length - 1; i > 0 && navList.scrollWidth > navList.clientWidth; i--) {
-				items[i].hidden = true;
-			}
-		}
-		var current = false;
-		items.forEach(function (li) {
-			if (!li.hidden) return;
-			menu.appendChild(li.cloneNode(true)).hidden = false;
-			if (li.querySelector('[aria-current]')) current = true;
-		});
-		pinned.forEach(function (li) {
-			menu.appendChild(li);
-			if (li.querySelector('[aria-current]')) current = true;
-		});
-		navMore.classList.toggle('has-current', current);
-	}
-	var fitQueued = false;
-	window.addEventListener('resize', function () {
-		if (fitQueued) return;
-		fitQueued = true;
-		requestAnimationFrame(function () { fitQueued = false; fitNav(); });
-	});
-	function start() {
-		label();
-		// Measured in the stand-in font, the links can fold into More only to come back out when the
-		// real font lands a moment later; that jump is worse than waiting for it.
-		if (document.fonts && document.fonts.ready && document.fonts.status !== 'loaded') document.fonts.ready.then(fitNav);
-		else fitNav();
-	}
-	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-	if (media.addEventListener) media.addEventListener('change', label);
+  // src/chrome.ts
+  var root = document.documentElement;
+  var media = window.matchMedia("(prefers-color-scheme: dark)");
+  function isDark() {
+    const forced = root.getAttribute("data-theme");
+    return forced !== null ? forced === "dark" : media.matches;
+  }
+  function label() {
+    const text = isDark() ? "Switch to light mode" : "Switch to dark mode";
+    for (const b of queryAll(document, "[data-dm-toggle]", Element)) b.setAttribute("aria-label", text);
+  }
+  function save(mode) {
+    const value = mode ?? "system";
+    document.cookie = `dm-theme=${value}; path=/; SameSite=Lax; max-age=31536000${cookieDomain()}`;
+    try {
+      localStorage.setItem("dm-theme", value);
+    } catch {
+    }
+  }
+  function sync() {
+    const m = /(?:^|; )dm-theme=(light|dark|system)/.exec(document.cookie)?.[1];
+    if (m === void 0) return;
+    if (m === "system") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", m);
+    label();
+  }
+  window.addEventListener("pageshow", sync);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) sync();
+  });
+  document.addEventListener("click", (e) => {
+    const era = closest(e.target, "[data-dm-skin]", Element);
+    if (!era) return;
+    const skin = era.getAttribute("data-dm-skin") ?? "";
+    if (era.closest(".dm-tmw")) {
+      try {
+        sessionStorage.setItem("dm-tm-open", "1");
+      } catch {
+      }
+    }
+    document.cookie = `dm-skin=${skin}; path=/; SameSite=Lax${cookieDomain()}${skin !== "" ? "; max-age=31536000" : "; max-age=0"}`;
+    const url = new URL(location.href);
+    if (url.searchParams.has("era")) {
+      url.searchParams.delete("era");
+      location.replace(url.toString());
+    } else {
+      location.reload();
+    }
+  });
+  function timeMachine(tm2, btn) {
+    let timer = 0;
+    let pointer = "";
+    const set = (open) => {
+      clearTimeout(timer);
+      if (open !== tm2.classList.contains("is-open")) tm2.classList.remove("is-still");
+      tm2.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    tm2.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse") set(true);
+    });
+    tm2.addEventListener("pointerleave", (e) => {
+      if (e.pointerType !== "mouse") return;
+      clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        set(false);
+      }, 350);
+    });
+    tm2.addEventListener("pointerdown", (e) => {
+      pointer = e.pointerType;
+    });
+    btn.addEventListener("click", (e) => {
+      if (pointer === "mouse" && e.detail > 0) set(true);
+      else set(!tm2.classList.contains("is-open"));
+      pointer = "";
+    });
+    document.addEventListener("click", (e) => {
+      if (!isNode(e.target) || !tm2.contains(e.target)) set(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && tm2.classList.contains("is-open")) {
+        set(false);
+        btn.focus();
+      }
+    });
+  }
+  function shareLink(btn, skin) {
+    const text = btn.textContent;
+    btn.addEventListener("click", () => {
+      const canon = query(document, 'link[rel="canonical"]', HTMLLinkElement);
+      const url = new URL(canon ? canon.href : location.href);
+      url.searchParams.set("era", skin);
+      const link = url.toString();
+      const done = (msg) => {
+        btn.textContent = msg;
+        setTimeout(() => {
+          btn.textContent = text;
+        }, 1800);
+      };
+      const fallback = () => {
+        window.prompt("Copy this link:", link);
+      };
+      if ("share" in navigator && matchMedia("(pointer: coarse)").matches) {
+        navigator.share({ title: document.title, url: link }).catch(() => {
+        });
+      } else if ("clipboard" in navigator) {
+        navigator.clipboard.writeText(link).then(() => {
+          done("Copied!");
+        }, fallback);
+      } else {
+        fallback();
+      }
+    });
+  }
+  var tm = query(document, ".dm-tmw", HTMLElement);
+  if (tm) {
+    const btn = query(tm, ".dm-tmw__btn", HTMLElement);
+    if (btn) timeMachine(tm, btn);
+    const share = query(tm, ".dm-tmw__share", HTMLElement);
+    const skin = query(tm, '[data-dm-skin][aria-pressed="true"]', Element)?.getAttribute("data-dm-skin");
+    if (share && skin != null && skin !== "") shareLink(share, skin);
+  }
+  var OPEN_MENUS = ".dm-sheet[open], .dm-nav__more[open]";
+  document.addEventListener("click", (e) => {
+    if (closest(e.target, "[data-dm-toggle]", Element)) {
+      const next = isDark() ? "light" : "dark";
+      if (next === "dark" === media.matches) {
+        root.removeAttribute("data-theme");
+        save(null);
+      } else {
+        root.setAttribute("data-theme", next);
+        save(next);
+      }
+      label();
+      return;
+    }
+    for (const d of queryAll(document, OPEN_MENUS, Element)) {
+      if (!isNode(e.target) || !d.contains(e.target)) d.removeAttribute("open");
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") for (const d of queryAll(document, OPEN_MENUS, Element)) d.removeAttribute("open");
+  });
+  var pinned = null;
+  function fitNav() {
+    const navList = query(document, ".dm-nav__links", HTMLElement);
+    const navMore = query(document, ".dm-nav__more", HTMLElement);
+    const menu = navMore && query(navMore, "ul", HTMLElement);
+    if (!navList || !navMore || !menu) return;
+    pinned ?? (pinned = queryAll(menu, ":scope > li", HTMLElement));
+    navList.classList.add("is-managed");
+    const items = queryAll(navList, ":scope > li", HTMLElement);
+    for (const li of items) li.hidden = false;
+    navMore.hidden = pinned.length === 0;
+    navMore.removeAttribute("open");
+    menu.textContent = "";
+    if (navList.offsetParent && navList.scrollWidth > navList.clientWidth) {
+      navMore.hidden = false;
+      for (let i = items.length - 1; i > 0 && navList.scrollWidth > navList.clientWidth; i--) {
+        const li = items[i];
+        if (li) li.hidden = true;
+      }
+    }
+    let current = false;
+    for (const li of items) {
+      if (li.hidden === false) continue;
+      const copy = li.cloneNode(true);
+      if (copy instanceof HTMLElement) {
+        copy.hidden = false;
+        menu.appendChild(copy);
+      }
+      if (li.querySelector("[aria-current]")) current = true;
+    }
+    for (const li of pinned) {
+      menu.appendChild(li);
+      if (li.querySelector("[aria-current]")) current = true;
+    }
+    navMore.classList.toggle("has-current", current);
+  }
+  var fitQueued = false;
+  window.addEventListener("resize", () => {
+    if (fitQueued) return;
+    fitQueued = true;
+    requestAnimationFrame(() => {
+      fitQueued = false;
+      fitNav();
+    });
+  });
+  onReady(() => {
+    label();
+    if (document.fonts.status !== "loaded") void document.fonts.ready.then(fitNav);
+    else fitNav();
+  });
+  media.addEventListener("change", label);
 })();
