@@ -572,7 +572,9 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 }
 .dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label, .dm-tmw[open] > summary .dm-tmw__label { display: inline; }
 .dm-tmw__panel { position: absolute; right: 0; bottom: calc(100% + 12px); box-sizing: border-box; width: 440px; max-width: calc(100vw - 24px); padding: 12px 14px 12px; border: 1px solid var(--dm-line); border-radius: 16px; background: var(--dm-surface); box-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.55); }
-.dm-tmw__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; margin-bottom: 12px; }
+/* One line each, so the card keeps its height whichever era it names. */
+.dm-tmw__head { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
+.dm-tmw__title, .dm-tmw__now { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dm-tmw__title { font: 500 11px/1.3 var(--dm-font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dm-muted); }
 .dm-tmw__now { font: 400 12px/1.3 var(--dm-font-body); color: var(--dm-muted); }
 .dm-tmw__now b { color: var(--dm-fg); font-weight: 600; }

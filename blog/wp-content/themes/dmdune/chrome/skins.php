@@ -181,7 +181,8 @@ function dmc_default2_taglines(): array {
 function dmc_time_machine_html(): string {
 	$skin  = dmc_skin();
 	$s     = $skin ? dmc_skins()[ $skin ] : array( 'name' => 'Dune', 'span' => 'today' );
-	$share = $skin ? '<button type="button" class="dm-tmw__share">Copy link to this era</button>' : '';
+	// Always there, so the card (and the timeline in it) is the same size in every era.
+	$share = '<button type="button" class="dm-tmw__share">Copy link to this era</button>';
 	return sprintf(
 		'<details class="dm-tmw" data-era="%1$s"><summary aria-label="Time machine: viewing %2$s. See the site as it looked in other years">%3$s<span class="dm-tmw__label">Time machine <b>%2$s</b></span></summary><div class="dm-tmw__panel"><div class="dm-tmw__head"><span class="dm-tmw__title">Time machine</span><span class="dm-tmw__now">Viewing <b>%2$s</b> · %4$s</span></div>%5$s%6$s</div></details><script>try{if(sessionStorage.getItem("dm-tm-open")){sessionStorage.removeItem("dm-tm-open");document.currentScript.previousElementSibling.open=true}}catch(e){}</script>',
 		$skin ? dmc_skin_era( $skin ) : 'now',
