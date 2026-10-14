@@ -33,7 +33,7 @@ if ( $song_id && ! $song ) {
 }
 
 function ly_era( int $y ): string {
-	return $y <= 2005 ? 'default' : ( $y <= 2007 ? 'kubrick' : 'blocks' );
+	return $y <= 2004 ? 'b2' : ( $y <= 2005 ? 'default' : ( $y <= 2007 ? 'kubrick' : 'blocks' ) );
 }
 
 function ly_year( array $s ): int {

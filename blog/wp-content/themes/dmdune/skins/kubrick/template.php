@@ -98,7 +98,7 @@ if ( is_singular() ) {
 		<h1 class="kb-title"><?php the_title(); ?></h1>
 		<?php if ( 'post' === $post->post_type ) : ?>
 			<small class="kb-date"><?php echo esc_html( get_the_date( 'F jS, Y' ) ); ?></small>
-			<?php echo dmc_era_post_link( get_the_date( 'Y-m-d' ) ); // phpcs:ignore ?>
+			<?php echo dmdune_era_post_link( get_post() ); // phpcs:ignore ?>
 		<?php endif; ?>
 		<div class="kb-entry"><?php the_content(); ?></div>
 		<?php if ( 'post' === $post->post_type ) : ?>

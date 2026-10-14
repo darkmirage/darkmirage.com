@@ -67,7 +67,7 @@ function dmdune_row_html( WP_Post $post, string $heading = 'h3' ): string {
 	$title = wp_strip_all_tags( get_the_title( $post ) );
 	return sprintf(
 		'<article class="dm-row" data-era="%1$s">%2$s<div class="dm-row__body"><p class="dm-row__stamp"><time datetime="%3$s">%4$s</time><span class="dm-row__no">TX·%5$d</span></p><%6$s class="dm-row__title"><a href="%7$s">%8$s</a></%6$s><p class="dm-row__meta">%9$s%10$s<span class="dm-sep" aria-hidden="true">·</span>%11$s</p></div></article>',
-		esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ) ) ),
+		esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ), (int) wp_date( 'n', $ts ) ) ),
 		dmdune_frame( $post, 'dm-frame--sm', false ),
 		esc_attr( wp_date( 'c', $ts ) ),
 		esc_html( wp_date( 'Y.m.d', $ts ) ),
@@ -120,7 +120,7 @@ function dmdune_month_points(): array {
 				continue;
 			}
 			$n        = $counts[ $y ][ $m ] ?? 0;
-			$points[] = array( wp_date( 'M Y', mktime( 12, 0, 0, $m, 1, $y ) ), $n, get_month_link( $y, $m ), dmdune_era( $y ), 1 === $m ? (string) $y : '' );
+			$points[] = array( wp_date( 'M Y', mktime( 12, 0, 0, $m, 1, $y ) ), $n, get_month_link( $y, $m ), dmdune_era( $y, $m ), 1 === $m ? (string) $y : '' );
 		}
 	}
 	return $points;

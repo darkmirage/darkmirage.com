@@ -31,7 +31,7 @@ function dmg_e($s): string {
 }
 
 function dmg_era(int $y): string {
-	return $y <= 2005 ? 'default' : ($y <= 2007 ? 'kubrick' : 'blocks');
+	return $y <= 2004 ? 'b2' : ($y <= 2005 ? 'default' : ($y <= 2007 ? 'kubrick' : 'blocks'));
 }
 
 /**

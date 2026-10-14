@@ -34,6 +34,7 @@
 	--dm-accent-soft: rgba(196, 90, 28, 0.09);
 	--dm-accent-line: rgba(196, 90, 28, 0.35);
 	--dm-brigade: #b63428;
+	--dm-era-b2: #2a9dc8;
 	--dm-era-default: #b9b2a8;
 	--dm-era-kubrick: #4f78b3;
 	--dm-era-blocks: var(--dm-accent);
@@ -60,6 +61,7 @@
 		--dm-accent-soft: rgba(240, 154, 74, 0.1);
 		--dm-accent-line: rgba(240, 154, 74, 0.38);
 		--dm-brigade: #e0574a;
+		--dm-era-b2: #4bbde3;
 		--dm-era-default: #5d6070;
 		--dm-era-kubrick: #6f93c8;
 		--dm-hero-scrim: rgba(11, 15, 24, 0.72);
@@ -82,6 +84,7 @@
 	--dm-accent-soft: rgba(240, 154, 74, 0.1);
 	--dm-accent-line: rgba(240, 154, 74, 0.38);
 	--dm-brigade: #e0574a;
+	--dm-era-b2: #4bbde3;
 	--dm-era-default: #5d6070;
 	--dm-era-kubrick: #6f93c8;
 	--dm-hero-scrim: rgba(11, 15, 24, 0.72);
@@ -350,6 +353,7 @@ h1, h2, h3, h4 { text-wrap: balance; }
 [data-cat="world"] { --a: #3d8fb0; --b: #1f4a5e; }
 [data-cat="japanese"] { --a: #c43a3a; --b: #f2efe9; }
 
+[data-era="b2"] { --era: var(--dm-era-b2); }
 [data-era="default"] { --era: var(--dm-era-default); }
 [data-era="kubrick"] { --era: var(--dm-era-kubrick); }
 [data-era="blocks"] { --era: var(--dm-era-blocks); }

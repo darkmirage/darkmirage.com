@@ -250,9 +250,14 @@ add_action( 'deleted_post', 'dmdune_flush_counts' );
 add_action( 'wp_update_comment_count', 'dmdune_flush_counts' );
 
 /**
- * Which of the blog's themes was live in a year; the archive strip colours its bars with it.
+ * Which of the blog's themes was live in a year (or a month, when given); the archive strip
+ * colours its bars with it. Until November 2005 the blog ran on b2; as a whole, 2005 counts as the
+ * year WordPress arrived.
  */
-function dmdune_era( int $year ): string {
+function dmdune_era( int $year, int $month = 0 ): string {
+	if ( $year <= 2004 || ( 2005 === $year && $month >= 1 && $month <= 10 ) ) {
+		return 'b2';
+	}
 	if ( $year <= 2005 ) {
 		return 'default';
 	}
