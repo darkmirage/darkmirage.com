@@ -169,6 +169,14 @@ function dmdune_render_tx( array $attrs, WP_Block $block ): string {
 	if ( ! $post ) {
 		return '';
 	}
+	return dmdune_tx_html( $post, $last_year );
+}
+
+/**
+ * A transmission-log entry for $post, preceded by a year marker when its year differs from
+ * $last_year (which it then updates). Shared by the home log and the Featured page.
+ */
+function dmdune_tx_html( WP_Post $post, ?int &$last_year ): string {
 	$ts   = get_post_timestamp( $post );
 	$year = (int) wp_date( 'Y', $ts );
 	$era  = dmdune_era( $year );
@@ -419,9 +427,12 @@ function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 			'has_password'   => false,
 		)
 	);
-	$cards = '';
-	foreach ( $posts as $i => $p ) {
-		$cards .= dmdune_card_html( $p, 0 === $i ? 'h2' : 'h3' );
+	// Random picks, shown as a stretch of the home page's log: newest first, with year markers.
+	usort( $posts, static fn( $a, $b ) => strcmp( $b->post_date, $a->post_date ) );
+	$cards     = '';
+	$last_year = null;
+	foreach ( $posts as $p ) {
+		$cards .= '<li>' . dmdune_tx_html( $p, $last_year ) . '</li>';
 	}
 	return sprintf(
 		'<header class="dm-page-head dm-featured-head alignwide"><p class="dm-kicker">// %1$s</p><h1>%2$s</h1><p>%3$s</p></header><section class="dm-unit dm-featured alignwide" aria-labelledby="dm-featured-title">%4$s%5$s</section>',
@@ -429,7 +440,7 @@ function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 		esc_html__( 'Featured', 'dmdune' ),
 		esc_html__( 'The best of ten years of blogging, 2003–2013.', 'dmdune' ),
 		dmdune_hud_head( 'HAND-PICKED', __( 'Worth reading', 'dmdune' ), '', 'dm-featured-title' ),
-		$cards ? '<div class="dm-featured__grid">' . $cards . '</div>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
+		$cards ? '<ol class="dm-log">' . $cards . '</ol>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
 	);
 }
 
