@@ -541,7 +541,7 @@
 
 .dm-discussed { display: flex; flex-direction: column; gap: 14px; }
 .dm-404 { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; max-width: 640px; }
-.dm-404__art { width: 100%; height: auto; aspect-ratio: 3 / 2; border-radius: 14px; border: 1px solid var(--dm-line); }
+.dm-404__art { width: min(420px, 100%); height: auto; }
 .dm-404 h1 { margin: 0; font-size: var(--wp--preset--font-size--xx-large); line-height: 1.05; }
 .dm-404 p { margin: 0; }
 .dm-404 .search-form { display: flex; gap: 8px; width: 100%; max-width: 480px; }
@@ -750,7 +750,7 @@
 
 /* Signal history panel: an instrument with a faint graticule behind the bars only (the
    content box stops above the 18px axis band, so lines never cross the title or the labels) */
-.dm-history { padding: 20px clamp(16px, 3vw, 26px) 16px; border: 1px solid var(--dm-line); border-radius: 18px; background: var(--dm-surface); }
+.dm-history { --dm-gap-bg: var(--dm-surface); padding: 20px clamp(16px, 3vw, 26px) 16px; border: 1px solid var(--dm-line); border-radius: 18px; background: var(--dm-surface); }
 .dm-history .dm-hud-head { border-bottom: 0; padding-bottom: 4px; }
 .dm-history .dm-spec { margin-top: 10px; background:
 	linear-gradient(var(--dm-line), var(--dm-line)) 0 100% / 100% 1px no-repeat content-box,

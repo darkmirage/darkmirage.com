@@ -659,7 +659,7 @@ function dmdune_render_site_footer( array $attrs, WP_Block $block ): string {
 
 function dmdune_render_not_found( array $attrs, WP_Block $block ): string {
 	return sprintf(
-		'<section class="dm-404"><img class="dm-404__art is-day" src="%1$slost-day.webp" alt="" width="960" height="640"><img class="dm-404__art is-night" src="%1$slost-night.webp" alt="" width="960" height="640" loading="lazy"><p class="dm-kicker">404 · %2$s</p><h1>%3$s</h1><p>%4$s</p>%5$s</section>',
+		'<section class="dm-404"><img class="dm-404__art is-day" src="%1$slost-signpost-day.webp" alt="" width="960" height="712"><img class="dm-404__art is-night" src="%1$slost-signpost-night.webp" alt="" width="960" height="712" loading="lazy"><p class="dm-kicker">404 · %2$s</p><h1>%3$s</h1><p>%4$s</p>%5$s</section>',
 		esc_url( get_template_directory_uri() . '/assets/brand/lost/' ),
 		esc_html__( 'Not found', 'dmdune' ),
 		esc_html__( 'Kiro got lost looking for this page.', 'dmdune' ),
