@@ -247,8 +247,12 @@
 		switch (r.t) {
 			case 'year0': {
 				var max = Math.max.apply(null, r.months) || 1;
+				var eras = [];
+				for (var q = r.p; q < r.to; q++) eras[posts[q].m] = eras[posts[q].m] || posts[q].era;
+				var era = posts[r.to - 1].era;
 				var bars = r.months.map(function (n, m) {
-					return '<i style="--h:' + (n / max).toFixed(3) + '" title="' + MON[m] + ' ' + r.y + ': ' + n + '"></i>';
+					era = eras[m] || era;
+					return '<i data-era="' + esc(era) + '" style="--h:' + (n / max).toFixed(3) + '" title="' + MON[m] + ' ' + r.y + ': ' + n + '"></i>';
 				}).join('');
 				var top = posts[r.top];
 				return '<button type="button" class="tl-y0" data-zoom="1" data-p="' + r.p + '">' +
@@ -264,7 +268,7 @@
 				var titles = [];
 				for (var k = r.p; k < r.to && titles.length < 3; k++) titles.push(title(posts[k]));
 				var n = r.to - r.p;
-				return '<button type="button" class="tl-band" data-zoom="2" data-p="' + r.p + '">' +
+				return '<button type="button" class="tl-band" data-zoom="2" data-era="' + esc(p.era) + '" data-p="' + r.p + '">' +
 					'<span class="tl-band__m">' + MON[r.m].toUpperCase() + '</span>' +
 					'<span class="tl-band__bar" style="--w:' + Math.min(1, n / 60).toFixed(3) + '"></span>' +
 					'<span class="tl-band__n">' + n + '</span>' +
@@ -509,6 +513,7 @@
 		flag('is-in', level !== 4 || docTop(log) - window.scrollY < window.innerHeight * 0.4);
 		flag('is-off', window.scrollY + window.innerHeight < docTop(postLevel() ? log : canvas));
 		scrubThumb.style.top = (i / posts.length * 100) + '%';
+		if (scrubThumb.getAttribute('data-era') !== posts[i].era) scrubThumb.setAttribute('data-era', posts[i].era);
 		if (!scrub.classList.contains('is-dragging')) bubble.textContent = MON[posts[i].m] + ' ' + posts[i].y;
 
 		var hb = headerBottom();

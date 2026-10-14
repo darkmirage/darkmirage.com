@@ -21,7 +21,7 @@
 }
 .tl-row--yhdr .dm-tx-year { height: 100%; box-sizing: border-box; padding: 0; }
 .tl--l2 .tl-row--yhdr .dm-tx-year a, .tl--l1 .tl-row--yhdr .dm-tx-year a { font-size: 48px; }
-/* Years and Months are about the shape of the whole run, so they stay neutral: no era colours. */
+/* Year numerals stay ink at Years and Months; the bars beside them carry the era colours. */
 .tl--l1 .dm-tx-year, .tl-year[data-era=""] { --era: var(--dm-fg); }
 
 /* Posts: today's rows at a fixed height. */
@@ -68,7 +68,7 @@
 .tl-band { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 52px 120px 36px minmax(0, 1fr); gap: 14px; align-items: center; width: 100%; height: 100%; padding: 0 12px 0 132px; cursor: pointer; border-radius: 10px; }
 .tl-band:hover, .tl-band:focus-visible { background: var(--dm-accent-soft); }
 .tl-band__m { font: 500 12px var(--wp--preset--font-family--mono); letter-spacing: 0.2em; color: var(--dm-muted); }
-.tl-band__bar { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--dm-accent) calc(var(--w) * 100%), var(--dm-line) 0); }
+.tl-band__bar { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--era) calc(var(--w) * 100%), var(--dm-line) 0); }
 .tl-band__n { font: 600 15px var(--wp--preset--font-family--display); color: var(--dm-fg); font-variant-numeric: tabular-nums; }
 .tl-band__titles { overflow: hidden; color: var(--dm-body); font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
 
@@ -78,7 +78,7 @@
 .tl-y0__year { font: 600 64px/0.9 var(--wp--preset--font-family--display); letter-spacing: 0.02em; color: transparent; -webkit-text-stroke: 1.5px var(--dm-fg); }
 .tl-y0:hover .tl-y0__year, .tl-y0:focus-visible .tl-y0__year { -webkit-text-stroke-color: var(--dm-accent); color: var(--dm-accent); }
 .tl-y0__spark { display: flex; align-items: flex-end; gap: 4px; height: 64px; }
-.tl-y0__spark i { flex: 1; height: calc(var(--h) * 100%); min-height: 2px; border-radius: 2px 2px 0 0; background: var(--dm-accent); opacity: 0.75; }
+.tl-y0__spark i { flex: 1; height: calc(var(--h) * 100%); min-height: 2px; border-radius: 2px 2px 0 0; background: var(--era); opacity: 0.85; }
 .tl-y0__meta { font-size: 14px; color: var(--dm-body); line-height: 1.5; overflow: hidden; }
 .tl-y0__meta b { font: 600 22px var(--wp--preset--font-family--display); color: var(--dm-fg); }
 .tl-y0__meta span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--dm-muted); font-size: 13px; }
@@ -116,7 +116,7 @@
 .tl-scrub__y { position: absolute; right: 14px; transform: translateY(-50%); font: 500 10px var(--wp--preset--font-family--mono); color: var(--dm-muted); cursor: pointer; }
 .tl-scrub__y:hover { color: var(--dm-accent); }
 .tl-scrub__y::after { content: ""; position: absolute; right: -9px; top: 50%; width: 6px; height: 1px; background: var(--dm-muted); }
-.tl-scrub__thumb { position: absolute; right: 4px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--dm-accent); box-shadow: 0 0 0 3px var(--dm-bg); pointer-events: none; }
+.tl-scrub__thumb { position: absolute; right: 4px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--era, var(--dm-accent)); box-shadow: 0 0 0 3px var(--dm-bg); pointer-events: none; transition: background-color 0.3s; }
 .tl-scrub__bubble { position: absolute; right: 26px; margin-top: -13px; padding: 5px 9px; border-radius: 8px; background: var(--dm-fg); color: var(--dm-bg); font: 500 11px var(--wp--preset--font-family--mono); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
 .tl-scrub.is-dragging .tl-scrub__bubble { opacity: 1; }
 @media (hover: hover) {
