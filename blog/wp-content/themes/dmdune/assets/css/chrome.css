@@ -581,27 +581,29 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 	--tmw-btn-radius: 999px;
 	--tmw-dot-bg: var(--tmw-bg);
 }
-.dm-tmw.dm-tmw { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 90; margin: 0; padding: 0; color: var(--tmw-fg); font: 400 12px/16px var(--tmw-font); text-align: left; }
+.dm-tmw.dm-tmw { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 44px; height: 44px; margin: 0; padding: 0; color: var(--tmw-fg); font: 400 12px/16px var(--tmw-font); text-align: left; }
 @media (max-width: 900px) { .dm-tmw.dm-tmw { right: 12px; bottom: calc(var(--dm-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); } }
-.dm-tmw.dm-tmw > summary { display: flex; align-items: center; box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--tmw-line); border-radius: var(--tmw-pill-radius); background: var(--tmw-bg); box-shadow: 0 0 0 2px var(--era), 0 10px 28px -12px rgba(0, 0, 0, 0.5); color: var(--era); list-style: none; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; }
-.dm-tmw.dm-tmw > summary::-webkit-details-marker { display: none; }
-/* The label slides out beside the clock on hover, focus and while open. */
-.dm-tmw__label { display: inline-block; overflow: hidden; max-width: 0; margin-left: 0; opacity: 0; color: var(--tmw-fg); font: var(--tmw-title-font); letter-spacing: 0.04em; white-space: nowrap; transition: max-width 0.28s ease, margin-left 0.28s ease, opacity 0.2s ease, color 0.2s ease; }
-.dm-tmw__label b { color: var(--era); font-weight: 700; transition: color 0.2s ease; }
-/* Hover fills the button with the era's colour. */
-@media (hover: hover) {
-	.dm-tmw.dm-tmw > summary:hover { background: var(--era); color: #fff; }
-	.dm-tmw.dm-tmw > summary:hover .dm-tmw__label { max-width: 260px; margin-left: 8px; opacity: 1; }
-}
-.dm-tmw.dm-tmw > summary:focus-visible, .dm-tmw[open] > summary { background: var(--era); color: #fff; }
-.dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label, .dm-tmw[open] > summary .dm-tmw__label { max-width: 260px; margin-left: 8px; opacity: 1; }
-.dm-tmw.dm-tmw > summary:hover .dm-tmw__label, .dm-tmw.dm-tmw > summary:hover .dm-tmw__label b, .dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label, .dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label b, .dm-tmw[open] > summary .dm-tmw__label, .dm-tmw[open] > summary .dm-tmw__label b { color: #fff; }
-.dm-tmw__panel { position: absolute; right: 0; bottom: calc(100% + 12px); box-sizing: border-box; width: 440px; max-width: calc(100vw - 24px); padding: 12px 14px; border: 1px solid var(--tmw-line); border-radius: var(--tmw-radius); background: var(--tmw-bg); box-shadow: var(--tmw-shadow); }
-/* Row one: the title, and Copy link in the old eras; row two: what's showing. Fixed heights. */
-.dm-tmw__head { display: grid; grid-template-rows: 22px 16px; gap: 4px; margin-bottom: 12px; }
-.dm-tmw__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+/* Collapsed: a round button filled with the era's colour. */
+.dm-tmw.dm-tmw .dm-tmw__btn { position: absolute; right: 0; bottom: 0; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; margin: 0; padding: 0; border: 0; border-radius: var(--tmw-pill-radius); background: var(--era); box-shadow: 0 0 0 2px var(--tmw-bg), 0 10px 26px -10px rgba(0, 0, 0, 0.55); color: #fff; cursor: pointer; transition: opacity 0.18s ease, transform 0.18s ease; }
+.dm-tmw.dm-tmw .dm-tmw__btn:focus-visible { outline: 2px solid var(--era); outline-offset: 3px; }
+/* Open: the panel grows out of the button's corner (a clip-path from the 44px circle to the full
+   card), the button fades under it, and the contents fade in once there's room. The shape is
+   drawn by ::before so the clip doesn't cut off the timeline's hover cards; drop-shadow follows it. */
+.dm-tmw__panel { position: absolute; right: 0; bottom: 0; z-index: 1; box-sizing: border-box; width: 440px; max-width: calc(100vw - 24px); filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.28)); visibility: hidden; pointer-events: none; transition: visibility 0s 0.32s; }
+.dm-tmw__panel::before { content: ""; position: absolute; inset: 0; border: 1px solid var(--tmw-line); border-radius: var(--tmw-radius); background: var(--tmw-bg); clip-path: inset(calc(100% - 44px) 0 0 calc(100% - 44px) round 22px); transition: clip-path 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.dm-tmw__body { position: relative; padding: 12px 14px; opacity: 0; transition: opacity 0.12s ease; }
+.dm-tmw.is-open .dm-tmw__panel { visibility: visible; pointer-events: auto; transition: none; }
+.dm-tmw.is-open .dm-tmw__panel::before { clip-path: inset(0 round var(--tmw-radius)); }
+.dm-tmw.is-open .dm-tmw__body { opacity: 1; transition: opacity 0.18s ease 0.12s; }
+/* The button stays as the panel's anchor in its bottom-right corner. */
+/* Reopened after an era switch: no animation. */
+.dm-tmw.is-still .dm-tmw__panel::before, .dm-tmw.is-still .dm-tmw__body, .dm-tmw.is-still .dm-tmw__btn { transition: none; }
+@media (prefers-reduced-motion: reduce) { .dm-tmw__panel::before, .dm-tmw__body, .dm-tmw.dm-tmw .dm-tmw__btn { transition: none; } }
+/* Top: the title, and Copy link in the old eras. Bottom: what's showing, beside the button
+   (which the pointer is on when the panel opens, so it doesn't land on a marker). Fixed heights. */
+.dm-tmw__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; height: 22px; margin-bottom: 14px; }
 .dm-tmw__title { flex: 1 1 auto; min-width: 0; overflow: hidden; padding: 0 4px; background: var(--tmw-title-bg); color: var(--tmw-title-fg); font: var(--tmw-title-font); letter-spacing: var(--tmw-title-spacing); text-overflow: ellipsis; text-transform: var(--tmw-title-case); white-space: nowrap; }
-.dm-tmw__now { overflow: hidden; color: var(--tmw-muted); text-overflow: ellipsis; white-space: nowrap; }
+.dm-tmw__now { box-sizing: border-box; height: 44px; margin: 6px -14px -12px 0; padding: 0 58px 0 0; overflow: hidden; color: var(--tmw-muted); line-height: 44px; text-overflow: ellipsis; white-space: nowrap; }
 .dm-tmw__now b { color: var(--tmw-fg); font-weight: 700; }
 .dm-tmw.dm-tmw .dm-tmw__share { flex: 0 0 auto; height: 22px; margin: 0; padding: 0 10px; border: 1px solid var(--tmw-line); border-radius: var(--tmw-btn-radius); background: var(--tmw-btn-bg); box-shadow: none; color: var(--tmw-btn-fg); font: 700 11px/20px var(--tmw-font); letter-spacing: 0; text-transform: none; cursor: pointer; }
 .dm-tmw.dm-tmw .dm-tmw__share:hover, .dm-tmw.dm-tmw .dm-tmw__share:focus-visible { border-color: var(--era); color: var(--era); }
@@ -613,12 +615,4 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 .dm-tmw .dm-tm__card b { font: 700 13px/17px var(--tmw-font); }
 .dm-tmw .dm-tm__span { color: var(--tmw-muted); font: 400 11px/14px var(--tmw-font); }
 .dm-tmw .dm-tm__blurb { color: var(--tmw-fg); }
-/* Opening rises out of the corner; reopening after an era switch (.dm-tmw--still) doesn't. */
-@keyframes dm-tmw-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
-.dm-tmw[open] > .dm-tmw__panel { transform-origin: 100% 100%; animation: dm-tmw-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1); }
-.dm-tmw--still[open] > .dm-tmw__panel { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-	.dm-tmw[open] > .dm-tmw__panel { animation: none; }
-	.dm-tmw.dm-tmw > summary, .dm-tmw__label, .dm-tmw__label b { transition: none; }
-}
 @media print { .dm-tmw { display: none; } }

@@ -173,10 +173,11 @@ function dmc_default2_taglines(): array {
 }
 
 /**
- * The time machine: a clock button floating in the corner (ringed in the current era's colour)
- * that opens a card with the timeline. Same place and size in every era, dressed in each era's
- * own style (assets/skins/<skin>/skin.css), and out of the old designs' way. After an era is picked in it, the inline
- * script reopens it on the new page before the first paint, so readers can step through eras.
+ * The time machine: a round button in the current era's colour floating in the corner. Hovering
+ * it (or tapping, or Enter) grows it into the timeline panel (assets/js/chrome.js). Same place
+ * and size in every era, dressed in each era's own style (assets/skins/<skin>/skin.css). After
+ * an era is picked in it, the inline script reopens it on the new page before the first paint,
+ * without the animation, so readers can step through eras.
  */
 function dmc_time_machine_html(): string {
 	$skin  = dmc_skin();
@@ -184,7 +185,7 @@ function dmc_time_machine_html(): string {
 	// In the header row, so the timeline sits in the same place whether or not it is there.
 	$share = $skin ? '<button type="button" class="dm-tmw__share">Copy link</button>' : '';
 	return sprintf(
-		'<details class="dm-tmw" data-era="%1$s"><summary aria-label="Time machine: viewing %2$s. See the site as it looked in other years">%3$s<span class="dm-tmw__label">Time machine <b>%2$s</b></span></summary><div class="dm-tmw__panel"><div class="dm-tmw__head"><div class="dm-tmw__row"><span class="dm-tmw__title">Time machine</span>%6$s</div><span class="dm-tmw__now">Viewing <b>%2$s</b> · %4$s</span></div>%5$s</div></details><script>try{if(sessionStorage.getItem("dm-tm-open")){sessionStorage.removeItem("dm-tm-open");var t=document.currentScript.previousElementSibling;t.classList.add("dm-tmw--still");t.open=true;t.firstElementChild.addEventListener("click",function(){t.classList.remove("dm-tmw--still")},{once:true})}}catch(e){}</script>',
+		'<div class="dm-tmw" data-era="%1$s"><button type="button" class="dm-tmw__btn" aria-expanded="false" aria-controls="dm-tmw-panel" aria-label="Time machine: viewing %2$s. See the site as it looked in other years">%3$s</button><div class="dm-tmw__panel" id="dm-tmw-panel" role="group" aria-label="Time machine"><div class="dm-tmw__body"><div class="dm-tmw__row"><span class="dm-tmw__title">Time machine</span>%6$s</div>%5$s<p class="dm-tmw__now">Viewing <b>%2$s</b> · %4$s</p></div></div></div><script>try{if(sessionStorage.getItem("dm-tm-open")){sessionStorage.removeItem("dm-tm-open");var t=document.currentScript.previousElementSibling;t.classList.add("is-open","is-still");t.querySelector(".dm-tmw__btn").setAttribute("aria-expanded","true")}}catch(e){}</script>',
 		$skin ? dmc_skin_era( $skin ) : 'now',
 		dmc_e( $s['name'] ),
 		dmc_icon( 'clock', 20 ),

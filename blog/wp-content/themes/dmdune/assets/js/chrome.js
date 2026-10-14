@@ -55,6 +55,38 @@
 		}
 	});
 
+	// The time machine grows out of its button: on hover with a mouse (closing a moment after the
+	// pointer leaves, so crossing the gap doesn't snap it shut), or on tap / Enter. Escape or a
+	// click elsewhere closes it.
+	(function () {
+		var tm = document.querySelector('.dm-tmw');
+		if (!tm) return;
+		var btn = tm.querySelector('.dm-tmw__btn');
+		var timer = null;
+		var pointer = '';
+		var set = function (open) {
+			clearTimeout(timer);
+			if (open !== tm.classList.contains('is-open')) tm.classList.remove('is-still');
+			tm.classList.toggle('is-open', open);
+			btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+		};
+		tm.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') set(true); });
+		tm.addEventListener('pointerleave', function (e) {
+			if (e.pointerType !== 'mouse') return;
+			clearTimeout(timer);
+			timer = setTimeout(function () { set(false); }, 350);
+		});
+		// A mouse has already opened it by hovering, so its click keeps it open; touch and keys toggle.
+		tm.addEventListener('pointerdown', function (e) { pointer = e.pointerType; });
+		btn.addEventListener('click', function (e) {
+			if (pointer === 'mouse' && e.detail) set(true);
+			else set(!tm.classList.contains('is-open'));
+			pointer = '';
+		});
+		document.addEventListener('click', function (e) { if (!tm.contains(e.target)) set(false); });
+		document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tm.classList.contains('is-open')) { set(false); btn.focus(); } });
+	})();
+
 	// In an old era, "Copy link" shares this page in that era (?era=<theme>): the share sheet on
 	// phones, the clipboard elsewhere.
 	(function () {
@@ -99,14 +131,14 @@
 			return;
 		}
 		// Tapping outside an open menu closes it.
-		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-tmw[open]').forEach(function (d) {
+		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) {
 			if (!d.contains(e.target)) d.removeAttribute('open');
 		});
 	});
 
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape') {
-			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-tmw[open]').forEach(function (d) { d.removeAttribute('open'); });
+			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open]').forEach(function (d) { d.removeAttribute('open'); });
 		}
 	});
 
