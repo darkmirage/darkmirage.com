@@ -29,13 +29,13 @@
  */
 function dmc_skins(): array {
 	return array(
-		'nadesico'  => array( 'name' => 'Nadesico', 'short' => 'Nadesico', 'era' => '2003', 'years' => '2003–04', 'from' => '0000-00-00' ),
-		'aegis'     => array( 'name' => 'Aegis', 'short' => 'Aegis', 'era' => '2004', 'years' => '2004–05', 'from' => '2004-04-17 00:00:00' ),
-		'lacus'     => array( 'name' => 'Lacus', 'short' => 'Lacus', 'era' => '2005', 'years' => '2005', 'from' => '2005-05-10 00:00:00' ),
-		'default2'  => array( 'name' => 'default2', 'short' => 'default2', 'era' => '2005', 'years' => '2005–06', 'from' => '2005-11-03 13:00:00' ),
-		'kubrick'   => array( 'name' => 'Kubrick DM', 'short' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-09-18 21:00:00' ),
-		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'short' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-12-01' ),
-		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–16', 'from' => '2007-12-01' ),
+		'nadesico'  => array( 'name' => 'Nadesico', 'short' => 'Nadesico', 'era' => '2003', 'years' => '2003–04', 'from' => '0000-00-00', 'span' => 'Apr 2003 – Apr 2004', 'blurb' => 'b2. A white page, a blue band and the Nadesico drawn faintly behind the posts.' ),
+		'aegis'     => array( 'name' => 'Aegis', 'short' => 'Aegis', 'era' => '2004', 'years' => '2004–05', 'from' => '2004-04-17 00:00:00', 'span' => 'Apr 2004 – May 2005', 'blurb' => 'b2. Sky blue, under the GAT-X303 Aegis banner.' ),
+		'lacus'     => array( 'name' => 'Lacus', 'short' => 'Lacus', 'era' => '2005', 'years' => '2005', 'from' => '2005-05-10 00:00:00', 'span' => 'May – Nov 2005', 'blurb' => 'b2’s last look: Lacus in the corner, a tagboard, and ads.' ),
+		'default2'  => array( 'name' => 'default2', 'short' => 'default2', 'era' => '2005', 'years' => '2005–06', 'from' => '2005-11-03 13:00:00', 'span' => 'Nov 2005 – Sep 2006', 'blurb' => 'WordPress arrives: Kubrick with rotating anime headers.' ),
+		'kubrick'   => array( 'name' => 'Kubrick DM', 'short' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-09-18 21:00:00', 'span' => 'Sep – Nov 2006', 'blurb' => 'Kubrick in DarkMirage blue, under Haruhi’s “H”.' ),
+		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'short' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-12-01', 'span' => 'Dec 2006 – Nov 2007', 'blurb' => 'Kubrick DM widened to three columns on blue stripes.' ),
+		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'short' => 'Blocks', 'era' => '2008', 'years' => '2008–16', 'from' => '2007-12-01', 'span' => 'Dec 2007 – 2016', 'blurb' => 'A carbon banner, white cards and deep red links. The longest-running look.' ),
 	);
 }
 
@@ -116,12 +116,27 @@ function dmc_skin_css( array $c ): string {
  * Dune header's menu.
  */
 function dmc_era_buttons(): string {
-	$skin = dmc_skin();
-	$out  = '';
-	foreach ( dmc_skins() as $key => $s ) {
-		$out .= sprintf( '<button type="button" data-dm-skin="%1$s" data-era="%2$s"%3$s aria-label="%4$s, %5$s: the site as it looked then"><span class="dm-era__name">%6$s</span><span class="dm-era__yrs">%5$s</span>%7$s</button>', $key, dmc_skin_era( $key ), $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['name'] ), dmc_e( $s['years'] ), dmc_e( $s['short'] ), dmc_era_peek( $key, $s['name'], $s['years'] ) );
+	$skin  = dmc_skin();
+	$stops = dmc_skins() + array( '' => array( 'name' => 'Dune', 'era' => 'Now', 'span' => 'Today', 'blurb' => 'Today’s design.' ) );
+	$out   = '';
+	$prev  = '';
+	foreach ( $stops as $key => $s ) {
+		// Years label only where they change, so the two 2005 designs share one "’05".
+		$year = 'Now' === $s['era'] ? 'Now' : ( $s['era'] === $prev ? '' : '’' . substr( $s['era'], 2 ) );
+		$prev = $s['era'];
+		$out .= sprintf(
+			'<li class="dm-tm__stop" data-era="%1$s"><button type="button" data-dm-skin="%2$s"%3$s aria-label="%4$s, %5$s"><span class="dm-tm__dot"></span><span class="dm-tm__yr">%6$s</span></button><span class="dm-tm__card" aria-hidden="true"><img src="%7$s" alt="" width="230" height="144" loading="lazy" decoding="async"><b>%4$s</b><span class="dm-tm__span">%5$s</span><span class="dm-tm__blurb">%8$s</span></span></li>',
+			'' === $key ? 'now' : dmc_skin_era( $key ),
+			$key,
+			$skin === $key ? ' aria-pressed="true"' : '',
+			dmc_e( $s['name'] ),
+			dmc_e( $s['span'] ),
+			dmc_e( $year ),
+			dmc_e( dmc_config()['assets'] . 'skins/previews/' . ( '' === $key ? 'now' : $key ) . '.webp?v=' . DMC_VERSION ),
+			dmc_e( $s['blurb'] )
+		);
 	}
-	return $out . sprintf( '<button type="button" data-dm-skin="" data-era="now"%s aria-label="Dune: today’s site"><span class="dm-era__name">Dune</span><span class="dm-era__yrs">Now</span>%s</button>', $skin ? '' : ' aria-pressed="true"', dmc_era_peek( 'now', 'Dune', 'today' ) );
+	return '<ol class="dm-tm" style="--n:' . count( $stops ) . '">' . $out . '</ol>';
 }
 
 /**
@@ -158,23 +173,11 @@ function dmc_default2_taglines(): array {
 }
 
 /**
- * A small screenshot of the era's home page, shown while a year button is hovered or focused.
- */
-function dmc_era_peek( string $key, string $name, string $years ): string {
-	return sprintf(
-		'<span class="dm-era-peek" aria-hidden="true"><img src="%1$s" alt="" width="240" height="150" loading="lazy" decoding="async"><span class="dm-era-peek__cap"><b>%2$s</b> %3$s</span></span>',
-		dmc_e( dmc_config()['assets'] . 'skins/previews/' . $key . '.webp?v=' . DMC_VERSION ),
-		dmc_e( $name ),
-		dmc_e( $years )
-	);
-}
-
-/**
  * Header control for Dune: a clock that opens the era list.
  */
 function dmc_era_menu_html(): string {
 	return sprintf(
-		'<details class="dm-era"><summary aria-label="Time machine: see the site as it looked in earlier years">%s<span class="dm-era__label">Time machine</span></summary><div class="dm-era__panel"><p>See DarkMirage as it looked back then</p><div class="dm-era__years">%s</div></div></details>',
+		'<details class="dm-era"><summary aria-label="Time machine: see the site as it looked in earlier years">%s<span class="dm-era__label">Time machine</span></summary><div class="dm-era__panel"><p>See DarkMirage as it looked back then</p>%s</div></details>',
 		dmc_icon( 'clock', 18 ),
 		dmc_era_buttons()
 	);

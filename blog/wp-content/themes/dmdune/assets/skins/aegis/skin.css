@@ -41,7 +41,7 @@ html[data-skin] a { font-weight: 700; }
 html[data-skin] a:hover { color: #000; }
 
 /* ---------- Time machine bar ---------- */
-.dm-skinbar { background: var(--b2-band); color: #000; border-bottom: 1px solid #000; font: 700 11px/1.2 var(--b2-font); }
+.dm-skinbar { --tm-edge: #000; background: var(--b2-band); color: #000; border-bottom: 1px solid #000; font: 700 11px/1.2 var(--b2-font); }
 .dm-skinbar__lead { font: 700 11px var(--b2-font); }
 .dm-skinbar button { min-width: 44px; padding: 2px 8px; border: 1px solid #000; border-radius: 0; background: var(--b2-menu); color: #000; font: 700 11px/1.2 var(--b2-font); }
 .dm-skinbar button:hover { background: #fff; color: #000; }

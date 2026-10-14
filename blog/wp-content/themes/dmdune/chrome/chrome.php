@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.12.4' );
+define( 'DMC_VERSION', '1.13.0' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
@@ -123,6 +123,10 @@ function dmc_head_early(): void {
 	if ( dmc_skin() ) {
 		// Era skins are single-scheme, as the originals were.
 		printf( "<meta name=\"color-scheme\" content=\"light\">\n<script>document.documentElement.setAttribute('data-skin','%s');</script>\n", dmc_skin() );
+		// Blocks' Jura is otherwise found only once skin.css arrives, and the banner title reflows.
+		if ( 'blocks' === dmc_skin() ) {
+			printf( '<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>' . "\n", dmc_e( dmc_config()['assets'] . 'fonts/jura-latin-wght.woff2' ) );
+		}
 		return;
 	}
 	// The fonts are only found once chrome.css arrives (from www, for the subsites); asking now

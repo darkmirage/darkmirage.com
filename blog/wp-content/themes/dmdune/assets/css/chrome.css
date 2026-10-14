@@ -533,57 +533,56 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 	.dm-era summary { width: 40px; padding: 0; justify-content: center; }
 	.dm-era__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 }
-.dm-era__panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; box-sizing: border-box; width: 360px; max-width: calc(100vw - 24px); padding: 12px 14px 14px; border: 1px solid var(--dm-line); border-radius: 14px; background: var(--dm-surface); box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45); }
+.dm-era__panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; box-sizing: border-box; width: 420px; max-width: calc(100vw - 24px); padding: 12px 14px 10px; border: 1px solid var(--dm-line); border-radius: 14px; background: var(--dm-surface); box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45); }
 /* On phones the clock sits beside other buttons, so the panel spans the screen instead. */
 @media (max-width: 600px) {
 	.dm-era__panel { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 66px); right: 12px; left: 12px; width: auto; max-width: none; }
 }
-.dm-era__panel p { margin: 0 0 8px; font: 500 11px/1.3 var(--dm-font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dm-muted); }
-/* Two columns, oldest first and Now last: each era by name, its years beneath, its colour dot. */
-.dm-era__years { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.dm-era__years button, .dm-era-post { font: 600 0.9375rem/1 var(--dm-font-display); letter-spacing: 0.04em; cursor: pointer; }
-.dm-era__years button { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; row-gap: 3px; align-items: center; min-width: 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--era, var(--dm-accent)) 45%, var(--dm-line)); border-radius: 10px; background: var(--dm-bg); color: var(--dm-fg); text-align: left; }
-.dm-era__years button::before { content: ""; grid-row: 1 / 3; width: 8px; height: 8px; border-radius: 50%; background: var(--era, var(--dm-accent)); }
-.dm-era__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dm-era__years .dm-era__yrs { font: 400 11px/1 var(--dm-font-mono); letter-spacing: 0.06em; color: var(--dm-muted); }
-.dm-era__years button[aria-pressed="true"] .dm-era__yrs { color: inherit; opacity: 0.85; }
-.dm-era__years button:hover, .dm-era__years button:focus-visible { border-color: var(--era, var(--dm-accent)); background: color-mix(in srgb, var(--era, var(--dm-accent)) 14%, var(--dm-bg)); }
-.dm-era__years button[aria-pressed="true"] { background: var(--era, var(--dm-accent)); border-color: var(--era, var(--dm-accent)); color: #fff; }
-.dm-era__years button[aria-pressed="true"]::before { background: #fff; }
-.dm-era-post { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px dashed color-mix(in srgb, var(--era, var(--dm-accent)) 60%, transparent); border-radius: 999px; background: none; color: var(--dm-muted); font-size: 0.8125rem; font-weight: 500; }
+.dm-era__panel p { margin: 0 0 10px; font: 500 11px/1.3 var(--dm-font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dm-muted); }
+.dm-era-post { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px dashed color-mix(in srgb, var(--era, var(--dm-accent)) 60%, transparent); border-radius: 999px; background: none; color: var(--dm-muted); font: 500 0.8125rem/1 var(--dm-font-display); letter-spacing: 0.04em; cursor: pointer; }
 .dm-era-post .dm-icon { color: var(--era, var(--dm-accent)); }
 .dm-era-post:hover, .dm-era-post:focus-visible { border-color: var(--era, var(--dm-accent)); border-style: solid; background: color-mix(in srgb, var(--era, var(--dm-accent)) 12%, transparent); color: var(--dm-fg); }
 
-/* Old eras' time machine bar: one row of name-over-years buttons in each skin's own style. The
-   doubled classes outrank the skins' layout rules, which wrapped the old year-only row. */
-.dm-skinbar.dm-skinbar { flex-wrap: nowrap; }
-.dm-skinbar .dm-skinbar__years { position: relative; display: flex; flex-wrap: nowrap; gap: 4px; min-width: 0; }
-.dm-skinbar .dm-skinbar__years button { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; flex: 0 0 auto; white-space: nowrap; }
-.dm-skinbar .dm-era__yrs { font-size: 0.8em; font-weight: 400; opacity: 0.8; }
-.dm-skinbar button[data-era] { box-shadow: inset 0 -3px 0 var(--era); }
-.dm-skinbar__share { flex: 0 0 auto; }
-@media (max-width: 960px) {
-	.dm-skinbar.dm-skinbar { justify-content: flex-start; }
-	.dm-skinbar .dm-skinbar__lead > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-	.dm-skinbar .dm-skinbar__years { flex: 1 1 auto; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-	.dm-skinbar .dm-skinbar__years::-webkit-scrollbar { display: none; }
-	/* The scrolling row would clip them. */
-	.dm-skinbar .dm-era-peek { display: none; }
-}
-
-/* Time machine previews: a screenshot of each era's home page by the era being hovered. */
-.dm-era-peek { position: absolute; top: calc(100% + 10px); left: 50%; z-index: 80; display: flex; flex-direction: column; gap: 6px; width: 240px; margin-left: -127px; padding: 6px 6px 8px; border: 1px solid var(--dm-line); border-top: 3px solid var(--era, var(--dm-accent)); border-radius: 12px; background: var(--dm-surface); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.45); color: var(--dm-fg); font: 400 11px/1.3 var(--dm-font-mono); letter-spacing: 0.06em; text-align: left; text-transform: none; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 0.15s, transform 0.15s, visibility 0s 0.15s; pointer-events: none; }
-.dm-era-peek img { display: block; width: 100%; height: auto; border-radius: 7px; background: var(--dm-line); }
-.dm-era-peek__cap { color: var(--dm-muted); }
-.dm-era-peek__cap b { color: var(--dm-fg); font-weight: 600; }
+/* The time machine: one line, a marker for each design from 2003 to now, evenly spaced. The line
+   between two markers takes the earlier era's colour, as on the archive chart. Hovering or
+   focusing a marker shows a card with the era's screenshot and dates; clicking goes there.
+   The doubled class outranks each old skin's ".dm-skinbar button" rules. */
+.dm-tm { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.dm-tm__stop { position: relative; display: flex; justify-content: center; min-width: 0; }
+.dm-tm__stop:not(:last-child)::before { content: ""; position: absolute; top: 8px; left: 50%; width: 100%; height: 3px; border-radius: 2px; background: var(--era); }
+.dm-tm.dm-tm .dm-tm__stop > button { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; min-width: 0; min-height: 0; margin: 0; padding: 3px 0 2px; border: 0; border-radius: 0; background: none; box-shadow: none; color: inherit; font: 500 10.5px/1 var(--dm-font-mono); letter-spacing: 0.04em; text-transform: none; cursor: pointer; }
+.dm-tm__dot { box-sizing: border-box; width: 13px; height: 13px; border: 3px solid var(--era); border-radius: 50%; background: var(--dm-surface); transition: transform 0.15s; }
+.dm-tm__yr { min-height: 1em; opacity: 0.75; white-space: nowrap; }
+.dm-tm.dm-tm .dm-tm__stop > button:hover .dm-tm__dot, .dm-tm.dm-tm .dm-tm__stop > button:focus-visible .dm-tm__dot { transform: scale(1.3); }
+.dm-tm.dm-tm .dm-tm__stop > button[aria-pressed="true"] { cursor: default; }
+.dm-tm.dm-tm .dm-tm__stop > button[aria-pressed="true"] .dm-tm__dot { background: var(--era); box-shadow: 0 0 0 4px color-mix(in srgb, var(--era) 28%, transparent); transform: scale(1.15); }
+.dm-tm.dm-tm .dm-tm__stop > button[aria-pressed="true"] .dm-tm__yr { opacity: 1; font-weight: 700; }
+.dm-tm__card { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 80; display: flex; flex-direction: column; gap: 3px; box-sizing: border-box; width: 230px; margin-left: -115px; padding: 6px 6px 9px; border: 1px solid var(--dm-line); border-top: 3px solid var(--era); border-radius: 12px; background: var(--dm-surface); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.45); color: var(--dm-fg); font: 400 12px/1.4 var(--dm-font-body, system-ui, sans-serif); letter-spacing: 0; text-align: left; text-transform: none; white-space: normal; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 0.15s, transform 0.15s, visibility 0s 0.15s; pointer-events: none; }
+/* The end markers' cards open inwards so they stay on screen. */
+.dm-tm__stop:nth-child(-n+2) > .dm-tm__card { left: 0; margin-left: -6px; }
+.dm-tm__stop:nth-last-child(-n+2) > .dm-tm__card { left: auto; right: 0; margin-left: 0; margin-right: -6px; }
+.dm-tm__card img { display: block; width: 100%; height: auto; margin-bottom: 4px; border-radius: 7px; background: var(--dm-line); }
+.dm-tm__card b { padding: 0 3px; font: 600 14px/1.2 var(--dm-font-display); }
+.dm-tm__span { padding: 0 3px; font: 400 11px/1.3 var(--dm-font-mono); letter-spacing: 0.04em; color: var(--dm-muted); }
+.dm-tm__blurb { padding: 0 3px; color: var(--dm-body, var(--dm-fg)); }
 @media (hover: hover) {
-	button:hover > .dm-era-peek { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+	.dm-tm__stop:hover > .dm-tm__card { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 }
-button:focus-visible > .dm-era-peek { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-@media (prefers-reduced-motion: reduce) { .dm-era-peek { transition: none; } }
-/* In the Dune panel the preview sits to the left of the list, which it would otherwise cover. */
-.dm-era__years .dm-era-peek { top: 0; right: calc(100% + 18px); left: auto; margin-left: 0; }
-@media (max-width: 600px) { .dm-era__years .dm-era-peek { display: none; } }
+.dm-tm__stop:focus-within > .dm-tm__card { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) { .dm-tm__card, .dm-tm__dot { transition: none; } }
 
-/* "Copy link" in an old era's time machine bar; each skin styles .dm-skinbar button. */
-.dm-skinbar__share { margin-left: 4px; }
+/* Old eras' bar: the same line between "Time machine" and "Copy link", in each skin's colours. */
+.dm-skinbar.dm-skinbar { flex-wrap: nowrap; }
+.dm-skinbar .dm-skinbar__years { display: block; flex: 0 1 420px; min-width: 0; }
+/* An outline keeps the line readable on bars of a similar colour (the b2 skins set it to black). */
+.dm-skinbar .dm-tm__stop:not(:last-child)::before { box-shadow: 0 0 0 1px var(--tm-edge, rgba(0, 0, 0, 0.3)); }
+.dm-skinbar .dm-tm__dot { background: #fff; box-shadow: 0 0 0 1px var(--tm-edge, rgba(0, 0, 0, 0.3)); }
+.dm-skinbar .dm-tm.dm-tm .dm-tm__stop > button[aria-pressed="true"] .dm-tm__dot { box-shadow: 0 0 0 1px var(--tm-edge, rgba(0, 0, 0, 0.3)), 0 0 0 4px #fff; }
+/* Labels in the skin's own bar font: no web font to wait for, and true to each era. */
+.dm-skinbar .dm-tm.dm-tm .dm-tm__stop > button { font-family: inherit; font-size: 10px; font-weight: 700; }
+.dm-skinbar__share { flex: 0 0 auto; margin-left: 4px; }
+@media (max-width: 600px) {
+	.dm-skinbar.dm-skinbar { gap: 8px; padding-left: 10px; padding-right: 10px; }
+	.dm-skinbar .dm-skinbar__lead > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+	.dm-skinbar .dm-skinbar__years { flex: 1 1 auto; }
+}
