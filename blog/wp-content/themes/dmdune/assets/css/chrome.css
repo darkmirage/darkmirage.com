@@ -608,7 +608,8 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 @media (prefers-reduced-motion: reduce) { .dm-tmw__panel::before, .dm-tmw__body, .dm-tmw.dm-tmw .dm-tmw__btn { transition: none; } }
 /* Top: the title, and Copy link in the old eras. Bottom: what's showing, beside the button
    (which the pointer is on when the panel opens, so it doesn't land on a marker). Fixed heights. */
-.dm-tmw__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; height: 22px; margin-bottom: 14px; }
+.dm-tmw__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; height: 22px; }
+.dm-tmw__sub { height: 16px; margin: 4px 0 12px; padding: 0 4px; overflow: hidden; color: var(--tmw-muted); font: 400 12px/16px var(--tmw-font); text-overflow: ellipsis; white-space: nowrap; }
 .dm-tmw__title { flex: 1 1 auto; min-width: 0; overflow: hidden; padding: 0 4px; background: var(--tmw-title-bg); color: var(--tmw-title-fg); font: var(--tmw-title-font); letter-spacing: var(--tmw-title-spacing); text-overflow: ellipsis; text-transform: var(--tmw-title-case); white-space: nowrap; }
 .dm-tmw__now { box-sizing: border-box; height: 44px; margin: 6px -14px -12px 0; padding: 0 58px 0 0; overflow: hidden; color: var(--tmw-muted); line-height: 44px; text-overflow: ellipsis; white-space: nowrap; }
 .dm-tmw__now b { color: var(--tmw-fg); font-weight: 700; }
