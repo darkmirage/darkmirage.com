@@ -311,18 +311,9 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 	if ( ! $points ) {
 		return '';
 	}
-	$total = array_sum( array_column( $points, 1 ) );
-	$peak  = array_reduce( $points, static fn( $c, $p ) => ( ! $c || $p[1] > $c[1] ) ? $p : $c );
 	$first = $points[0][0];
 	$last  = end( $points )[0];
-	$note  = sprintf(
-		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><span><i data-era="b2"></i>b2</span> <span><i data-era="default"></i>default2</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>',
-		esc_html( number_format_i18n( $total ) ),
-		esc_html__( 'transmissions', 'dmdune' ),
-		esc_html( $peak[0] ),
-		/* translators: %s: number of posts */
-		esc_html( sprintf( __( 'Busiest month (%s posts):', 'dmdune' ), $peak[1] ) )
-	);
+	$note  = '<span class="dm-legend"><span><i data-era="b2"></i>b2</span> <span><i data-era="default"></i>default2</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>';
 	return sprintf(
 		'<section class="dm-unit dm-history alignwide" aria-labelledby="dm-history-title">%1$s%2$s<p class="dm-spec__range"><span>%3$s</span><span>%4$s</span></p></section>',
 		dmdune_hud_head( 'SIGNAL HISTORY', __( 'Every month on air', 'dmdune' ), $note, 'dm-history-title' ),
