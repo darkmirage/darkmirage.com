@@ -55,23 +55,24 @@ add_action(
 );
 
 /**
- * Falls back to the roundel as the favicon until a site icon is set in the Customizer.
+ * Falls back to the roundel as the favicon until a site icon is set in the Customizer. The admin
+ * and login screens don't run wp_head, so they get it too (otherwise browsers show the 2007
+ * /favicon.ico there).
  */
-add_action(
-	'wp_head',
-	static function () {
-		if ( has_site_icon() ) {
-			return;
-		}
-		$base = get_template_directory_uri() . '/assets/brand/icons/';
-		// SVG first: it switches to night colours in dark mode. PNG for browsers without SVG icons.
-		printf( '<link rel="icon" href="%s" type="image/svg+xml">' . "\n", esc_url( $base . 'favicon.svg' ) );
-		printf( '<link rel="icon" href="%s" sizes="32x32">' . "\n", esc_url( $base . 'site-icon-32.png' ) );
-		printf( '<link rel="icon" href="%s" sizes="192x192">' . "\n", esc_url( $base . 'site-icon-192.png' ) );
-		printf( '<link rel="apple-touch-icon" href="%s">' . "\n", esc_url( $base . 'site-icon-180.png' ) );
-	},
-	5
-);
+$dmdune_icons = static function () {
+	if ( has_site_icon() ) {
+		return;
+	}
+	$base = get_template_directory_uri() . '/assets/brand/icons/';
+	// SVG first: it switches to night colours in dark mode. PNG for browsers without SVG icons.
+	printf( '<link rel="icon" href="%s" type="image/svg+xml">' . "\n", esc_url( $base . 'favicon.svg' ) );
+	printf( '<link rel="icon" href="%s" sizes="32x32">' . "\n", esc_url( $base . 'site-icon-32.png' ) );
+	printf( '<link rel="icon" href="%s" sizes="192x192">' . "\n", esc_url( $base . 'site-icon-192.png' ) );
+	printf( '<link rel="apple-touch-icon" href="%s">' . "\n", esc_url( $base . 'site-icon-180.png' ) );
+};
+add_action( 'wp_head', $dmdune_icons, 5 );
+add_action( 'admin_head', $dmdune_icons );
+add_action( 'login_head', $dmdune_icons );
 
 add_filter( 'excerpt_length', static fn() => 34, 999 );
 add_filter( 'excerpt_more', static fn() => '…' );
