@@ -109,27 +109,35 @@
 		}
 	});
 
-	// Header: links that don't fit on one line move into the "More" menu, so the bar never wraps.
+	// Header: "More" always holds the links the server put there (Japanese lessons, Capsule); links
+	// that don't fit on one line join them, so the bar never wraps.
 	function fitNav() {
 		var navList = document.querySelector('.dm-nav__links');
 		var navMore = document.querySelector('.dm-nav__more');
 		if (!navList || !navMore) return;
+		var menu = navMore.querySelector('ul');
+		if (!navMore.dmPinned) navMore.dmPinned = Array.prototype.slice.call(menu.children);
+		var pinned = navMore.dmPinned;
 		navList.classList.add('is-managed');
 		var items = Array.prototype.slice.call(navList.children);
 		items.forEach(function (li) { li.hidden = false; });
-		navMore.hidden = true;
+		navMore.hidden = !pinned.length;
 		navMore.removeAttribute('open');
-		var menu = navMore.querySelector('ul');
 		menu.textContent = '';
-		if (!navList.offsetParent || navList.scrollWidth <= navList.clientWidth) return;
-		navMore.hidden = false;
-		for (var i = items.length - 1; i > 0 && navList.scrollWidth > navList.clientWidth; i--) {
-			items[i].hidden = true;
+		if (navList.offsetParent && navList.scrollWidth > navList.clientWidth) {
+			navMore.hidden = false;
+			for (var i = items.length - 1; i > 0 && navList.scrollWidth > navList.clientWidth; i--) {
+				items[i].hidden = true;
+			}
 		}
 		var current = false;
 		items.forEach(function (li) {
 			if (!li.hidden) return;
 			menu.appendChild(li.cloneNode(true)).hidden = false;
+			if (li.querySelector('[aria-current]')) current = true;
+		});
+		pinned.forEach(function (li) {
+			menu.appendChild(li);
 			if (li.querySelector('[aria-current]')) current = true;
 		});
 		navMore.classList.toggle('has-current', current);

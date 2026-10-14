@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.11.0' );
+define( 'DMC_VERSION', '1.11.1' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
@@ -159,12 +159,19 @@ function dmc_header_html( array $c = array() ): string {
 	}
 	$current = dmc_current( $c );
 	$links   = '';
+	$more    = '';
 	foreach ( dmc_nav( $c ) as $key => $item ) {
-		$links .= sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
+		$li = sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
+		// The Japanese lessons and the Capsule always sit under "More"; the rest fold in only when the bar runs out of room.
+		if ( in_array( $key, array( 'japanese', 'capsule' ), true ) ) {
+			$more .= $li;
+		} else {
+			$links .= $li;
+		}
 	}
 	$icons = $c['assets'] . 'brand/icons/';
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more" hidden><summary>More</summary><ul></ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%4$s%8$s</div></nav></div>',
+		'<a class="dm-skip" href="%1$s">Skip to content</a><div class="dm-topbar"><nav class="dm-nav" aria-label="Main"><a class="dm-brand" href="%2$s" rel="home"><img class="is-day" src="%3$sroundel-day.webp" alt="" width="34" height="34"><img class="is-night" src="%3$sroundel-night.webp" alt="" width="34" height="34" loading="lazy"><span>Dark<b>Mirage</b></span></a><ul class="dm-nav__links">%5$s</ul><details class="dm-nav__more%10$s"%9$s><summary>More</summary><ul>%11$s</ul></details><div class="dm-nav__tools"><a class="dm-iconbtn" href="%6$s" aria-label="Search">%7$s</a>%4$s%8$s</div></nav></div>',
 		dmc_e( $c['skip'] ),
 		dmc_e( $c['www'] ),
 		dmc_e( $icons ),
@@ -172,7 +179,10 @@ function dmc_header_html( array $c = array() ): string {
 		$links,
 		dmc_e( $c['search'] . array( 'blog' => '?s=', 'lyrics' => '#find', 'gallery' => '' )[ $c['site'] ] ),
 		dmc_icon( 'search', 18 ),
-		dmc_mode_button( 'dm-mode--top' )
+		dmc_mode_button( 'dm-mode--top' ),
+		$more ? '' : ' hidden',
+		in_array( $current, array( 'japanese', 'capsule' ), true ) ? ' has-current' : '',
+		$more
 	);
 }
 
