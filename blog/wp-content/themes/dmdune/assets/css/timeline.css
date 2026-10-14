@@ -140,8 +140,13 @@
 	.tl-card { grid-template-columns: 96px 104px minmax(0, 1fr); gap: 0 16px; }
 	.tl-card__frame { width: 104px; height: 62px; }
 	.tl-title, .tl-band, .tl-mhdr { padding-left: 108px; }
-	.tl-y0 { grid-template-columns: 120px minmax(0, 1fr); }
-	.tl-y0__meta { display: none; }
+	.tl-y0 { grid-template-columns: 136px minmax(0, 1fr); grid-template-areas: "year meta" "year spark"; row-gap: 4px; align-content: center; }
+	.tl-y0__year { grid-area: year; font-size: 54px; }
+	.tl-y0__spark { grid-area: spark; }
+	/* Narrow: keep the year's post count above its bars, drop the most-replied line. */
+	.tl-y0__meta { grid-area: meta; font: 500 11px/1 var(--wp--preset--font-family--mono); letter-spacing: 0.08em; color: var(--dm-muted); text-transform: uppercase; }
+	.tl-y0__meta b { font: inherit; color: var(--dm-fg); }
+	.tl-y0__meta br, .tl-y0__meta span { display: none; }
 }
 @media (max-width: 600px) {
 	.tl--l3 .tl-canvas::before, .tl--l4 .tl-canvas::before { left: 21px; }
@@ -157,7 +162,8 @@
 	.tl-band__titles { grid-column: 1 / -1; grid-row: 2; font-size: 12px; }
 	.tl-y0 { grid-template-columns: 92px minmax(0, 1fr); gap: 14px; padding: 8px 4px; }
 	.tl-y0__year { font-size: 40px; }
-	.tl-y0__spark { height: 48px; gap: 2px; }
+	.tl-y0__spark { height: 40px; gap: 2px; }
+	.tl { padding-bottom: 72px; }
 	.tl-post .dm-tx__title { -webkit-line-clamp: 3; }
 
 	.tl-ctl { background: var(--dm-surface); }
