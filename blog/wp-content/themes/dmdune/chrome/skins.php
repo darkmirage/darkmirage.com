@@ -121,7 +121,7 @@ function dmc_era_buttons(): string {
 	foreach ( dmc_skins() as $key => $s ) {
 		$out .= sprintf( '<button type="button" data-dm-skin="%1$s" data-era="%2$s"%3$s aria-label="%4$s, %5$s: the site as it looked then"><span class="dm-era__name">%6$s</span><span class="dm-era__yrs">%5$s</span>%7$s</button>', $key, dmc_skin_era( $key ), $skin === $key ? ' aria-pressed="true"' : '', dmc_e( $s['name'] ), dmc_e( $s['years'] ), dmc_e( $s['short'] ), dmc_era_peek( $key, $s['name'], $s['years'] ) );
 	}
-	return $out . sprintf( '<button type="button" data-dm-skin="" data-era="now"%s aria-label="Now: today’s site"><span class="dm-era__name">Now</span><span class="dm-era__yrs">Dune</span>%s</button>', $skin ? '' : ' aria-pressed="true"', dmc_era_peek( 'now', 'Dune', 'today' ) );
+	return $out . sprintf( '<button type="button" data-dm-skin="" data-era="now"%s aria-label="Dune: today’s site"><span class="dm-era__name">Dune</span><span class="dm-era__yrs">Now</span>%s</button>', $skin ? '' : ' aria-pressed="true"', dmc_era_peek( 'now', 'Dune', 'today' ) );
 }
 
 /**
