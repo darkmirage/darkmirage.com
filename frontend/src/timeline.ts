@@ -182,6 +182,8 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
   scrubThumb.className = 'tl-scrub__thumb';
   const bubble = document.createElement('span');
   bubble.className = 'tl-scrub__bubble';
+  const ghost = document.createElement('span');
+  ghost.className = 'tl-scrub__ghost';
   scrub.appendChild(track);
 
   /* ---------- Layout: rows and their fixed heights for the current level ---------- */
@@ -716,37 +718,33 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
       marks += `<span class="tl-scrub__y" data-p="${String(i)}" style="top:${(i / posts.length * 100).toFixed(2)}%">'${String(p.y).slice(2)}</span>`;
     });
     track.innerHTML = marks;
-    track.append(scrubThumb, bubble);
+    track.append(ghost, scrubThumb, bubble);
     ui.appendChild(scrub);
-    let dragging = false;
-    function at(e: PointerEvent): void {
+    // Point at the rail to see the date there (a ghost dot and a label); click to go to it.
+    const pointAt = (e: MouseEvent): number => {
       const b = track.getBoundingClientRect();
       const f = Math.max(0, Math.min(1, (e.clientY - b.top) / b.height));
       const i = Math.min(posts.length - 1, Math.floor(f * posts.length));
-      bubble.textContent = `${mon(post(i).m)} ${String(post(i).y)}`;
-      bubble.style.top = `${String(f * 100)}%`;
-      scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
-    }
-    track.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); // no text selection while dragging
-      dragging = true;
-      track.setPointerCapture(e.pointerId);
-      scrub.classList.add('is-dragging');
-      const y = closest(e.target, '.tl-scrub__y', HTMLElement);
-      if (y) {
-        const i = Number(y.getAttribute('data-p'));
-        if (Number.isInteger(i) && posts[i]) {
-          scrollToPost(i, Math.max(90, window.innerHeight * 0.18));
-          bubble.textContent = String(post(i).y);
-        }
-        return;
-      }
-      at(e);
+      const p = post(i);
+      ghost.style.top = bubble.style.top = `${String(f * 100)}%`;
+      if (ghost.getAttribute('data-era') !== p.era) ghost.setAttribute('data-era', p.era);
+      bubble.textContent = `${mon(p.m)} ${String(p.y)}`;
+      return i;
+    };
+    track.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      scrub.classList.add('is-pointing');
+      pointAt(e);
     });
-    track.addEventListener('pointermove', (e) => { if (dragging) at(e); });
-    const end = (): void => { dragging = false; scrub.classList.remove('is-dragging'); };
-    track.addEventListener('pointerup', end);
-    track.addEventListener('pointercancel', end);
+    track.addEventListener('pointerleave', () => { scrub.classList.remove('is-pointing'); });
+    track.addEventListener('click', (e) => {
+      // A year label goes to the top of that year (its newest post), near the top of the screen.
+      const y = closest(e.target, '.tl-scrub__y', HTMLElement);
+      const yi = y ? Number(y.getAttribute('data-p')) : NaN;
+      if (Number.isInteger(yi) && posts[yi]) { scrollToPost(yi, Math.max(90, window.innerHeight * 0.18)); return; }
+      const i = pointAt(e);
+      scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
+    });
   }
 
   function flag(name: string, on: boolean): void {
@@ -769,7 +767,6 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
     flag('is-off', window.scrollY + window.innerHeight < docTop(postLevel() ? log : canvas));
     scrubThumb.style.top = `${String(i / posts.length * 100)}%`;
     if (scrubThumb.getAttribute('data-era') !== p.era) scrubThumb.setAttribute('data-era', p.era);
-    if (!scrub.classList.contains('is-dragging')) bubble.textContent = `${mon(p.m)} ${String(p.y)}`;
 
     const hb = headerBottom();
     const y = window.scrollY + hb + 8;

@@ -178,6 +178,8 @@
     scrubThumb.className = "tl-scrub__thumb";
     const bubble = document.createElement("span");
     bubble.className = "tl-scrub__bubble";
+    const ghost = document.createElement("span");
+    ghost.className = "tl-scrub__ghost";
     scrub.appendChild(track);
     let H = { yhdr: 0, post: 0, postOne: 0, titleLine: 0, titleFont: "", titleWidth: 0, card: 0, title: 0, mhdr: 0, band: 0, year0: 0, end: 150 };
     function heights() {
@@ -685,42 +687,36 @@
         marks += `<span class="tl-scrub__y" data-p="${String(i)}" style="top:${(i / posts.length * 100).toFixed(2)}%">'${String(p.y).slice(2)}</span>`;
       });
       track.innerHTML = marks;
-      track.append(scrubThumb, bubble);
+      track.append(ghost, scrubThumb, bubble);
       ui.appendChild(scrub);
-      let dragging = false;
-      function at2(e) {
+      const pointAt = (e) => {
         const b = track.getBoundingClientRect();
         const f = Math.max(0, Math.min(1, (e.clientY - b.top) / b.height));
         const i = Math.min(posts.length - 1, Math.floor(f * posts.length));
-        bubble.textContent = `${mon(post(i).m)} ${String(post(i).y)}`;
-        bubble.style.top = `${String(f * 100)}%`;
-        scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
-      }
-      track.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        dragging = true;
-        track.setPointerCapture(e.pointerId);
-        scrub.classList.add("is-dragging");
+        const p = post(i);
+        ghost.style.top = bubble.style.top = `${String(f * 100)}%`;
+        if (ghost.getAttribute("data-era") !== p.era) ghost.setAttribute("data-era", p.era);
+        bubble.textContent = `${mon(p.m)} ${String(p.y)}`;
+        return i;
+      };
+      track.addEventListener("pointermove", (e) => {
+        if (e.pointerType !== "mouse") return;
+        scrub.classList.add("is-pointing");
+        pointAt(e);
+      });
+      track.addEventListener("pointerleave", () => {
+        scrub.classList.remove("is-pointing");
+      });
+      track.addEventListener("click", (e) => {
         const y = closest(e.target, ".tl-scrub__y", HTMLElement);
-        if (y) {
-          const i = Number(y.getAttribute("data-p"));
-          if (Number.isInteger(i) && posts[i]) {
-            scrollToPost(i, Math.max(90, window.innerHeight * 0.18));
-            bubble.textContent = String(post(i).y);
-          }
+        const yi = y ? Number(y.getAttribute("data-p")) : NaN;
+        if (Number.isInteger(yi) && posts[yi]) {
+          scrollToPost(yi, Math.max(90, window.innerHeight * 0.18));
           return;
         }
-        at2(e);
+        const i = pointAt(e);
+        scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
       });
-      track.addEventListener("pointermove", (e) => {
-        if (dragging) at2(e);
-      });
-      const end = () => {
-        dragging = false;
-        scrub.classList.remove("is-dragging");
-      };
-      track.addEventListener("pointerup", end);
-      track.addEventListener("pointercancel", end);
     }
     function flag(name, on) {
       ui.classList.toggle(name, on);
@@ -739,7 +735,6 @@
       flag("is-off", window.scrollY + window.innerHeight < docTop(postLevel() ? log2 : canvas));
       scrubThumb.style.top = `${String(i / posts.length * 100)}%`;
       if (scrubThumb.getAttribute("data-era") !== p.era) scrubThumb.setAttribute("data-era", p.era);
-      if (!scrub.classList.contains("is-dragging")) bubble.textContent = `${mon(p.m)} ${String(p.y)}`;
       const hb = headerBottom();
       const y = window.scrollY + hb + 8;
       const listTop = postLevel() ? docTop(log2) : canvasTop;

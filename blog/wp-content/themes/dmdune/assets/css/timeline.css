@@ -110,21 +110,24 @@
 .tl-ctl__rand { margin-left: 4px; border-left: 1px solid var(--dm-line) !important; border-radius: 0 50% 50% 0 !important; }
 
 /* Scrubber: a rail on the right edge; years take room in proportion to their posts. */
-.tl-scrub { position: fixed; z-index: 35; top: calc(env(safe-area-inset-top, 0px) + 136px); bottom: 90px; right: 6px; width: 44px; opacity: 0; transition: opacity 0.3s; }
-/* Hidden on the first screen; it appears past the first few posts, or when the edge is hovered. */
-.tl-ui.is-deep .tl-scrub, .tl-scrub:hover, .tl-scrub.is-dragging { opacity: 1; }
-.tl-scrub__track { position: absolute; inset: 0; cursor: ns-resize; touch-action: none; }
-/* Dragging the rail must not select its labels or the page, or bring up the long-press menu. */
+.tl-ui.is-deep .tl-scrub, .tl-scrub:hover { opacity: 1; }
+/* Clicking the rail or the controls must not select their labels or bring up the long-press menu. */
 .tl-scrub, .tl-ctl { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-.tl-scrub__track::before { content: ""; position: absolute; top: 0; bottom: 0; right: 8px; width: 2px; border-radius: 1px; background: var(--dm-line); }
-.tl-scrub__y { position: absolute; right: 14px; transform: translateY(-50%); font: 500 10px var(--wp--preset--font-family--mono); color: var(--dm-muted); cursor: pointer; }
-.tl-scrub__y:hover { color: var(--dm-accent); }
-.tl-scrub__y::after { content: ""; position: absolute; right: -9px; top: 50%; width: 6px; height: 1px; background: var(--dm-muted); }
-.tl-scrub__thumb { position: absolute; right: 4px; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--era, var(--dm-accent)); box-shadow: 0 0 0 3px var(--dm-bg); pointer-events: none; transition: background-color 0.3s; }
-.tl-scrub__bubble { position: absolute; right: 26px; margin-top: -13px; padding: 5px 9px; border-radius: 8px; background: var(--dm-fg); color: var(--dm-bg); font: 500 11px var(--wp--preset--font-family--mono); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
-.tl-scrub.is-dragging .tl-scrub__bubble { opacity: 1; }
-@media (hover: hover) {
-	.tl-scrub:hover .tl-scrub__bubble { opacity: 1; }
+/* The date rail is for a mouse: point at a date to see it, click to go there (the scrollbar does
+   the scrubbing). Touch screens have no rail, so it never fights their own scroll handle. */
+.tl-scrub { display: none; }
+@media (hover: hover) and (pointer: fine) {
+	.tl-scrub { display: block; position: fixed; z-index: 35; top: calc(env(safe-area-inset-top, 0px) + 136px); bottom: 90px; right: 6px; width: 44px; opacity: 0; transition: opacity 0.3s; }
+	.tl-scrub__track { position: absolute; inset: 0; cursor: pointer; }
+	.tl-scrub__track::before { content: ""; position: absolute; top: 0; bottom: 0; right: 8px; width: 2px; border-radius: 1px; background: var(--dm-line); }
+	.tl-scrub__y { position: absolute; right: 14px; transform: translateY(-50%); font: 500 10px var(--wp--preset--font-family--mono); color: var(--dm-muted); }
+	.tl-scrub__y:hover { color: var(--dm-accent); }
+	.tl-scrub__y::after { content: ""; position: absolute; right: -9px; top: 50%; width: 6px; height: 1px; background: var(--dm-muted); }
+	.tl-scrub__thumb, .tl-scrub__ghost { position: absolute; right: 4px; width: 10px; height: 10px; margin-top: -5px; box-sizing: border-box; border-radius: 50%; pointer-events: none; }
+	.tl-scrub__thumb { background: var(--era, var(--dm-accent)); box-shadow: 0 0 0 3px var(--dm-bg); transition: background-color 0.3s; }
+	.tl-scrub__ghost { border: 2px solid var(--era, var(--dm-accent)); background: var(--dm-bg); opacity: 0; transition: opacity 0.12s; }
+	.tl-scrub__bubble { position: absolute; right: 26px; margin-top: -13px; padding: 5px 9px; border-radius: 8px; background: var(--dm-fg); color: var(--dm-bg); font: 500 11px var(--wp--preset--font-family--mono); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.12s; }
+	.tl-scrub.is-pointing .tl-scrub__ghost, .tl-scrub.is-pointing .tl-scrub__bubble { opacity: 1; }
 }
 
 /* The year the reader is in, pinned under the header in the same outlined numerals as the log's
@@ -136,7 +139,7 @@
 
 /* Leave room for the scrubber beside the content on wide screens. */
 @media (min-width: 1240px) { .tl { margin-right: 0; } }
-@media (max-width: 1240px) and (min-width: 601px) { .tl-canvas { margin-right: 36px; } }
+@media (max-width: 1240px) and (min-width: 601px) and (hover: hover) and (pointer: fine) { .tl-canvas { margin-right: 36px; } }
 
 @media (max-width: 900px) {
 	.tl-ctl { bottom: calc(var(--dm-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); left: 12px; }
@@ -179,12 +182,5 @@
 	.tl-ui[data-level="1"] .tl-year, .tl-ui[data-level="2"] .tl-year { display: none; }
 	.tl-year { width: 44px; padding: 8px 0 16px; justify-content: center; background: linear-gradient(var(--dm-bg) 80%, transparent); }
 	.tl-year a { width: auto; font-size: 30px; line-height: 1; writing-mode: vertical-rl; transform: rotate(180deg); -webkit-text-stroke-width: 1.2px; }
-	/* Phones: a thin handle on the edge, only while scrolling or dragging. */
-	.tl-scrub, .tl-ui.is-deep .tl-scrub { top: 120px; bottom: calc(var(--dm-tabbar-h) + 90px); width: 28px; right: 0; opacity: 0; transition: opacity 0.3s 0.6s; }
-	.tl-ui.is-deep.is-scrolling .tl-scrub, .tl-scrub.is-dragging { opacity: 1; transition-delay: 0s; }
-	.tl-scrub__y { display: none; }
-	.tl-scrub__thumb { right: 3px; width: 6px; height: 36px; margin-top: -18px; border-radius: 3px; }
-	.tl-scrub__track::before { right: 5px; }
-	.tl-scrub__bubble { right: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .tl-canvas, .tl-scrub, .tl-year, .tl-ctl, .is-hit > * { transition: none; animation: none; } }
