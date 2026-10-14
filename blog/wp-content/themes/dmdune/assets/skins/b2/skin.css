@@ -1,0 +1,256 @@
+/* DarkMirage's Weblog (b2, 2003–2005), rebuilt from the 2004–05 layout2b.css: a sky-blue page with
+   the Nadesico line drawing behind it, the Aegis banner breaking out of a blue band, a 150px "menu"
+   column of ruled lists on the left, and posts under dd.mm.yy date tabs in bold Verdana. The
+   lyrics and gallery rules come from the Kubrick skin (imported), recoloured through its --kb-*
+   variables. Reflows on phones. Banner art: all rights reserved (see LICENSE.md). */
+
+@import url("../kubrick/skin.css");
+
+:root[data-skin][data-skin] {
+	--b2-sky: #b6e1f0;
+	--b2-band: #34a6d2;
+	--b2-menu: #a0dcf1;
+	--b2-field: #81d4f6;
+	--b2-quote: #31a4e1;
+	/* layout2b.css used #609fff and #4e93fc; darkened just enough to read on the blue. */
+	--b2-link: #1d63cc;
+	--b2-font: Verdana, Geneva, Arial, Helvetica, "Hiragino Sans", "Noto Sans JP", sans-serif;
+	--kb-blue: #1f7fb0;
+	--kb-rule: #000;
+	--kb-link: var(--b2-link);
+	--kb-link-text: var(--b2-link);
+	--kb-page: transparent;
+	--kb-side: var(--b2-menu);
+	--kb-bg: var(--b2-sky);
+	--kb-head: var(--b2-font);
+	--kb-body: var(--b2-font);
+	--dm-bg: var(--b2-sky);
+	--dm-surface: #fff;
+	--dm-sunk: var(--b2-menu);
+	--dm-line: #000;
+	--dm-fg: #000;
+	--dm-body: #000;
+	--dm-muted: #2f4f62;
+	--dm-accent: #1f7fb0;
+	--dm-accent-soft: rgba(52, 166, 210, 0.18);
+}
+
+html[data-skin] body { background: var(--b2-sky); color: #000; font: 400 12px/1.5 var(--b2-font); }
+html[data-skin] a { font-weight: 700; }
+html[data-skin] a:hover { color: #000; }
+
+/* ---------- Time machine bar ---------- */
+.dm-skinbar { background: var(--b2-band); color: #000; border-bottom: 1px solid #000; font: 700 11px/1.2 var(--b2-font); }
+.dm-skinbar__lead { font: 700 11px var(--b2-font); }
+.dm-skinbar button { min-width: 44px; padding: 2px 8px; border: 1px solid #000; border-radius: 0; background: var(--b2-menu); color: #000; font: 700 11px/1.2 var(--b2-font); }
+.dm-skinbar button:hover { background: #fff; color: #000; }
+.dm-skinbar button[aria-pressed="true"] { background: #fff; border-color: #000; color: #000; }
+
+/* ---------- Page, band and banner ---------- */
+.bk-shell { position: relative; max-width: none; margin: 0; border: 0; background: url("nadesico.webp") no-repeat 361px 210px; }
+.bk-banner {
+	position: relative;
+	display: block;
+	box-sizing: border-box;
+	min-height: 0;
+	height: 127px;
+	aspect-ratio: auto;
+	margin-right: 2%;
+	background: var(--b2-band);
+	border: 1px solid #000;
+	border-top: 0;
+	container-type: normal;
+}
+/* The banner breaks out of the band, as the 600 × 130 title image did. */
+.bk-banner::before {
+	content: "";
+	position: absolute;
+	z-index: 1;
+	left: 159px;
+	top: 9px;
+	width: 600px;
+	height: 130px;
+	border: 1px solid #000;
+	background: #0b1b26 url("banner-aegis.webp") 0 0 / 100% 100% no-repeat;
+}
+.bk-banner--lyrics::before, .bk-banner--gallery::before { background-image: url("banner-aegis-2004.webp"); }
+/* Title and tagline in a small boxed panel at the right, like the old "Print | Play | Stop" box. */
+.bk-banner__text { position: absolute; top: -1px; right: 40px; left: auto; max-width: calc(100% - 820px); padding: 4px 8px 5px; background: var(--b2-menu); border: 1px solid #000; }
+.bk-title, html[data-skin] .bk-title, html[data-skin] .bk-title:hover { color: #000; font: 700 12px/1.3 var(--b2-font); text-shadow: none; }
+.bk-title__of { font-weight: 400; }
+.bk-tagline { margin: 1px 0 0; color: #000; font: italic 400 10px/1.3 var(--b2-font); text-shadow: none; }
+.bk-tabs, .bk-feed { display: none; }
+
+/* Menu column on the left (it is the right-hand aside in the markup), posts beside it. */
+.bk-page, .single-post .bk-page { display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-areas: "menu main"; column-gap: 5px; align-items: start; padding: 0 20px 0 5px; }
+html[data-skin] .bk-page > main, html[data-skin] .single-post .bk-page > main { grid-area: main; min-width: 0; padding: 20px 0 30px; background: none; }
+.bk-side--left { display: none; }
+.bk-side--right, .single-post .bk-side--right {
+	grid-area: menu;
+	position: relative;
+	z-index: 2;
+	display: block;
+	box-sizing: border-box;
+	width: 150px;
+	margin-top: -117px;
+	padding: 0 0 6px;
+	background: var(--b2-menu);
+	border: 1px solid #000;
+	border-top: 0;
+	line-height: 17px;
+}
+.bk-block, .bk-block--nav { display: block; margin: 0; }
+.bk-block .bk-label, .bk-side--right .bk-label {
+	margin: 0;
+	padding: 1px 2px 1px 8px;
+	background: #4bb2e5 url("ctop.gif") no-repeat 0 0;
+	border: solid #000;
+	border-width: 1px 0;
+	color: #000;
+	font: 700 12px/14px var(--b2-font);
+	text-align: left;
+	text-transform: lowercase;
+}
+.bk-block__body { padding: 2px 0 6px; font-size: 11px; }
+.bk-block ul, .bk-side--right .bk-nav { margin: 0; padding: 0; list-style: none; }
+.bk-block li { margin: 0; padding-left: 15px; color: #000; font-size: 10px; line-height: 17px; }
+html[data-skin] .bk-block li a { font: 700 11px/17px var(--b2-font); color: var(--b2-link); }
+html[data-skin] .bk-block li a:hover { background: none; padding: 0; margin: 0; color: #000; }
+html[data-skin] .bk-block li a[aria-current] { color: #000; }
+.bk-block--search .bk-block__body { padding: 8px 0 6px; }
+.bk-search { flex-direction: column; justify-content: center; gap: 3px; }
+.bk-search input, html[data-skin] .bk-search input { box-sizing: border-box; width: 136px; padding: 1px 3px 3px; border: 1px solid #000; background: var(--b2-field); color: #000; text-align: left; font: 400 12px/14px var(--b2-font); }
+.bk-search input::placeholder { color: #2f4f62; }
+.bk-search button { padding: 1px 6px 3px; border: 1px solid #000; background: var(--b2-field); color: #000; font: 400 12px/14px var(--b2-font); }
+.bk-search button::after { content: "search"; }
+
+/* ---------- Posts ---------- */
+.b2-pagetitle {
+	margin: 0 0 14px;
+	padding: 2px 8px;
+	background: #4bb2e5 url("ctop.gif") no-repeat 0 0 / 100% 100%;
+	border: solid #000;
+	border-width: 1px 0;
+	font: 700 12px/16px var(--b2-font);
+	color: #000;
+	text-transform: lowercase;
+	overflow-wrap: anywhere;
+}
+.b2-day { margin: 15px 0; padding: 6px; border-bottom: 1px solid #000; background: url("top.gif") no-repeat 0 0; font: 700 14px/14px var(--b2-font); color: #000; }
+.b2-main > .b2-day:first-child, .b2-pagetitle + .b2-day { margin-top: 0; }
+.b2-story { margin: 0 0 22px; }
+.b2-storytitle { margin: 5px 0 6px 5px; font: 700 10px/1.4 var(--b2-font); color: #000; overflow-wrap: anywhere; }
+.b2-title { display: inline; margin: 0; font: 700 14px/1.3 var(--b2-font); color: #000; }
+html[data-skin] .b2-title a { color: #000; font-weight: 700; }
+html[data-skin] .b2-title a:hover { color: var(--b2-link); }
+html[data-skin] .b2-cat { color: #000; font-size: 10px; }
+.b2-author { font-style: italic; }
+.b2-at { font-weight: 400; }
+html[data-skin] .b2-time { font-size: 11px; }
+.b2-content { margin: 0 15px 0 30px; font: 400 12px/18px var(--b2-font); color: #000; overflow-wrap: anywhere; }
+.b2-content p { margin: 0 0 12px; }
+html[data-skin] .b2-content a { font-weight: 700; }
+.b2-content blockquote { margin: 12px 40px; padding: 10px; border: 1px dotted var(--b2-quote); }
+.b2-content blockquote p:last-child { margin-bottom: 0; }
+.b2-content img { max-width: 100%; height: auto; }
+.b2-content iframe, .b2-content video, .b2-content .dm-media, .b2-content figure { max-width: 100%; }
+.b2-content .caption, .b2-content .wp-caption-text, .b2-content figcaption { margin: 4px 0 12px; font-size: 10px; text-align: center; }
+.b2-content h2, .b2-content h3 { font: 700 13px var(--b2-font); }
+.b2-content table { font-size: 12px; }
+.b2-more { margin: 4px 15px 0 0; text-align: right; }
+html[data-skin] .b2-more a { font-size: 11px; }
+.b2-locked { font-style: italic; }
+.b2-none { margin: 20px 0 20px 30px; }
+.b2-postnav { display: flex; justify-content: space-between; gap: 16px; margin: 18px 15px 0 30px; font-size: 11px; }
+.b2-postnav__next { text-align: right; }
+.b2-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 8px; margin: 24px 0 10px; font: 700 11px var(--b2-font); }
+.b2-pager .current { color: #000; }
+html[data-skin] .dm-era-post { margin: 10px 0 0 30px; padding: 2px 8px 3px; border: 1px solid #000; border-radius: 0; background: var(--b2-menu); color: #000; font: 700 11px var(--b2-font); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+html[data-skin] .dm-era-post:hover { background: #fff; }
+
+/* Password form (protected posts) and the comment form: b2's light-blue fields. */
+.post-password-form { margin: 0; }
+.post-password-form label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.post-password-form input[type="password"], .b2-respond input[type="text"], .b2-respond input[type="email"], .b2-respond input[type="url"], .b2-respond textarea {
+	box-sizing: border-box;
+	max-width: 100%;
+	margin: 1px;
+	padding: 1px 3px 3px;
+	border: 1px solid #000;
+	background: var(--b2-field);
+	color: #000;
+	font: 400 12px/14px var(--b2-font);
+}
+.post-password-form input[type="submit"], .b2-respond input[type="submit"] { margin: 1px; padding: 1px 8px 3px; border: 1px solid #000; background: var(--b2-field); color: #000; font: 400 12px/14px var(--b2-font); cursor: pointer; }
+.post-password-form input[type="submit"]:hover, .b2-respond input[type="submit"]:hover { background: #fff; }
+
+/* Comments, as b2's comment popup listed them */
+.b2-comments { margin-top: 26px; }
+.b2-commentlist { margin: 0 15px 0 30px; padding: 0; list-style: none; }
+.b2-comment { margin: 0 0 10px; padding: 6px 10px; border: 1px dotted var(--b2-quote); background: rgba(255, 255, 255, 0.35); }
+.b2-comment__by { margin: 0 0 4px; font-size: 11px; }
+html[data-skin] .b2-comment__by a { font-size: 11px; }
+.b2-comment__text { font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.b2-comment__text p { margin: 0 0 8px; }
+.b2-respond { margin: 18px 15px 0 30px; }
+.b2-respond h3 { margin: 0 0 6px; font: 700 12px var(--b2-font); }
+.b2-respond textarea { width: 100%; }
+.b2-respond p { margin: 0 0 6px; }
+.b2-respond label { display: block; font-size: 11px; font-weight: 700; }
+
+.b2-archives h2 { margin-top: 18px; }
+.b2-list { margin: 0; padding: 0 0 0 10px; list-style: none; }
+.b2-list li { line-height: 18px; }
+.b2-tagcloud { line-height: 1.8; }
+
+/* ---------- Footer ---------- */
+.bk-footer { margin: 10px 20px 0 160px; padding: 10px 0 24px; background: none; border-top: 1px solid #000; color: #000; text-align: left; font: 400 10px/1.6 var(--b2-font); }
+.bk-footer p { margin: 0; }
+html[data-skin] .bk-footer a, html[data-skin] .bk-footer a:hover { color: var(--b2-link) !important; font-weight: 700; }
+.bk-footer .dm-footer__lineage span { color: #2f4f62; }
+.bk-footer .dm-era-switch { color: var(--b2-link); font-weight: 700; }
+.bk-footer .dm-era-switch[aria-pressed="true"] { color: #000; }
+
+html[data-skin] .dm-tabbar { background: rgba(160, 220, 241, 0.97); border-color: #000; }
+html[data-skin] .dm-tabbar a, html[data-skin] .dm-tabbar summary { color: #10394d; font-family: var(--b2-font); font-weight: 400; }
+html[data-skin] .dm-tabbar a[aria-current] { color: #000; font-weight: 700; }
+
+/* ---------- Lyrics and gallery (Kubrick rules, b2 colours) ---------- */
+html[data-skin] .ly-main, html[data-skin] .dmg-main { padding: 0 15px 0 10px; }
+html[data-skin] .dm-archive-head h1, html[data-skin] .dmg-head h1, html[data-skin] .ly-sheet h1, html[data-skin] .ly-group__head, html[data-skin] .ly-letter, html[data-skin] .ly-more .dm-hud-title { color: #000; font-family: var(--b2-font); }
+html[data-skin] .ly-group__head a, html[data-skin] .ly-song__title a, html[data-skin] .dmg-album__title { color: #000 !important; }
+html[data-skin] .ly-song:nth-child(even) { background: rgba(255, 255, 255, 0.35); }
+html[data-skin] .ly-seg, html[data-skin] .ly-find input, html[data-skin] .dmg-search input[type="search"] { border-color: #000; background: var(--b2-field); }
+html[data-skin] .ly-tile { border-color: #000; background: var(--b2-menu); color: #000; }
+html[data-skin] .dmg-album__cover, html[data-skin] .dmg-grid a, html[data-skin] .dmg-strip a, html[data-skin] .dmg-viewer__stage img { border-color: #000; }
+html[data-skin] .dm-hud-code, html[data-skin] .dm-meta, html[data-skin] .ly-type, html[data-skin] .ly-alt, html[data-skin] .dmg-album__meta, html[data-skin] .dmg-count { color: #2f4f62; }
+
+/* ---------- Narrower screens: the title box no longer fits beside the banner ---------- */
+@media (max-width: 1080px) {
+	.bk-banner__text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); padding: 0; border: 0; }
+}
+
+/* ---------- Phones and tablets: banner on top, one column, menu after the posts ---------- */
+@media (max-width: 860px) {
+	.bk-shell { background-position: right -120px top 260px; background-size: 420px auto; }
+	.bk-banner { height: auto; margin: 0; border: 0; background: var(--b2-band); }
+	.bk-banner::before { position: static; display: block; box-sizing: border-box; width: 100%; height: auto; aspect-ratio: 600 / 130; border: 0; border-bottom: 1px solid #000; }
+	.bk-banner__text { position: static; width: auto; height: auto; max-width: none; overflow: visible; clip: auto; margin: 0; padding: 6px 12px 7px; border: 0; border-bottom: 1px solid #000; background: var(--b2-menu); }
+	.bk-title, html[data-skin] .bk-title { font-size: 14px; }
+	.bk-tagline { font-size: 11px; }
+	.bk-page, .single-post .bk-page { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "menu"; padding: 0 12px; }
+	html[data-skin] .bk-page > main, html[data-skin] .single-post .bk-page > main { padding: 8px 0 24px; }
+	.bk-side--right, .single-post .bk-side--right { width: auto; margin: 0 0 16px; border-top: 1px solid #000; }
+	.bk-side--right .bk-block--nav { display: none; }
+	.bk-search { flex-direction: row; justify-content: flex-start; padding: 0 8px; }
+	.bk-search input, html[data-skin] .bk-search input { flex: 1 1 auto; width: auto; min-width: 0; font-size: 16px; }
+	.bk-search button { font-size: 14px; }
+	.b2-storytitle { margin-left: 0; }
+	.b2-content { margin: 0 0 0 8px; font-size: 14px; line-height: 1.6; }
+	.b2-content blockquote { margin: 12px 0; }
+	.b2-commentlist, .b2-respond, .b2-postnav { margin-left: 8px; margin-right: 0; }
+	html[data-skin] .dm-era-post { margin-left: 8px; }
+	.b2-respond input[type="text"], .b2-respond input[type="email"], .b2-respond input[type="url"], .b2-respond textarea, .post-password-form input[type="password"] { font-size: 16px; }
+	.bk-footer { margin: 0 12px; padding-bottom: 96px; }
+	html[data-skin] .ly-main, html[data-skin] .dmg-main { padding: 0; }
+}

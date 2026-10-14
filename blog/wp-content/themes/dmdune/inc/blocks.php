@@ -249,7 +249,7 @@ function dmdune_render_byline( array $attrs, WP_Block $block ): string {
 		/* translators: %s: number of comments */
 		$bits[] = '<a href="#comments">' . esc_html( sprintf( _n( '%s comment', '%s comments', $n, 'dmdune' ), number_format_i18n( $n ) ) ) . '</a>';
 	}
-	$era = 'post' === $post->post_type ? dmc_era_post_link( get_the_date( 'Y-m-d', $post ) ) : '';
+	$era = 'post' === $post->post_type ? dmdune_era_post_link( $post ) : '';
 	return '<div class="dm-byline-row"><p class="dm-meta dm-byline">' . implode( '<span class="dm-sep" aria-hidden="true">·</span>', $bits ) . '</p>' . $era . '</div>';
 }
 
@@ -316,7 +316,7 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 	$first = $points[0][0];
 	$last  = end( $points )[0];
 	$note  = sprintf(
-		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><span><i data-era="default"></i>WP Default</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>',
+		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><span><i data-era="b2"></i>b2</span> <span><i data-era="default"></i>WP Default</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>',
 		esc_html( number_format_i18n( $total ) ),
 		esc_html__( 'transmissions', 'dmdune' ),
 		esc_html( $peak[0] ),
@@ -334,7 +334,7 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 
 function dmdune_render_archive_index( array $attrs, WP_Block $block ): string {
 	global $wp_locale;
-	$era_names = array( 'default' => 'WP Default', 'kubrick' => 'Kubrick DM · dmbrickv2', 'blocks' => 'DarkMirage Blocks' );
+	$era_names = array( 'b2' => 'b2 Weblog', 'default' => 'WP Default', 'kubrick' => 'Kubrick DM · dmbrickv2', 'blocks' => 'DarkMirage Blocks' );
 	$out       = '';
 	foreach ( dmdune_month_counts() as $year => $months ) {
 		$max   = max( $months );
@@ -389,7 +389,7 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 		$n     = (int) $p->comment_count;
 		$rows .= sprintf(
 			'<li class="dm-rank" data-era="%1$s"><span class="dm-rank__no">%2$02d</span>%3$s<div class="dm-rank__body"><p class="dm-row__stamp"><time datetime="%4$s">%5$s</time>%6$s</p><h3 class="dm-rank__title"><a href="%7$s">%8$s</a></h3><p class="dm-rank__signal"><span class="dm-rank__bar" style="--w:%9$.3f"></span><span class="dm-rank__n">%10$s</span></p></div></li>',
-			esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ) ) ),
+			esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ), (int) wp_date( 'n', $ts ) ) ),
 			$i + 1,
 			dmdune_frame( $p, 'dm-frame--sm', false ),
 			esc_attr( wp_date( 'c', $ts ) ),
@@ -467,7 +467,7 @@ function dmdune_render_archive_head( array $attrs, WP_Block $block ): string {
 		$title  = (string) $y;
 		$months = dmdune_month_counts()[ $y ] ?? array();
 		for ( $m = 1; $m <= 12; $m++ ) {
-			$points[] = array( $wp_locale->get_month( $m ) . ' ' . $y, $months[ $m ] ?? 0, get_month_link( $y, $m ), dmdune_era( $y ), mb_substr( $wp_locale->get_month_abbrev( $wp_locale->get_month( $m ) ), 0, 1 ) );
+			$points[] = array( $wp_locale->get_month( $m ) . ' ' . $y, $months[ $m ] ?? 0, get_month_link( $y, $m ), dmdune_era( $y, $m ), mb_substr( $wp_locale->get_month_abbrev( $wp_locale->get_month( $m ) ), 0, 1 ) );
 		}
 	} elseif ( is_page() ) {
 		$slug  = get_post_field( 'post_name', get_queried_object_id() );

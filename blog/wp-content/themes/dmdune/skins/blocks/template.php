@@ -137,7 +137,7 @@ if ( is_front_page() || is_home() ) {
 	?>
 	<article class="bk-card bk-card--single">
 		<h1 class="bk-card__title"><?php the_title(); ?></h1>
-		<?php if ( 'post' === $post->post_type ) : ?><p class="bk-date"><?php echo esc_html( get_the_date( 'F jS, Y' ) ); ?></p><?php echo dmc_era_post_link( get_the_date( 'Y-m-d' ) ); // phpcs:ignore ?><?php endif; ?>
+		<?php if ( 'post' === $post->post_type ) : ?><p class="bk-date"><?php echo esc_html( get_the_date( 'F jS, Y' ) ); ?></p><?php echo dmdune_era_post_link( get_post() ); // phpcs:ignore ?><?php endif; ?>
 		<div class="bk-prose"><?php the_content(); ?></div>
 		<?php if ( 'post' === $post->post_type ) : ?>
 			<p class="bk-postmeta"><?php echo wp_kses_post( dmbk_posted_in( $post ) ); ?><?php the_tags( '<br>Tagged ', ', ' ); ?></p>
