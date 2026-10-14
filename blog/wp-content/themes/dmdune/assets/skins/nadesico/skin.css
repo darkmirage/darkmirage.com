@@ -20,8 +20,10 @@
 
 html[data-skin] body { background: #fff; }
 
-/* The drawing scrolled with the page at 170px × 30px; the strip (#beta) ran down the left. */
-.bk-shell { background: url("nadesico.webp") no-repeat 170px 30px; }
+/* The drawing sat at 170px × 30px and stayed put while the posts scrolled over it: the 2003 CSS
+   made <body> the scroller (overflow-y: auto), so its background stuck to the window. The strip
+   (#beta) ran down the left. */
+.bk-shell { background: url("nadesico.webp") no-repeat 170px 30px fixed; }
 .bk-shell::before { content: ""; position: absolute; z-index: 0; left: 0; top: 127px; box-sizing: border-box; width: 126px; height: 457px; background: var(--b2-band); border: 1px solid #000; border-top: 0; }
 .bk-banner { border-top: 1px solid #000; }
 .bk-banner::before, .bk-banner--lyrics::before, .bk-banner--gallery::before { background-image: url("banner-nadesico.webp"); }
