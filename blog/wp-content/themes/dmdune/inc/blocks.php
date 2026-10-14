@@ -422,7 +422,7 @@ function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 		'<header class="dm-page-head dm-featured-head alignwide"><p class="dm-kicker">// %1$s</p><h1>%2$s</h1><p>%3$s</p></header><section class="dm-unit dm-featured alignwide" aria-labelledby="dm-featured-title">%4$s%5$s</section>',
 		esc_html__( 'Editor’s picks', 'dmdune' ),
 		esc_html__( 'Featured', 'dmdune' ),
-		esc_html__( 'The posts worth starting with, picked by hand, and the ones that drew the most replies.', 'dmdune' ),
+		esc_html__( 'The best of ten years of blogging, 2003–2013.', 'dmdune' ),
 		dmdune_hud_head( 'HAND-PICKED', __( 'Worth reading', 'dmdune' ), '', 'dm-featured-title' ),
 		$cards ? '<div class="dm-featured__grid">' . $cards . '</div>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
 	);
