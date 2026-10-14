@@ -186,32 +186,16 @@ function dmdune_tx_html( WP_Post $post, ?int &$last_year ): string {
 		$last_year = $year;
 	}
 
-	$src   = dmdune_first_image( $post );
-	$frame = $src
-		? dmdune_thumb( $post, 'dm-tx__media' )
-		: '<div class="dm-tx__media dm-tx__nosignal"><span>NO SIGNAL</span></div>';
-
-	$n    = (int) $post->comment_count;
-	$bars = $n ? min( 5, max( 1, (int) round( log( $n + 1, 2 ) ) ) ) : 0;
-	$sig  = '';
-	for ( $i = 0; $i < 5; $i++ ) {
-		$sig .= sprintf( '<b class="%s" style="height:%dpx"></b>', $i < $bars ? 'on' : '', 4 + $i * 3 );
-	}
-	$cat = dmdune_primary_category( $post );
-	/* translators: %s: number of comments */
-	$replies = $n ? sprintf( _n( '%s reply', '%s replies', $n, 'dmdune' ), number_format_i18n( $n ) ) : __( 'No replies', 'dmdune' );
-	$title   = wp_strip_all_tags( get_the_title( $post ) );
-	$url     = get_permalink( $post );
-
+	$x    = dmdune_tx_bits( $post );
 	$out .= sprintf(
 		'<article class="dm-tx" data-era="%1$s">
 			<div class="dm-tx__rail"><time datetime="%2$s"><span class="dm-tx__day">%3$s</span><span class="dm-tx__mon">%4$s</span></time><span class="dm-tx__no">TX·%5$d</span></div>
-			<a class="dm-tx__frame" href="%6$s" tabindex="-1" aria-hidden="true">%7$s<span class="dm-tx__scan"></span><span class="dm-tx__rec">REC %8$s</span></a>
+			%6$s
 			<div class="dm-tx__body">
-				<p class="dm-tx__cat">%9$s%10$s</p>
-				<h2 class="dm-tx__title"><a href="%6$s">%11$s</a></h2>
-				<p class="dm-tx__excerpt">%12$s</p>
-				<p class="dm-tx__meta"><span class="dm-tx__sig" aria-hidden="true">%13$s</span><a href="%6$s#comments">%14$s</a><span class="dm-sep" aria-hidden="true">·</span><span>%15$s</span></p>
+				<p class="dm-tx__cat">%7$s</p>
+				<h2 class="dm-tx__title"><a href="%8$s">%9$s</a></h2>
+				<p class="dm-tx__excerpt">%10$s</p>
+				%11$s
 			</div>
 		</article>',
 		esc_attr( $era ),
@@ -219,19 +203,49 @@ function dmdune_tx_html( WP_Post $post, ?int &$last_year ): string {
 		esc_html( wp_date( 'd', $ts ) ),
 		esc_html( strtoupper( wp_date( 'M', $ts ) ) ),
 		$post->ID,
-		esc_url( $url ),
-		$frame,
-		esc_html( wp_date( 'Y.m.d', $ts ) ),
-		dmdune_cat_label( $post ),
-		$cat && dmdune_cat_ja( $cat->slug ) ? '<span class="dm-tx__ja" lang="ja">' . esc_html( dmdune_cat_ja( $cat->slug ) ) . '</span>' : '',
-		'' !== $title ? esc_html( $title ) : esc_html__( '(untitled)', 'dmdune' ),
+		$x['frame'],
+		$x['cat'],
+		esc_url( $x['url'] ),
+		$x['title'],
 		esc_html( wp_trim_words( get_the_excerpt( $post ), 28, '…' ) ),
-		$sig,
-		esc_html( $replies ),
-		/* translators: %d: minutes */
-		esc_html( sprintf( __( '%d min read', 'dmdune' ), dmdune_reading_minutes( $post ) ) )
+		$x['meta']
 	);
 	return $out;
+}
+
+/**
+ * The pieces of a transmission-log entry, already escaped: the recorded frame (picture, scanlines,
+ * REC stamp), category line, title, link and the signal/replies/reading-time line.
+ */
+function dmdune_tx_bits( WP_Post $post ): array {
+	$ts    = get_post_timestamp( $post );
+	$url   = get_permalink( $post );
+	$media = dmdune_first_image( $post )
+		? dmdune_thumb( $post, 'dm-tx__media' )
+		: '<div class="dm-tx__media dm-tx__nosignal"><span>NO SIGNAL</span></div>';
+	$n     = (int) $post->comment_count;
+	$bars  = $n ? min( 5, max( 1, (int) round( log( $n + 1, 2 ) ) ) ) : 0;
+	$sig   = '';
+	for ( $i = 0; $i < 5; $i++ ) {
+		$sig .= sprintf( '<b class="%s" style="height:%dpx"></b>', $i < $bars ? 'on' : '', 4 + $i * 3 );
+	}
+	$cat   = dmdune_primary_category( $post );
+	$ja    = $cat ? dmdune_cat_ja( $cat->slug ) : '';
+	$title = wp_strip_all_tags( get_the_title( $post ) );
+	return array(
+		'url'   => $url,
+		'frame' => sprintf( '<a class="dm-tx__frame" href="%1$s" tabindex="-1" aria-hidden="true">%2$s<span class="dm-tx__scan"></span><span class="dm-tx__rec">REC %3$s</span></a>', esc_url( $url ), $media, esc_html( wp_date( 'Y.m.d', $ts ) ) ),
+		'cat'   => dmdune_cat_label( $post ) . ( $ja ? '<span class="dm-tx__ja" lang="ja">' . esc_html( $ja ) . '</span>' : '' ),
+		'title' => '' !== $title ? esc_html( $title ) : esc_html__( '(untitled)', 'dmdune' ),
+		'meta'  => sprintf(
+			'<p class="dm-tx__meta"><span class="dm-tx__sig" aria-hidden="true">%1$s</span><a href="%2$s#comments">%3$s</a><span class="dm-sep" aria-hidden="true">·</span><span>%4$s</span></p>',
+			$sig,
+			esc_url( $url ),
+			esc_html( dmdune_replies( $post ) ),
+			/* translators: %d: minutes */
+			esc_html( sprintf( __( '%d min read', 'dmdune' ), dmdune_reading_minutes( $post ) ) )
+		),
+	);
 }
 
 function dmdune_render_card( array $attrs, WP_Block $block ): string {
@@ -247,6 +261,11 @@ function dmdune_render_post_meta( array $attrs, WP_Block $block ): string {
 	$cats = array();
 	foreach ( get_the_category( $post->ID ) as $c ) {
 		$cats[] = sprintf( '<span class="dm-cat" data-cat="%s"><a href="%s">%s</a></span>', esc_attr( $c->slug ), esc_url( get_category_link( $c ) ), esc_html( $c->name ) );
+	}
+	// The post's number in the transmission log, as on its row there.
+	if ( 'post' === $post->post_type ) {
+		$ts     = get_post_timestamp( $post );
+		$cats[] = sprintf( '<span class="dm-post-no" data-era="%s">TX·%d</span>', esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ), (int) wp_date( 'n', $ts ) ) ), $post->ID );
 	}
 	return $cats ? '<p class="dm-post-cats">' . implode( '', $cats ) . '</p>' : '';
 }
@@ -427,12 +446,23 @@ function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 			'has_password'   => false,
 		)
 	);
-	// Random picks, shown as a stretch of the home page's log: newest first, with year markers.
-	usort( $posts, static fn( $a, $b ) => strcmp( $b->post_date, $a->post_date ) );
-	$cards     = '';
-	$last_year = null;
-	foreach ( $posts as $p ) {
-		$cards .= '<li>' . dmdune_tx_html( $p, $last_year ) . '</li>';
+	// Two columns of compact transmission-log entries: the same frame, category line, title and
+	// signal line as the home page's rows, without the date rail.
+	$cards = '';
+	foreach ( $posts as $i => $p ) {
+		$x      = dmdune_tx_bits( $p );
+		$ts     = get_post_timestamp( $p );
+		$cards .= sprintf(
+			'<article class="dm-pick" data-era="%1$s">%2$s<div class="dm-pick__body"><p class="dm-tx__cat">%3$s</p><%4$s class="dm-pick__title"><a href="%5$s">%6$s</a></%4$s><p class="dm-pick__excerpt">%7$s</p>%8$s</div></article>',
+			esc_attr( dmdune_era( (int) wp_date( 'Y', $ts ), (int) wp_date( 'n', $ts ) ) ),
+			$x['frame'],
+			$x['cat'],
+			0 === $i ? 'h2' : 'h3',
+			esc_url( $x['url'] ),
+			$x['title'],
+			esc_html( wp_trim_words( get_the_excerpt( $p ), 24, '…' ) ),
+			$x['meta']
+		);
 	}
 	return sprintf(
 		'<header class="dm-page-head dm-featured-head alignwide"><p class="dm-kicker">// %1$s</p><h1>%2$s</h1><p>%3$s</p></header><section class="dm-unit dm-featured alignwide" aria-labelledby="dm-featured-title">%4$s%5$s</section>',
@@ -440,7 +470,7 @@ function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 		esc_html__( 'Featured', 'dmdune' ),
 		esc_html__( 'The best of ten years of blogging, 2003–2013.', 'dmdune' ),
 		dmdune_hud_head( 'HAND-PICKED', __( 'Worth reading', 'dmdune' ), '', 'dm-featured-title' ),
-		$cards ? '<ol class="dm-log">' . $cards . '</ol>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
+		$cards ? '<div class="dm-featured__grid">' . $cards . '</div>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
 	);
 }
 
