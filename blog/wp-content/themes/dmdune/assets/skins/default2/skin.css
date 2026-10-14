@@ -110,7 +110,9 @@ html[data-skin] .dm-locked input { border-radius: 0; border-color: #aaa; backgro
 html[data-skin] .dm-locked button { border-radius: 0; background: #4180b6; font: 700 0.75rem var(--kb-body); }
 
 /* ---------- Footer: Kubrick's rounded bottom ---------- */
-.bk-footer { min-height: 63px; box-sizing: border-box; padding: 20px 26px 26px; background: url("kubrickfooter.jpg") center bottom no-repeat; color: #333; border-top: 0; }
+/* Both lines sit inside the image's 63px band, as Kubrick's two centred lines did. */
+.bk-footer { display: flex; flex-direction: column; justify-content: center; gap: 3px; box-sizing: border-box; height: 63px; padding: 0 26px 8px; background: url("kubrickfooter.jpg") center bottom no-repeat; color: #333; border-top: 0; font: 400 11px/14px var(--kb-body); }
+.bk-footer p { margin: 0; }
 .bk-footer a, .bk-footer a:hover { color: #06c !important; font-weight: 400; }
 .bk-footer .dm-footer__lineage span { color: #999; }
 .bk-footer .dm-era-switch { color: #06c; }
@@ -127,7 +129,7 @@ html[data-skin] .ly-text--pair .ly-stanza { border-left-color: #ddd; }
 	.bk-shell, html[data-skin] .single-post .bk-shell { margin: 0 auto; border: 0; background: #fff; }
 	.bk-page { padding: 0; }
 	.bk-side--right { background: #f9f9f9; }
-	.bk-footer { background: #eee; }
+	.bk-footer { height: auto; padding: 14px 16px 96px; background: #eee; }
 	/* A fixed ratio plus a minimum height would widen the page past the screen; let height lead. */
 	.bk-banner { aspect-ratio: auto; min-height: 140px; background-size: cover; background-position: center; }
 	.bk-banner::before { inset: 0; background: rgba(30, 50, 80, 0.25); }

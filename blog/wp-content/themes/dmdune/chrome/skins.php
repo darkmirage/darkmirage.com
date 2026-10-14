@@ -328,12 +328,13 @@ function dmc_skin_footer_html( array $c, string $tabbar ): string {
 	if ( 'lacus' === $skin ) {
 		$cols['right'] .= dmc_bk_block( 'advertisements', dmc_b2_fake_ads(), 'bk-block--ads' );
 	}
-	$note = $c['note'] ?? array(
+	// default2's footer is Kubrick's 63px rounded band, which fits only its own short line.
+	$note = 'default2' === $skin ? 'Ramblings of DarkMirage is proudly powered by WordPress · Art: all rights reserved' : ( $c['note'] ?? array(
 		'nadesico' => 'DarkMirage’s Weblog · 2003–2004 · powered by b2',
 		'aegis'    => 'DarkMirage’s Weblog · 2004–2005 · powered by b2',
 		'lacus'    => 'DarkMirage’s Weblog · 2005 · powered by b2',
 		'default2' => 'Ramblings of DarkMirage is proudly powered by WordPress · 2005–2006',
-	)[ $skin ] ?? 'Ramblings of DarkMirage · 2003–' . date( 'Y' );
+	)[ $skin ] ?? 'Ramblings of DarkMirage · 2003–' . date( 'Y' ) );
 	return sprintf(
 		'%1$s<aside class="bk-side bk-side--right" aria-label="Sidebar">%2$s</aside></div><footer class="bk-footer"><p>%3$s</p><p class="dm-footer__lineage">%4$s <span>·</span> <a class="dm-footer__src" href="https://github.com/darkmirage/darkmirage.com">Source on GitHub</a></p></footer></div>%5$s',
 		$cols['left'] ? '<aside class="bk-side bk-side--left" aria-label="More">' . $cols['left'] . '</aside>' : '',
