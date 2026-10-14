@@ -107,13 +107,17 @@ function dmdune_legacy_after_autop( string $content ): string {
 		$content
 	);
 
-	// Images: drop fixed sizing, lazy-load, https.
+	// Images: drop old posts' fixed sizing, lazy-load, https. Block-editor posts keep the size
+	// they were given in the editor (a resized image's style="width:…").
+	$blocks  = has_blocks( get_post() );
 	$content = preg_replace_callback(
 		'#<img\b[^>]*>#i',
-		static function ( $m ) {
+		static function ( $m ) use ( $blocks ) {
 			$tag = $m[0];
 			// Some old tags have no space before style= (alt="…"style="width:283px").
-			$tag = preg_replace( '#(?<=["\'\s])style=(["\'])[^"\']*\1#i', ' ', $tag );
+			if ( ! $blocks ) {
+				$tag = preg_replace( '#(?<=["\'\s])style=(["\'])[^"\']*\1#i', ' ', $tag );
+			}
 			$tag = preg_replace_callback(
 				'#\ssrc=(["\'])(.*?)\1#i',
 				static fn( $s ) => ' src="' . esc_url( dmdune_override_image( dmdune_https( html_entity_decode( $s[2] ) ), 'content' ) ) . '"',
