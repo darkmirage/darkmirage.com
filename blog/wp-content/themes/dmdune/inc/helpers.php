@@ -25,13 +25,24 @@ function dmdune_https( string $url ): string {
  */
 function dmdune_image_overrides(): array {
 	$base = get_template_directory_uri() . '/assets/brand/soraven/';
-	return array(
+	$out  = array(
 		'/uploads/2013/06/sr.png' => array(
 			'card'    => $base . 'skyline-1600.webp',
 			'share'   => $base . 'skyline-share.jpg',
 			'content' => $base . 'raven-logo.webp',
 		),
 	);
+	// Pictures from sites that are gone, recovered from the Wayback Machine into /images/recovered/
+	// (scripts/restore_lost_images.py puts them on the server).
+	$recovered = array(
+		'img.engadget.com/common/images/8435422553253955.JPG' => 'img.engadget.com/8435422553253955.jpg',
+		'ausdod.com/images/game.gif'                          => 'ausdod.com/game.gif',
+	);
+	foreach ( $recovered as $fragment => $file ) {
+		$url              = home_url( '/images/recovered/' . $file );
+		$out[ $fragment ] = array( 'card' => $url, 'share' => $url, 'content' => $url );
+	}
+	return $out;
 }
 
 function dmdune_override_image( string $src, string $where ): string {
@@ -96,6 +107,7 @@ function dmdune_first_image( WP_Post $post ): ?string {
 		return '' === $cache ? null : $cache;
 	}
 	$found = '';
+	$b2    = (bool) get_post_meta( $post->ID, '_dm_b2_id', true );
 	if ( preg_match_all( '#(?:<a\b[^>]*\bhref=(["\'])([^"\']+)\1[^>]*>\s*)?(<img\b[^>]*>)#i', $post->post_content, $tags, PREG_SET_ORDER ) ) {
 		foreach ( $tags as $t ) {
 			$tag = $t[3];
@@ -103,8 +115,8 @@ function dmdune_first_image( WP_Post $post ): ?string {
 				continue;
 			}
 			$src = html_entity_decode( $m[2] );
-			// Smilies, badges, counters and ad pixels aren't post art.
-			if ( preg_match( '#smilies|admin\.gif|googlesyndication|qrcode|creativecommons|w3\.org|/wp-content/plugins/|\.(?:svg)$#i', $src ) ) {
+			// Smilies, badges, counters, ad pixels and old themes' layout graphics aren't post art.
+			if ( preg_match( '#smilies|admin\.gif|googlesyndication|qrcode|creativecommons|w3\.org|/wp-content/plugins/|/wp-content/themes/[^/]+/images/|\.(?:svg)$#i', $src ) ) {
 				continue;
 			}
 			$size = 0;
@@ -116,6 +128,10 @@ function dmdune_first_image( WP_Post $post ): ?string {
 			}
 			// A small inline thumbnail that links to the full picture: the card wants the full one.
 			$href = isset( $t[2] ) ? html_entity_decode( $t[2] ) : '';
+			if ( $b2 ) {
+				$src  = dmdune_b2_url( $src );
+				$href = '' !== $href ? dmdune_b2_url( $href ) : '';
+			}
 			$thumbish = ( $size && $size <= 200 ) || preg_match( '#[._-]thumb(?:nail)?[._-]|thumb-|/thumb/|s\.(?:jpe?g|png|gif)$#i', $src );
 			if ( $thumbish && preg_match( '#\.(?:jpe?g|png|gif|webp)$#i', $href ) ) {
 				$src = $href;

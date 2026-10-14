@@ -67,11 +67,7 @@ add_filter(
 		// b2 pages lived at /blog/, so "../images/x.jpg" meant /images/x.jpg and "index.php?p=5" meant /blog/index.php?p=5.
 		$content = preg_replace_callback(
 			'#\b(href|src)=(["\'])(?!(?:[a-z][a-z0-9+.-]*:|/|\#))([^"\']+)\2#i',
-			static function ( $m ) {
-				$url = $m[3];
-				$url = str_starts_with( $url, '../' ) ? '/' . substr( $url, 3 ) : '/blog/' . ltrim( $url, './' );
-				return $m[1] . '=' . $m[2] . esc_url( home_url( $url ) ) . $m[2];
-			},
+			static fn( $m ) => $m[1] . '=' . $m[2] . esc_url( dmdune_b2_url( $m[3] ) ) . $m[2],
 			$content
 		);
 		$author = get_post_meta( $post->ID, '_dm_b2_author', true );
@@ -137,3 +133,15 @@ function dmdune_b2_title( $title, $post = 0 ) {
 add_filter( 'the_title', 'dmdune_b2_title', 10, 2 );
 // The <title> tag comes from single_post_title(), which skips the_title.
 add_filter( 'single_post_title', 'dmdune_b2_title', 10, 2 );
+
+/**
+ * A link from a b2 post, made absolute. b2 pages lived at /blog/, so "../images/x.jpg" meant
+ * /images/x.jpg and "index.php?p=5" meant /blog/index.php?p=5. Absolute and root-relative links,
+ * and #anchors, are returned unchanged.
+ */
+function dmdune_b2_url( string $url ): string {
+	if ( preg_match( '#^(?:[a-z][a-z0-9+.-]*:|/|\#)#i', $url ) ) {
+		return $url;
+	}
+	return home_url( str_starts_with( $url, '../' ) ? '/' . substr( $url, 3 ) : '/blog/' . ltrim( $url, './' ) );
+}

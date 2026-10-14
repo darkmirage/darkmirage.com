@@ -19,7 +19,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const DMDUNE_TIMELINE_KEY = 'dmdune_timeline_v1';
+const DMDUNE_TIMELINE_KEY = 'dmdune_timeline_v2';
 
 /**
  * A smaller copy of the post's first picture when it's a WordPress upload; otherwise the

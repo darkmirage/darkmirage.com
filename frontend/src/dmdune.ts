@@ -103,6 +103,32 @@ function openViewer(set: HTMLAnchorElement[], start: HTMLAnchorElement): void {
   dlg.showModal();
 }
 
+// Pictures that no longer exist (2003-04 files and sites long gone): a card or log picture becomes
+// the NO SIGNAL panel; a picture in a post becomes a small "picture lost" plate. Errors don't
+// bubble, so this listens in the capture phase, which also covers rows the timeline adds later.
+function lose(img: HTMLImageElement): void {
+  if (img.closest('.dm-video')) return; // handled by markGone below
+  const media = img.closest('.dm-media');
+  if (media) { media.classList.add('is-lost'); return; }
+  if (!img.closest('.dm-prose')) return;
+  const w = Number(img.getAttribute('width'));
+  const h = Number(img.getAttribute('height'));
+  if ((w > 0 && w < 40) || (h > 0 && h < 40)) { img.remove(); return; } // counters, buttons
+  const plate = document.createElement('span');
+  plate.className = 'dm-lost';
+  plate.setAttribute('role', 'img');
+  plate.setAttribute('aria-label', img.alt !== '' ? `Picture no longer available: ${img.alt}` : 'Picture no longer available');
+  plate.textContent = 'PICTURE LOST';
+  // A link around just this picture pointed at the same lost file.
+  const a = img.parentElement;
+  const target = a instanceof HTMLAnchorElement && a.children.length === 1 && a.textContent.trim() === '' ? a : img;
+  target.replaceWith(plate);
+}
+document.addEventListener('error', (e) => { if (e.target instanceof HTMLImageElement) lose(e.target); }, true);
+for (const img of queryAll(document, '.dm-media img, .dm-prose img', HTMLImageElement)) {
+  if (img.complete && img.naturalWidth === 0 && img.getAttribute('src') !== null && !img.hasAttribute('data-dm-src')) lose(img);
+}
+
 // A missing thumbnail means YouTube has removed the video.
 function markGone(img: HTMLImageElement): void {
   img.closest('.dm-video')?.classList.add('is-gone');

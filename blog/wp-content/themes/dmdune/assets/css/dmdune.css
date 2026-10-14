@@ -692,6 +692,12 @@
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 .dm-tx__rec::before { content: "●"; color: #ff4d4d; margin-right: 6px; font-size: 8px; vertical-align: 1px; }
+/* A picture that no longer exists: the same NO SIGNAL panel (dmdune.js adds .is-lost). */
+.dm-media.is-lost { display: grid; place-items: center; background: repeating-linear-gradient(135deg, #151922 0 10px, #10131a 10px 20px); }
+.dm-media.is-lost img { display: none; }
+.dm-media.is-lost::after { content: "NO SIGNAL"; font: 500 12px var(--wp--preset--font-family--mono); letter-spacing: 0.3em; color: #7d8597; }
+/* …and inside a post, a small plate where the picture was. */
+.dm-lost { display: inline-grid; place-items: center; width: min(100%, 320px); height: 96px; border: 1px dashed var(--dm-line); border-radius: 10px; font: 500 11px var(--wp--preset--font-family--mono); letter-spacing: 0.24em; color: var(--dm-muted); background: repeating-linear-gradient(135deg, transparent 0 10px, var(--dm-line) 10px 11px); vertical-align: middle; }
 .dm-tx__nosignal {
 	display: grid;
 	place-items: center;

@@ -140,6 +140,35 @@
     show2(index);
     dlg.showModal();
   }
+  function lose(img) {
+    if (img.closest(".dm-video")) return;
+    const media = img.closest(".dm-media");
+    if (media) {
+      media.classList.add("is-lost");
+      return;
+    }
+    if (!img.closest(".dm-prose")) return;
+    const w = Number(img.getAttribute("width"));
+    const h = Number(img.getAttribute("height"));
+    if (w > 0 && w < 40 || h > 0 && h < 40) {
+      img.remove();
+      return;
+    }
+    const plate = document.createElement("span");
+    plate.className = "dm-lost";
+    plate.setAttribute("role", "img");
+    plate.setAttribute("aria-label", img.alt !== "" ? `Picture no longer available: ${img.alt}` : "Picture no longer available");
+    plate.textContent = "PICTURE LOST";
+    const a = img.parentElement;
+    const target = a instanceof HTMLAnchorElement && a.children.length === 1 && a.textContent.trim() === "" ? a : img;
+    target.replaceWith(plate);
+  }
+  document.addEventListener("error", (e) => {
+    if (e.target instanceof HTMLImageElement) lose(e.target);
+  }, true);
+  for (const img of queryAll(document, ".dm-media img, .dm-prose img", HTMLImageElement)) {
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute("src") !== null && !img.hasAttribute("data-dm-src")) lose(img);
+  }
   function markGone(img) {
     img.closest(".dm-video")?.classList.add("is-gone");
   }
