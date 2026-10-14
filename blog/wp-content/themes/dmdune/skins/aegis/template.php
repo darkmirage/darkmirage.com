@@ -1,10 +1,11 @@
 <?php
 /**
- * DarkMirage's Weblog (b2, 2003–2005), rebuilt: one template for every blog screen while the
- * reader has picked the 2003 era (see chrome/skins.php). As layout2b.css drew it: a sky-blue page,
- * the Aegis banner in a blue band, a left "menu" column of ruled lists, and posts grouped under
- * dd.mm.yy date tabs as "Title [Category] - Author at hh:mm:ss". b2 printed whole posts on every
- * list, so this does too (search results get a summary). Styles: assets/skins/b2/skin.css.
+ * DarkMirage's Weblog (b2, 2003–2005), rebuilt: one template for every blog screen in the three b2
+ * looks (Nadesico, Aegis, Lacus; see chrome/skins.php). As layout2b.css drew them: a blue band with
+ * the banner, a left "menu" column of ruled lists, and posts grouped under dd.mm.yy date tabs as
+ * "Title [Category] - Author at hh:mm:ss". b2 printed whole posts on every list, so this does too
+ * (search results get a summary). Styles: assets/skins/aegis/skin.css, which the Nadesico and Lacus
+ * stylesheets import and restyle.
  *
  * @package dmdune
  */
@@ -90,7 +91,22 @@ function dmb2_pager(): string {
 	return $links ? '<nav class="b2-pager" aria-label="Pages">' . implode( ' ', $links ) . '</nav>' : '';
 }
 
-$cfg  = array( 'note' => esc_html__( 'DarkMirage’s Weblog · 2003–2005, powered by b2 · Art: all rights reserved · Theme code: GPL-2.0', 'dmdune' ) ) + dmdune_chrome_config();
+$years = array( 'nadesico' => '2003–2004', 'aegis' => '2004–2005', 'lacus' => '2005' )[ dmc_skin() ] ?? '2003–2005';
+$cfg   = array( 'note' => esc_html( 'DarkMirage’s Weblog · ' . $years . ', powered by b2 · Art: all rights reserved · Theme code: GPL-2.0' ) ) + dmdune_chrome_config();
+// The title bar's tagline changed over the years: a post shows the one it was written under.
+if ( is_singular( 'post' ) ) {
+	$cfg['tagline'] = dmc_b2_tagline( dmc_skin(), get_the_date( 'Y-m-d', get_queried_object() ) );
+}
+// Lacus's tagboard: the shouts are gone, so it lists the b2 entries just before this page (a post's
+// own date, otherwise the end of b2) in their place.
+if ( 'lacus' === dmc_skin() ) {
+	$shouts = '';
+	$before = is_singular( 'post' ) && get_post_meta( get_queried_object_id(), '_dm_b2_id', true ) ? get_the_date( 'Y-m-d H:i:s', get_queried_object() ) : '2005-11-04 00:00:00';
+	foreach ( get_posts( array( 'numberposts' => 6, 'has_password' => false, 'meta_key' => '_dm_b2_id', 'suppress_filters' => false, 'date_query' => array( array( 'before' => $before, 'inclusive' => true ) ) ) ) as $p ) {
+		$shouts .= sprintf( '<li><b>DarkMirage</b>: new entry, <a href="%s">%s</a> <span>%s</span></li>', esc_url( get_permalink( $p ) ), esc_html( wp_strip_all_tags( get_the_title( $p ) ) ), esc_html( get_the_date( 'd.m.y', $p ) ) );
+	}
+	$cfg['tagboard'] = '<p class="b2-tagboard__note">The shouts weren’t archived; the last entries instead:</p><ul class="b2-tagboard__list">' . $shouts . '</ul>';
+}
 $side = array();
 $last = null;
 ob_start();

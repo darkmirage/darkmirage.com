@@ -1,0 +1,51 @@
+/* DarkMirage's Weblog (b2), the Nadesico look of July 2003 – April 2004 ("Blog layout done. Based on
+   Nadesico."), rebuilt from the last layout2b.css of the era (Wayback, 2004-04-12) over the Aegis
+   skin it grew into: a white page, the #34A6D2 band and a strip down the left, a white menu column,
+   the pale ND-001 Nadesico drawing behind the posts, blue drop caps, and Ruri, who sat in the midi
+   player box. The era's own banner is lost; banner-nadesico.webp is a labelled stand-in (see
+   LICENSE.md). Art: all rights reserved. */
+
+@import url("../aegis/skin.css");
+
+:root[data-skin][data-skin] {
+	--b2-sky: #fff;
+	--b2-menu: #fff;
+	/* layout2b.css used #609fff; darkened a little to read on white. */
+	--b2-link: #3a7fe6;
+	--kb-side: #fff;
+	--dm-bg: #fff;
+	--dm-sunk: #fff;
+	--dm-muted: #3d5566;
+}
+
+html[data-skin] body { background: #fff; }
+
+/* The drawing scrolled with the page at 170px × 30px; the strip (#beta) ran down the left. */
+.bk-shell { background: url("nadesico.webp") no-repeat 170px 30px; }
+.bk-shell::before { content: ""; position: absolute; z-index: 0; left: 0; top: 127px; box-sizing: border-box; width: 126px; height: 457px; background: var(--b2-band); border: 1px solid #000; border-top: 0; }
+.bk-banner { border-top: 1px solid #000; }
+.bk-banner::before, .bk-banner--lyrics::before, .bk-banner--gallery::before { background-image: url("banner-nadesico.webp"); }
+
+/* The midi player box (#control) at the top right, with Ruri in it. */
+.bk-banner__text { right: 6px; box-sizing: border-box; width: 214px; max-width: none; background: var(--b2-band); }
+.bk-title, html[data-skin] .bk-title, html[data-skin] .bk-title:hover { color: #fff; }
+.bk-tagline { color: #e3f5fc; }
+.bk-banner::after { content: ""; position: absolute; z-index: 1; right: 236px; bottom: 0; width: 79px; height: 100px; background: url("ruri.gif") no-repeat; }
+
+.bk-side--right, .single-post .bk-side--right { background: #fff; }
+.b2-content > :first-child::first-letter { color: #5b93e7; font-size: 150%; }
+.b2-comment { background: rgba(255, 255, 255, 0.8); }
+
+html[data-skin] .dm-tabbar { background: rgba(255, 255, 255, 0.97); }
+.dm-skinbar button { background: #c9ebf7; }
+.dm-skinbar button:hover, .dm-skinbar button[aria-pressed="true"] { background: #fff; }
+
+@media (max-width: 1080px) {
+	.bk-banner::after { right: 24px; }
+}
+@media (max-width: 860px) {
+	.bk-shell { background-position: right -260px top 330px; background-size: 520px auto; }
+	.bk-shell::before, .bk-banner::after { display: none; }
+	.bk-banner { border-top: 0; }
+	.bk-banner__text { background: var(--b2-band); }
+}

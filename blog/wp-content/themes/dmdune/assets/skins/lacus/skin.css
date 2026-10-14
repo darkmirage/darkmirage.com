@@ -1,0 +1,47 @@
+/* DarkMirage's Weblog (b2), the Lacus look of May – November 2005 ("Some changes made to the blog
+   layout (Lacus~~~)"), rebuilt from the 2005-09 layout2b.css over the Aegis skin it changed: the
+   band runs borderless across the page, lacus.jpg sits flush top right, a tagboard box takes the
+   banner's old place, posts are in Trebuchet MS, and the menu ends in an "advertisements" slot,
+   here a joke recreation of the AdSense text ads (chrome/skins.php dmc_b2_fake_ads). Art: all
+   rights reserved (see LICENSE.md). */
+
+@import url("../aegis/skin.css");
+
+/* ---------- Band, banner and tagboard ---------- */
+.bk-banner { height: 126px; margin-right: 0; border: 0; border-bottom: 1px solid #000; }
+.bk-banner::before, .bk-banner--lyrics::before, .bk-banner--gallery::before { left: auto; right: 0; top: 0; width: 430px; height: 125px; border: 0; background: var(--b2-band) url("banner-lacus.webp") 0 0 / 100% 100% no-repeat; }
+/* No title box: the page named itself only in its <title>. */
+.bk-banner__text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); padding: 0; border: 0; }
+.b2-tagboard { position: absolute; z-index: 3; left: 159px; top: 9px; box-sizing: border-box; display: flex; flex-direction: column; width: 600px; height: 128px; border: 1px solid #000; background: var(--b2-menu); }
+.b2-tagboard__label { flex: 0 0 auto; margin: 0; padding: 1px 2px 1px 8px; background: #4bb2e5 url("../aegis/ctop.gif") no-repeat 0 0; border-bottom: 1px solid #000; color: #000; font: 700 12px/14px var(--b2-font); text-transform: lowercase; }
+.b2-tagboard__body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 3px 8px 4px; font: 400 10px/14px var(--b2-font); color: #000; }
+.b2-tagboard__note { margin: 0 0 2px; color: #2f4f62; font-style: italic; }
+.b2-tagboard__list { margin: 0; padding: 0; list-style: none; }
+.b2-tagboard__list li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-skin] .b2-tagboard a { font-size: 10px; }
+.b2-tagboard__list span { color: #2f4f62; }
+
+/* ---------- Posts: Trebuchet MS from April 2005 on ---------- */
+.b2-content, .b2-comment__text { font-family: "Trebuchet MS", Verdana, Geneva, sans-serif; }
+
+/* ---------- The 120 × 600 "advertisements" slot ---------- */
+.bk-block--ads .bk-block__body { padding: 8px 0 8px; }
+.b2-ads { box-sizing: border-box; width: 120px; margin: 0 auto; padding: 4px 5px 6px; border: 1px solid var(--b2-menu); background: var(--b2-menu); font-family: Arial, Helvetica, sans-serif; }
+.b2-ads ul { margin: 0; padding: 0; list-style: none; }
+.bk-side--right .b2-ads li { margin: 0 0 14px; padding: 0; font: 400 11px/13px Arial, Helvetica, sans-serif; color: #000; }
+.b2-ads__title { display: block; color: #0066ff; font-weight: 700; text-decoration: underline; }
+.b2-ads__text { display: block; margin-top: 1px; }
+.b2-ads__url { display: block; margin-top: 1px; color: #4e93fc; overflow-wrap: anywhere; }
+.b2-ads__by { margin: 0; color: #000; font: 400 9px/11px Arial, Helvetica, sans-serif; text-align: left; }
+.b2-ads__note { margin: 6px 8px 0; color: #2f4f62; font: italic 400 9px/12px var(--b2-font); text-align: center; }
+
+/* ---------- Narrower screens ---------- */
+@media (max-width: 860px) {
+	.bk-banner { height: auto; border: 0; }
+	.bk-banner::before, .bk-banner--lyrics::before, .bk-banner--gallery::before { position: static; display: block; width: 100%; max-width: 430px; height: auto; margin-left: auto; aspect-ratio: 430 / 125; border: 0; }
+	.bk-banner { display: flex; flex-direction: column; background: var(--b2-band); border-bottom: 1px solid #000; }
+	.b2-tagboard { position: static; width: auto; height: auto; max-height: 150px; border: 0; border-top: 1px solid #000; }
+	.bk-banner__text { position: static; width: auto; height: auto; overflow: visible; clip: auto; padding: 6px 12px 7px; border-top: 1px solid #000; background: var(--b2-menu); }
+	.b2-tagboard__list li { white-space: normal; }
+	.b2-ads { width: 100%; max-width: 300px; }
+}

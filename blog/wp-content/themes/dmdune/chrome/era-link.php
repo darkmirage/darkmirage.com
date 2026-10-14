@@ -11,7 +11,7 @@ if ( isset( $_GET['era'] ) && ! headers_sent() ) {
 	// Theme names rather than years, so the address doesn't carry a second, unrelated date.
 	$want  = strtolower( trim( (string) $_GET['era'] ) );
 	$alias = array( 'block' => 'blocks', 'kubrickdm' => 'kubrick', 'dmbrick' => 'kubrick', 'now' => '', 'today' => '', 'dune' => '' );
-	$want  = $alias[ $want ] ?? $want;
+	$want  = dmc_skin_key( $alias[ $want ] ?? $want );
 	$skin  = ( '' === $want || isset( dmc_skins()[ $want ] ) ) ? $want : null;
 	if ( null !== $skin ) {
 		$host = (string) ( $_SERVER['HTTP_HOST'] ?? '' );

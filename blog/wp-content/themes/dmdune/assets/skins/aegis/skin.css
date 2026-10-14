@@ -1,8 +1,9 @@
-/* DarkMirage's Weblog (b2, 2003–2005), rebuilt from the 2004–05 layout2b.css: a sky-blue page with
-   the Nadesico line drawing behind it, the Aegis banner breaking out of a blue band, a 150px "menu"
+/* DarkMirage's Weblog (b2), the Aegis look of April 2004 – May 2005, rebuilt from the 2004–05
+   layout2b.css: a sky-blue page, the Aegis banner breaking out of a blue band, a 150px "menu"
    column of ruled lists on the left, and posts under dd.mm.yy date tabs in bold Verdana. The
    lyrics and gallery rules come from the Kubrick skin (imported), recoloured through its --kb-*
-   variables. Reflows on phones. Banner art: all rights reserved (see LICENSE.md). */
+   variables. The Nadesico (2003–04) and Lacus (2005) skins import this file and restyle it.
+   Reflows on phones. Banner art: all rights reserved (see LICENSE.md). */
 
 @import url("../kubrick/skin.css");
 
@@ -47,7 +48,7 @@ html[data-skin] a:hover { color: #000; }
 .dm-skinbar button[aria-pressed="true"] { background: #fff; border-color: #000; color: #000; }
 
 /* ---------- Page, band and banner ---------- */
-.bk-shell { position: relative; max-width: none; margin: 0; border: 0; background: url("nadesico.webp") no-repeat 361px 210px; }
+.bk-shell { position: relative; max-width: none; margin: 0; border: 0; background: none; }
 .bk-banner {
 	position: relative;
 	display: block;
@@ -184,6 +185,13 @@ html[data-skin] .dm-era-post:hover { background: #fff; }
 .post-password-form input[type="submit"], .b2-respond input[type="submit"] { margin: 1px; padding: 1px 8px 3px; border: 1px solid #000; background: var(--b2-field); color: #000; font: 400 12px/14px var(--b2-font); cursor: pointer; }
 .post-password-form input[type="submit"]:hover, .b2-respond input[type="submit"]:hover { background: #fff; }
 
+/* The lock box on protected posts (inc/b2.php), in the same fields. */
+html[data-skin] .dm-locked { max-width: 520px; padding: 10px; border: 1px dotted var(--b2-quote); border-radius: 0; background: rgba(255, 255, 255, 0.35); font: 400 12px/18px var(--b2-font); }
+html[data-skin] .dm-locked__why { color: #000; }
+html[data-skin] .dm-locked input { min-height: 0; padding: 1px 3px 3px; border: 1px solid #000; border-radius: 0; background: var(--b2-field); color: #000; font: 400 12px/14px var(--b2-font); }
+html[data-skin] .dm-locked button { min-height: 0; padding: 1px 8px 3px; border: 1px solid #000; border-radius: 0; background: var(--b2-field); color: #000; font: 400 12px/14px var(--b2-font); cursor: pointer; }
+html[data-skin] .dm-locked button:hover { background: #fff; }
+
 /* Comments, as b2's comment popup listed them */
 .b2-comments { margin-top: 26px; }
 .b2-commentlist { margin: 0 15px 0 30px; padding: 0; list-style: none; }
@@ -232,7 +240,6 @@ html[data-skin] .dm-hud-code, html[data-skin] .dm-meta, html[data-skin] .ly-type
 
 /* ---------- Phones and tablets: banner on top, one column, menu after the posts ---------- */
 @media (max-width: 860px) {
-	.bk-shell { background-position: right -120px top 260px; background-size: 420px auto; }
 	.bk-banner { height: auto; margin: 0; border: 0; background: var(--b2-band); }
 	.bk-banner::before { position: static; display: block; box-sizing: border-box; width: 100%; height: auto; aspect-ratio: 600 / 130; border: 0; border-bottom: 1px solid #000; }
 	.bk-banner__text { position: static; width: auto; height: auto; max-width: none; overflow: visible; clip: auto; margin: 0; padding: 6px 12px 7px; border: 0; border-bottom: 1px solid #000; background: var(--b2-menu); }
@@ -251,6 +258,7 @@ html[data-skin] .dm-hud-code, html[data-skin] .dm-meta, html[data-skin] .ly-type
 	.b2-commentlist, .b2-respond, .b2-postnav { margin-left: 8px; margin-right: 0; }
 	html[data-skin] .dm-era-post { margin-left: 8px; }
 	.b2-respond input[type="text"], .b2-respond input[type="email"], .b2-respond input[type="url"], .b2-respond textarea, .post-password-form input[type="password"] { font-size: 16px; }
+	html[data-skin] .dm-locked input { font-size: 16px; }
 	.bk-footer { margin: 0 12px; padding-bottom: 96px; }
 	html[data-skin] .ly-main, html[data-skin] .dmg-main { padding: 0; }
 }
