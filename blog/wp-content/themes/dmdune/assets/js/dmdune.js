@@ -166,8 +166,24 @@
   document.addEventListener("error", (e) => {
     if (e.target instanceof HTMLImageElement) lose(e.target);
   }, true);
+  function probe(img) {
+    const test = new Image();
+    test.addEventListener("error", () => {
+      if (img.isConnected && img.naturalWidth === 0) lose(img);
+    });
+    test.src = img.currentSrc !== "" ? img.currentSrc : img.src;
+  }
+  var lazyProbe = "IntersectionObserver" in window ? new IntersectionObserver((entries, obs) => {
+    for (const e of entries) {
+      if (!e.isIntersecting || !(e.target instanceof HTMLImageElement)) continue;
+      obs.unobserve(e.target);
+      probe(e.target);
+    }
+  }) : null;
   for (const img of queryAll(document, ".dm-media img, .dm-prose img", HTMLImageElement)) {
-    if (img.complete && img.naturalWidth === 0 && img.getAttribute("src") !== null && !img.hasAttribute("data-dm-src")) lose(img);
+    if (!img.complete || img.naturalWidth !== 0 || img.getAttribute("src") === null || img.hasAttribute("data-dm-src")) continue;
+    if (img.loading === "lazy" && lazyProbe) lazyProbe.observe(img);
+    else probe(img);
   }
   function markGone(img) {
     img.closest(".dm-video")?.classList.add("is-gone");

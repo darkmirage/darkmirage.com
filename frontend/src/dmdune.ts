@@ -125,8 +125,27 @@ function lose(img: HTMLImageElement): void {
   target.replaceWith(plate);
 }
 document.addEventListener('error', (e) => { if (e.target instanceof HTMLImageElement) lose(e.target); }, true);
+// A picture that failed before this script ran: complete with no size. WebKit (every iOS browser)
+// also reports a lazy picture it hasn't started loading that way, so confirm with a fresh request,
+// and for lazy pictures only once they come into view.
+function probe(img: HTMLImageElement): void {
+  const test = new Image();
+  test.addEventListener('error', () => { if (img.isConnected && img.naturalWidth === 0) lose(img); });
+  test.src = img.currentSrc !== '' ? img.currentSrc : img.src;
+}
+const lazyProbe = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries, obs) => {
+    for (const e of entries) {
+      if (!e.isIntersecting || !(e.target instanceof HTMLImageElement)) continue;
+      obs.unobserve(e.target);
+      probe(e.target);
+    }
+  })
+  : null;
 for (const img of queryAll(document, '.dm-media img, .dm-prose img', HTMLImageElement)) {
-  if (img.complete && img.naturalWidth === 0 && img.getAttribute('src') !== null && !img.hasAttribute('data-dm-src')) lose(img);
+  if (!img.complete || img.naturalWidth !== 0 || img.getAttribute('src') === null || img.hasAttribute('data-dm-src')) continue;
+  if (img.loading === 'lazy' && lazyProbe) lazyProbe.observe(img);
+  else probe(img);
 }
 
 // A missing thumbnail means YouTube has removed the video.
