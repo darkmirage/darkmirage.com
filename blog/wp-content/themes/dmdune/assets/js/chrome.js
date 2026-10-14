@@ -51,16 +51,15 @@
 		}
 	});
 
-	// In an old era, "Copy link" shares this page in that era (?era=<theme>): the share sheet on
-	// phones, the clipboard elsewhere.
+	// In an old era, "Copy link to this era" shares this page in that era (?era=<theme>): the share
+	// sheet on phones, the clipboard elsewhere.
 	(function () {
-		var bar = document.querySelector('.dm-skinbar');
-		var cur = bar && bar.querySelector('[data-dm-skin][aria-pressed="true"]');
+		var tm = document.querySelector('.dm-tmw');
+		var btn = tm && tm.querySelector('.dm-tmw__share');
+		var cur = tm && tm.querySelector('[data-dm-skin][aria-pressed="true"]');
 		var skin = cur && cur.getAttribute('data-dm-skin');
-		if (!skin) return;
-		// The button is in the page from the start (adding it here shifted the centred bar).
-		var btn = bar.querySelector('.dm-skinbar__share');
-		if (!btn) return;
+		if (!btn || !skin) return;
+		var text = btn.textContent;
 		btn.addEventListener('click', function () {
 			var canon = document.querySelector('link[rel="canonical"]');
 			var url = new URL(canon ? canon.href : location.href);
@@ -68,7 +67,7 @@
 			var link = url.toString();
 			var done = function (msg) {
 				btn.textContent = msg;
-				setTimeout(function () { btn.textContent = 'Copy link'; }, 1800);
+				setTimeout(function () { btn.textContent = text; }, 1800);
 			};
 			if (navigator.share && matchMedia('(pointer: coarse)').matches) {
 				navigator.share({ title: document.title, url: link }).catch(function () {});
@@ -96,14 +95,14 @@
 			return;
 		}
 		// Tapping outside an open menu closes it.
-		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-era[open]').forEach(function (d) {
+		document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-tmw[open]').forEach(function (d) {
 			if (!d.contains(e.target)) d.removeAttribute('open');
 		});
 	});
 
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape') {
-			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-era[open]').forEach(function (d) { d.removeAttribute('open'); });
+			document.querySelectorAll('.dm-sheet[open], .dm-nav__more[open], .dm-tmw[open]').forEach(function (d) { d.removeAttribute('open'); });
 		}
 	});
 

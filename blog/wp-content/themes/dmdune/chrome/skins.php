@@ -112,8 +112,8 @@ function dmc_skin_css( array $c ): string {
 }
 
 /**
- * The time machine: one button per era plus "Now". Used at the top of skinned pages and in the
- * Dune header's menu.
+ * The timeline inside the time machine: a marker per design from 2003 to now, each with a card
+ * (screenshot, dates, a line about it) shown on hover or focus.
  */
 function dmc_era_buttons(): string {
 	$skin  = dmc_skin();
@@ -173,13 +173,22 @@ function dmc_default2_taglines(): array {
 }
 
 /**
- * Header control for Dune: a clock that opens the era list.
+ * The time machine, the same on every page and every era: a clock button floating in the corner
+ * (ringed in the current era's colour) that opens a card with the timeline. It stays out of the
+ * old designs' way instead of sitting in their headers.
  */
-function dmc_era_menu_html(): string {
+function dmc_time_machine_html(): string {
+	$skin  = dmc_skin();
+	$s     = $skin ? dmc_skins()[ $skin ] : array( 'name' => 'Dune', 'span' => 'today' );
+	$share = $skin ? '<button type="button" class="dm-tmw__share">Copy link to this era</button>' : '';
 	return sprintf(
-		'<details class="dm-era"><summary aria-label="Time machine: see the site as it looked in earlier years">%s<span class="dm-era__label">Time machine</span></summary><div class="dm-era__panel"><p>See DarkMirage as it looked back then</p>%s</div></details>',
-		dmc_icon( 'clock', 18 ),
-		dmc_era_buttons()
+		'<details class="dm-tmw" data-era="%1$s"><summary aria-label="Time machine: viewing %2$s. See the site as it looked in other years">%3$s<span class="dm-tmw__label">Time machine <b>%2$s</b></span></summary><div class="dm-tmw__panel"><div class="dm-tmw__head"><span class="dm-tmw__title">Time machine</span><span class="dm-tmw__now">Viewing <b>%2$s</b> · %4$s</span></div>%5$s%6$s</div></details>',
+		$skin ? dmc_skin_era( $skin ) : 'now',
+		dmc_e( $s['name'] ),
+		dmc_icon( 'clock', 20 ),
+		dmc_e( $s['span'] ),
+		dmc_era_buttons(),
+		$share
 	);
 }
 
@@ -238,10 +247,10 @@ function dmc_skin_header_html( array $c ): string {
 		$tabs .= sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key || ( '' === $current && 'home' === $key ) ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
 	}
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><nav class="dm-skinbar" aria-label="Time machine"><span class="dm-skinbar__lead">%2$s<span>Time machine</span></span><span class="dm-skinbar__years">%3$s</span><button type="button" class="dm-skinbar__share">Copy link</button></nav><div class="bk-shell"><header class="bk-banner bk-banner--%4$s"%11$s><div class="bk-banner__text"><a class="bk-title" href="%5$s" rel="home"><span class="bk-title__of">%6$s</span> <span class="bk-title__name">%7$s</span></a><p class="bk-tagline">%8$s</p></div><nav class="bk-tabs" aria-label="Main"><ul>%9$s</ul></nav>%10$s%12$s</header><div class="bk-page">',
+		'<a class="dm-skip" href="%1$s">Skip to content</a>%2$s%3$s<div class="bk-shell"><header class="bk-banner bk-banner--%4$s"%11$s><div class="bk-banner__text"><a class="bk-title" href="%5$s" rel="home"><span class="bk-title__of">%6$s</span> <span class="bk-title__name">%7$s</span></a><p class="bk-tagline">%8$s</p></div><nav class="bk-tabs" aria-label="Main"><ul>%9$s</ul></nav>%10$s%12$s</header><div class="bk-page">',
 		dmc_e( $c['skip'] ),
-		dmc_icon( 'clock', 14 ),
-		dmc_era_buttons(),
+		'',
+		dmc_time_machine_html(),
 		dmc_e( $c['site'] ),
 		dmc_e( $home ),
 		dmc_e( $title[0] ),

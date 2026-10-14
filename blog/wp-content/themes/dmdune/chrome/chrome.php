@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.13.0' );
+define( 'DMC_VERSION', '1.14.0' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
@@ -179,7 +179,7 @@ function dmc_header_html( array $c = array() ): string {
 		dmc_e( $c['skip'] ),
 		dmc_e( $c['www'] ),
 		dmc_e( $icons ),
-		dmc_era_menu_html(),
+		'',
 		$links,
 		dmc_e( $c['search'] . array( 'blog' => '?s=', 'lyrics' => '#find', 'gallery' => '' )[ $c['site'] ] ),
 		dmc_icon( 'search', 18 ),
@@ -187,7 +187,7 @@ function dmc_header_html( array $c = array() ): string {
 		$more ? '' : ' hidden',
 		in_array( $current, array( 'japanese', 'capsule' ), true ) ? ' has-current' : '',
 		$more
-	);
+	) . dmc_time_machine_html();
 }
 
 function dmc_footer( array $c = array() ): void {
