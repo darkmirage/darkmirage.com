@@ -58,10 +58,9 @@
 		var cur = bar && bar.querySelector('[data-dm-skin][aria-pressed="true"]');
 		var skin = cur && cur.getAttribute('data-dm-skin');
 		if (!skin) return;
-		var btn = document.createElement('button');
-		btn.type = 'button';
-		btn.className = 'dm-skinbar__share';
-		btn.textContent = 'Copy link';
+		// The button is in the page from the start (adding it here shifted the centred bar).
+		var btn = bar.querySelector('.dm-skinbar__share');
+		if (!btn) return;
 		btn.addEventListener('click', function () {
 			var canon = document.querySelector('link[rel="canonical"]');
 			var url = new URL(canon ? canon.href : location.href);
@@ -79,7 +78,6 @@
 				window.prompt('Copy this link:', link);
 			}
 		});
-		bar.appendChild(btn);
 	})();
 
 	document.addEventListener('click', function (e) {
