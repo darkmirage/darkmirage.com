@@ -57,25 +57,49 @@
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) sync();
   });
+  var ERA = document.documentElement.getAttribute("data-skin") ?? "";
+  function withEra(href, era) {
+    const url = new URL(href, location.href);
+    if (era !== "") url.searchParams.set("era", era);
+    else url.searchParams.delete("era");
+    return url;
+  }
+  function isSiteUrl(url) {
+    return /(^|\.)darkmirage\.com$/.test(url.hostname) || url.hostname === location.hostname;
+  }
   document.addEventListener("click", (e) => {
     const era = closest(e.target, "[data-dm-skin]", Element);
     if (!era) return;
-    const skin = era.getAttribute("data-dm-skin") ?? "";
     if (era.closest(".dm-tmw")) {
       try {
         sessionStorage.setItem("dm-tm-open", "1");
       } catch {
       }
     }
-    document.cookie = `dm-skin=${skin}; path=/; SameSite=Lax${cookieDomain()}${skin !== "" ? "; max-age=31536000" : "; max-age=0"}`;
-    const url = new URL(location.href);
-    if (url.searchParams.has("era")) {
-      url.searchParams.delete("era");
-      location.replace(url.toString());
-    } else {
-      location.reload();
-    }
+    location.assign(withEra(location.href, era.getAttribute("data-dm-skin") ?? "").toString());
   });
+  if (ERA !== "") {
+    document.addEventListener("click", (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = closest(e.target, "a[href]", HTMLAnchorElement);
+      if (!a || a.target !== "" && a.target !== "_self" || a.hasAttribute("download")) return;
+      const url = new URL(a.href, location.href);
+      if (!isSiteUrl(url) || url.searchParams.has("era")) return;
+      if (url.pathname === location.pathname && url.search === location.search && url.hash !== "") return;
+      if (/\.(?:jpe?g|png|gif|webp|svg|mp3|zip|pdf|txt)$/i.test(url.pathname)) return;
+      a.href = withEra(a.href, ERA).toString();
+    });
+    document.addEventListener("submit", (e) => {
+      const form = e.target;
+      if (!(form instanceof HTMLFormElement) || form.method.toLowerCase() !== "get") return;
+      if (!isSiteUrl(new URL(form.action, location.href)) || form.querySelector('input[name="era"]')) return;
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "era";
+      input.value = ERA;
+      form.appendChild(input);
+    });
+  }
   function timeMachine(tm2, btn) {
     let timer = 0;
     let pointer = "";

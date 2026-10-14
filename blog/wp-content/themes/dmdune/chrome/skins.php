@@ -52,8 +52,7 @@ function dmc_skin_key( string $key ): string {
 function dmc_skin(): string {
 	static $skin = null;
 	if ( null === $skin ) {
-		$want = dmc_skin_key( (string) ( $_COOKIE['dm-skin'] ?? '' ) );
-		$skin = isset( dmc_skins()[ $want ] ) ? $want : '';
+		$skin = dmc_requested_skin();
 	}
 	return $skin;
 }

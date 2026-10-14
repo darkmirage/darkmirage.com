@@ -541,7 +541,7 @@
 
 .dm-discussed { display: flex; flex-direction: column; gap: 14px; }
 .dm-404 { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; max-width: 640px; }
-.dm-404__kiro { width: min(320px, 70%); height: auto; }
+.dm-404__art { width: 100%; height: auto; aspect-ratio: 3 / 2; border-radius: 14px; border: 1px solid var(--dm-line); }
 .dm-404 h1 { margin: 0; font-size: var(--wp--preset--font-size--xx-large); line-height: 1.05; }
 .dm-404 p { margin: 0; }
 .dm-404 .search-form { display: flex; gap: 8px; width: 100%; max-width: 480px; }

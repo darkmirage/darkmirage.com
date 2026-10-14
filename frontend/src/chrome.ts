@@ -35,25 +35,57 @@ function sync(): void {
 window.addEventListener('pageshow', sync);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
 
-// Era skins: one cookie across the three sites, then reload so the server sends that era.
+// Era skins live in the address (?era=<theme>; see chrome/era-link.php), so an era belongs to
+// one tab: picking one moves this page to that address, and clicks on the site's own links carry
+// it along. Anything opened in a new tab, or from elsewhere, starts in today's design.
+const ERA = document.documentElement.getAttribute('data-skin') ?? '';
+
+function withEra(href: string, era: string): URL {
+  const url = new URL(href, location.href);
+  if (era !== '') url.searchParams.set('era', era);
+  else url.searchParams.delete('era');
+  return url;
+}
+
+function isSiteUrl(url: URL): boolean {
+  return /(^|\.)darkmirage\.com$/.test(url.hostname) || url.hostname === location.hostname;
+}
+
 document.addEventListener('click', (e) => {
   const era = closest(e.target, '[data-dm-skin]', Element);
   if (!era) return;
-  const skin = era.getAttribute('data-dm-skin') ?? '';
   // Picked from the time machine: reopen it on the next page (see dmc_time_machine_html).
   if (era.closest('.dm-tmw')) {
     try { sessionStorage.setItem('dm-tm-open', '1'); } catch { /* it just opens closed */ }
   }
-  document.cookie = `dm-skin=${skin}; path=/; SameSite=Lax${cookieDomain()}${skin !== '' ? '; max-age=31536000' : '; max-age=0'}`;
-  // A shared ?era= link would otherwise win over the era just picked.
-  const url = new URL(location.href);
-  if (url.searchParams.has('era')) {
-    url.searchParams.delete('era');
-    location.replace(url.toString());
-  } else {
-    location.reload();
-  }
+  location.assign(withEra(location.href, era.getAttribute('data-dm-skin') ?? '').toString());
 });
+
+if (ERA !== '') {
+  // Same-tab clicks on pages of this site keep the era; Ctrl/Cmd/Shift/middle clicks (new tabs
+  // and windows) and target=_blank links don't.
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = closest(e.target, 'a[href]', HTMLAnchorElement);
+    if (!a || (a.target !== '' && a.target !== '_self') || a.hasAttribute('download')) return;
+    const url = new URL(a.href, location.href);
+    if (!isSiteUrl(url) || url.searchParams.has('era')) return;
+    if (url.pathname === location.pathname && url.search === location.search && url.hash !== '') return;
+    if (/\.(?:jpe?g|png|gif|webp|svg|mp3|zip|pdf|txt)$/i.test(url.pathname)) return;
+    a.href = withEra(a.href, ERA).toString();
+  });
+  // Forms that load a page of the site (search) carry it too.
+  document.addEventListener('submit', (e) => {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement) || form.method.toLowerCase() !== 'get') return;
+    if (!isSiteUrl(new URL(form.action, location.href)) || form.querySelector('input[name="era"]')) return;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'era';
+    input.value = ERA;
+    form.appendChild(input);
+  });
+}
 
 // The time machine grows out of its button: on hover with a mouse (closing a moment after the
 // pointer leaves, so crossing the gap doesn't snap it shut), or on tap / Enter. Escape or a
