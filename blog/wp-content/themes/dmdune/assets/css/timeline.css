@@ -114,6 +114,8 @@
 /* Hidden on the first screen; it appears past the first few posts, or when the edge is hovered. */
 .tl-ui.is-deep .tl-scrub, .tl-scrub:hover, .tl-scrub.is-dragging { opacity: 1; }
 .tl-scrub__track { position: absolute; inset: 0; cursor: ns-resize; touch-action: none; }
+/* Dragging the rail must not select its labels or the page, or bring up the long-press menu. */
+.tl-scrub, .tl-ctl { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .tl-scrub__track::before { content: ""; position: absolute; top: 0; bottom: 0; right: 8px; width: 2px; border-radius: 1px; background: var(--dm-line); }
 .tl-scrub__y { position: absolute; right: 14px; transform: translateY(-50%); font: 500 10px var(--wp--preset--font-family--mono); color: var(--dm-muted); cursor: pointer; }
 .tl-scrub__y:hover { color: var(--dm-accent); }

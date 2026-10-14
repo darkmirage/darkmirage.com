@@ -697,6 +697,7 @@
         scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
       }
       track.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         dragging = true;
         track.setPointerCapture(e.pointerId);
         scrub.classList.add("is-dragging");
