@@ -516,14 +516,12 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 .dm-spec--years .dm-spec__tick { left: 50%; transform: translateX(-50%); }
 .dm-spec--years .dm-spec__col.is-tick::before { display: none; }
 .dm-spec--mini { --sh: 30px; gap: 2px; padding-bottom: 0; }
-.dm-spec__gap { position: relative; flex: var(--g) 1 0; min-width: 18px; height: 100%; }
-/* An axis break: two slanted strokes where the silent years were cut out. */
+.dm-spec__gap { position: relative; flex: 0 0 14px; height: 100%; }
+/* An axis break: two slanted strokes where the silent years were cut out. The axis labels either
+   side (2013, 2026) say how long; the hover text gives the exact span. */
 .dm-spec__gap::before { content: ""; position: absolute; left: 50%; bottom: -6px; width: 6px; height: 12px; transform: translateX(-50%) skewX(-24deg); border-inline: 1.5px solid var(--dm-muted); background: var(--dm-gap-bg, var(--dm-bg)); }
-/* Its label sits in the empty space above the axis, where the bars would be. */
-.dm-spec__gapl { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); font: 500 10px/1.25 var(--dm-font-mono); letter-spacing: 0.04em; color: var(--dm-muted); text-align: center; white-space: nowrap; opacity: 0.85; }
-.dm-spec--years .dm-spec__gapl { white-space: normal; width: 8ch; }
-@media (max-width: 600px) { .dm-spec__gapl { display: none; } }
-.dm-spec--mini .dm-spec__gapl { display: none; }
+.dm-spec__gapl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.dm-spec--mini .dm-spec__gap { flex-basis: 8px; }
 .dm-spec--mini .dm-spec__gap::before { bottom: -2px; height: 8px; }
 .dm-spec--mini .dm-spec__tick, .dm-spec--mini .dm-spec__col::before { display: none; }
 

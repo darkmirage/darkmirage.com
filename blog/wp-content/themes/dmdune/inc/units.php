@@ -125,8 +125,7 @@ function dmdune_spectrum( array $points, string $class = '' ): string {
 			/* translators: %d: number of years */
 			$quiet = sprintf( _n( '%d yr off air', '%d yrs off air', $years, 'dmdune' ), $years );
 			$bars .= sprintf(
-				'<span class="dm-spec__gap" style="--g:%d" title="%s"><span class="dm-spec__gapl">%s</span></span>',
-				$months ? 24 : 3,
+				'<span class="dm-spec__gap" title="%s"><span class="dm-spec__gapl">%s</span></span>',
 				esc_attr( $p[0] . ' – ' . $points[ $skip[ $i ] - 1 ][0] . ' · ' . __( 'nothing posted', 'dmdune' ) ),
 				esc_html( $quiet )
 			);
