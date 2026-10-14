@@ -1,0 +1,132 @@
+/* default2 (November 2005 – September 2006), rebuilt: WordPress's stock Kubrick, which the blog
+   wore under DarkMirage's own anime headers. A 760px white page on light grey, a rounded 760×200
+   header picked from five (chrome/skins.php chooses one per page) with the title centred over it in
+   white, Trebuchet headings, a light sidebar on the right with Lucida lists marked "»", and no
+   sidebar on post pages. No tabs: the sidebar's "Menu" was the navigation. Builds on the Kubrick DM
+   stylesheet, which shares Kubrick's bones. Header art: all rights reserved (see LICENSE.md). */
+
+@import url("../kubrick/skin.css");
+
+:root[data-skin][data-skin] {
+	--kb-blue: #4180b6;
+	--kb-rule: #ddd;
+	--kb-link: #06c;
+	--kb-link-text: #06c;
+	--kb-side: #f9f9f9;
+	--kb-bg: #e7e7e7;
+	--dm-accent: #06c;
+	--dm-accent-soft: rgba(0, 102, 204, 0.1);
+}
+
+html[data-skin] body { background: var(--kb-bg) url("kubrickbgcolor.jpg"); font-size: 0.75rem; }
+html[data-skin] a:hover { color: #147; text-decoration: underline; }
+
+/* ---------- Time machine bar: Kubrick's header blue ---------- */
+.dm-skinbar { background: linear-gradient(#69aee7, #4180b6); color: #eaf3fb; }
+.dm-skinbar button { border-color: rgba(255, 255, 255, 0.55); }
+.dm-skinbar button:hover, .dm-skinbar button[aria-pressed="true"] { color: #4180b6; }
+
+/* ---------- Page and header ---------- */
+.bk-shell { margin: 20px auto; border-width: 1px; border-color: #959596; }
+.bk-banner {
+	aspect-ratio: 760 / 200;
+	min-height: 0;
+	background: #73a0c5 url("header-sage.webp") center / cover no-repeat;
+	border-bottom: 0;
+	justify-content: center;
+}
+.bk-banner[data-banner="nerine"] { background-image: url("header-nerine.webp"); }
+.bk-banner[data-banner="nanaka"] { background-image: url("header-nanaka.webp"); }
+.bk-banner[data-banner="haruhi"] { background-image: url("header-haruhi.webp"); }
+.bk-banner[data-banner="bakuten"] { background-image: url("header-bakuten.webp"); }
+/* Kubrick's centred white h1 at 70px down, the description under it. */
+.bk-banner__text { left: 0; right: 0; top: 33%; max-width: none; padding: 0 20px; text-align: center; }
+.bk-title { font: 700 clamp(1.5rem, 5.2cqw, 2.5rem)/1.1 "Trebuchet MS", "Lucida Grande", Verdana, Arial, sans-serif; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+.bk-tagline { margin-top: 6px; font: 400 clamp(0.6875rem, 1.6cqw, 0.75rem)/1.3 var(--kb-body); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+.bk-tabs, .bk-feed { display: none; }
+
+.bk-page { grid-template-columns: minmax(0, 1fr) 200px; }
+html[data-skin] .bk-page > main { padding: 20px 45px 40px 45px; }
+.bk-side--right { padding: 20px 10px 30px 14px; background: var(--kb-side); border-left: 1px solid #f0f0f0; }
+html[data-skin] .single-post .bk-page > main { padding-left: clamp(16px, 19%, 150px); padding-right: clamp(16px, 19%, 150px); }
+
+/* Sidebar: plain Lucida headings, "»" lists, grey sub-items, nothing ruled */
+.bk-block { margin-bottom: 15px; }
+.bk-block--nav { display: block; }
+.bk-block .bk-label { margin: 5px 0 0; padding: 0; border: 0; text-align: left; font: 700 0.875rem var(--kb-body); color: #333; }
+.bk-block__body { font-size: 0.6875rem; }
+.bk-block ul { margin: 5px 0 0 10px; padding: 0; }
+.bk-block li { margin: 3px 0 0; color: #777; }
+.bk-block li::before { content: "\00BB\0020"; }
+.bk-block li a:hover { background: none; padding-left: 0; margin-left: 0; }
+.bk-block .children { margin-top: 0; }
+.bk-search { justify-content: flex-start; }
+.bk-search input { width: 108px; padding: 2px; border: 1px solid #aaa; background: #fff; color: #333; text-align: left; font: 400 0.75rem var(--kb-body); }
+.bk-search input::placeholder { color: #999; }
+.bk-search button { padding: 1px 6px; border: 1px solid #aaa; background: #f4f4f4; color: #333; font: 400 0.75rem var(--kb-body); }
+.bk-search button::after { content: "Search"; }
+.kb-winamp li::before { content: none; }
+.kb-winamp li { color: #333; }
+.kb-winamp li span, .kb-winamp li a { display: block; margin-left: 9px; font-size: 1.2em; color: var(--kb-link); }
+.kb-recent li { overflow-wrap: anywhere; }
+
+/* ---------- Posts: stock Kubrick ---------- */
+.kb-post { margin-bottom: 40px; }
+.kb-title, .kb-pagetitle { margin-top: 30px; border: 0; font: 700 1.25rem/1.25 "Trebuchet MS", "Lucida Grande", Verdana, Arial, sans-serif; }
+main > .kb-post:first-child .kb-title, main > .kb-pagetitle:first-child { margin-top: 10px; }
+.kb-post--single .kb-title { margin-top: 10px; }
+.kb-title a { color: #333 !important; }
+.kb-title a:hover { color: #06c !important; text-decoration: none; }
+.kb-entry { line-height: 1.4; font-size: 0.75rem; }
+.kb-post--single .kb-entry { font-size: 0.7875rem; line-height: 1.6; }
+.kb-entry a { border: 0; }
+.kb-entry a:visited { color: #b85b5a !important; }
+.kb-entry a:hover { color: #147 !important; text-decoration: underline; }
+.kb-entry img { border: 0; padding: 0; background: none; }
+.kb-entry .caption, .kb-entry .wp-caption-text, .kb-entry figcaption { color: #777; }
+.kb-entry blockquote { margin: 15px 30px 0 10px; padding-left: 20px; border-left: 5px solid #ddd; color: #777; }
+.kb-entry ul { padding-left: 10px; list-style: none; }
+.kb-entry ul li::before { content: "\00BB\0020"; }
+.kb-thumb img { border: 0; padding: 0; }
+.kb-more { margin: 8px 0 0; }
+.kb-postmeta { color: #777; }
+.kb-postmeta a { color: #06c; }
+.kb-postnav { font-size: 0.75rem; }
+.kb-comment__no { display: none; }
+.kb-comment { font-size: 0.7rem; }
+.kb-comment.alt { background: #f8f8f8; }
+.kb-respond input[type="text"], .kb-respond input[type="email"], .kb-respond input[type="url"], .kb-respond textarea { border-color: #aaa; background: #fff; }
+.kb-respond input[type="submit"] { border-color: #aaa; color: #333; }
+html[data-skin] .dm-era-post { border-color: #4180b6; color: #4180b6; }
+html[data-skin] .dm-era-post:hover { background: #4180b6; }
+/* The lock box for private posts, in Kubrick's plain greys */
+html[data-skin] .dm-locked { border-color: #ccc; border-radius: 0; }
+html[data-skin] .dm-locked input { border-radius: 0; border-color: #aaa; background: #fff; }
+html[data-skin] .dm-locked button { border-radius: 0; background: #4180b6; font: 700 0.75rem var(--kb-body); }
+
+/* ---------- Footer: Kubrick's grey fade ---------- */
+.bk-footer { padding: 20px 16px; background: #eee url("kubrickfooter.jpg") center bottom no-repeat; color: #333; border-top: 1px solid #ddd; }
+.bk-footer a, .bk-footer a:hover { color: #06c !important; font-weight: 400; }
+.bk-footer .dm-footer__lineage span { color: #999; }
+.bk-footer .dm-era-switch { color: #06c; }
+.bk-footer .dm-era-switch[aria-pressed="true"] { color: #333; font-weight: 700; }
+
+/* ---------- Lyrics and Gallery ---------- */
+html[data-skin] .ly-tile, html[data-skin] .dmg-album__cover, html[data-skin] .dmg-grid a, html[data-skin] .dmg-strip a { border-color: #ccc; }
+html[data-skin] .dmg-viewer__stage img { border-color: #ccc; }
+html[data-skin] .ly-text--pair .ly-stanza { border-left-color: #ddd; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 760px) {
+	.bk-shell { margin: 0 auto; border: 0; }
+	/* A fixed ratio plus a minimum height would widen the page past the screen; let height lead. */
+	.bk-banner { aspect-ratio: auto; min-height: 140px; background-size: cover; background-position: center; }
+	.bk-banner::before { inset: 0; background: rgba(30, 50, 80, 0.25); }
+	.bk-banner__text { top: 50%; transform: translateY(-50%); }
+	.bk-tabs { display: none; }
+	/* The desktop grid and padding above outrank the Kubrick DM phone rules; restate them. */
+	.bk-page { grid-template-columns: minmax(0, 1fr); }
+	html[data-skin] .bk-page > main, html[data-skin] .single-post .bk-page > main { padding: 16px 16px 30px; }
+	.bk-side--right { border-left: 0; border-top: 1px solid #e4e4e4; }
+	.kb-entry, .kb-post--single .kb-entry { font-size: 0.875rem; }
+}

@@ -1,8 +1,10 @@
 <?php
 /**
- * Kubrick DM (2006) and dmbrickv2 (2007), rebuilt: both grew from WordPress's Kubrick, so one
- * template serves both and the stylesheets tell them apart (2006: one right sidebar, wide post
- * pages; 2007: three columns, with Current / Related / Random beside posts). See chrome/skins.php.
+ * default2 (2005–06), Kubrick DM (2006) and dmbrickv2 (2007), rebuilt: all three grew from
+ * WordPress's Kubrick, so one template serves them and the stylesheets tell them apart (default2:
+ * stock Kubrick under DarkMirage's anime headers, with Winamp and recent comments in the sidebar;
+ * 2006: one right sidebar, wide post pages; 2007: three columns, with Current / Related / Random
+ * beside posts). skins/default2/template.php loads this file. See chrome/skins.php.
  *
  * @package dmdune
  */
@@ -10,6 +12,7 @@
 defined( 'ABSPATH' ) || exit;
 
 $dmkb_v2 = 'dmbrickv2' === dmc_skin();
+$dmkb_d2 = 'default2' === dmc_skin();
 
 function dmkb_postmeta( WP_Post $post, bool $tags ): string {
 	$cats = get_the_category( $post->ID );
@@ -26,7 +29,7 @@ function dmkb_postmeta( WP_Post $post, bool $tags ): string {
  * A post as the home page and lists showed it: title, date, text (up to the <!--more--> mark on
  * home, a summary in lists) and the "続きを読む continue" button.
  */
-function dmkb_post( WP_Post $post, bool $full, bool $tags ): string {
+function dmkb_post( WP_Post $post, bool $full, bool $tags, bool $plain = false ): string {
 	$GLOBALS['post'] = $post; // phpcs:ignore
 	setup_postdata( $post );
 	$link = get_permalink( $post );
@@ -48,7 +51,10 @@ function dmkb_post( WP_Post $post, bool $full, bool $tags ): string {
 		esc_html( wp_strip_all_tags( get_the_title( $post ) ) ),
 		esc_html( get_the_date( 'F jS, Y', $post ) ),
 		$body,
-		$more ? '<p class="kb-continue"><a href="' . esc_url( $link ) . '#more-' . (int) $post->ID . '" aria-label="Continue reading ' . esc_attr( wp_strip_all_tags( get_the_title( $post ) ) ) . '"><span lang="ja">続きを読む</span> continue</a></p>' : '',
+		! $more ? '' : ( $plain
+			// Stock Kubrick's text link; Kubrick DM swapped in its "続きを読む continue" button.
+			? '<p class="kb-more"><a href="' . esc_url( $link ) . '#more-' . (int) $post->ID . '">Read the rest of this entry &raquo;</a></p>'
+			: '<p class="kb-continue"><a href="' . esc_url( $link ) . '#more-' . (int) $post->ID . '" aria-label="Continue reading ' . esc_attr( wp_strip_all_tags( get_the_title( $post ) ) ) . '"><span lang="ja">続きを読む</span> continue</a></p>' ),
 		dmkb_postmeta( $post, $tags )
 	);
 }
@@ -166,7 +172,7 @@ if ( is_singular() ) {
 	while ( have_posts() ) {
 		the_post();
 		$any = true;
-		echo dmkb_post( get_post(), $home, $dmkb_v2 ); // phpcs:ignore
+		echo dmkb_post( get_post(), $home, $dmkb_v2, $dmkb_d2 ); // phpcs:ignore
 	}
 	if ( ! $any ) {
 		echo '<p class="kb-center">Sorry, but you are looking for something that isn&#8217;t here.</p>'; // phpcs:ignore
@@ -197,8 +203,33 @@ foreach ( array_reverse( dmdune_year_counts(), true ) as $year => $n ) {
 	$years .= '<li><a href="' . esc_url( get_year_link( $year ) ) . '">' . (int) $year . '</a> (' . (int) $n . ')</li>';
 }
 $col    = $dmkb_v2 ? 'left' : 'right';
+if ( $dmkb_d2 ) {
+	// What Winamp was playing, as the last.fm box showed it on the Wayback Machine's 2005–06 captures.
+	$track  = dmc_default2_pick(
+		array(
+			array( 'もどるとき', '坂本真綾' ),
+			array( '瞳の欠片', 'FictionJunction YUUKA' ),
+			array( 'rond et rond', 'eufonius' ),
+		)
+	);
+	$side[] = array( 'Winamp', sprintf( '<ul class="kb-winamp"><li>Title<span lang="ja">%1$s</span></li><li>Artist<a href="https://www.last.fm/music/%2$s" lang="ja">%3$s</a></li></ul>', esc_html( $track[0] ), rawurlencode( $track[1] ), esc_html( $track[1] ) ) );
+	// The categories' descriptions were their tooltips ("Girly J-Pop ahoy!").
+	$cats   = wp_list_categories( array( 'echo' => false, 'title_li' => '', 'show_count' => false, 'hide_empty' => true, 'use_desc_for_title' => true ) );
+}
 $side[] = array( 'Categories', '<ul class="kb-links">' . $cats . '</ul>', '', $col );
 $side[] = array( 'Archives', '<ul class="kb-links">' . $years . '</ul>', '', $col );
+if ( $dmkb_d2 ) {
+	// Comments on locked posts stay out, like the posts' own text.
+	// The newest comments as the sidebar showed them in 2006: none from after the era.
+	$recent = get_comments( array( 'number' => 5, 'status' => 'approve', 'type' => 'comment', 'post_status' => 'publish', 'has_password' => false, 'date_query' => array( array( 'before' => '2006-10-01 00:00:00', 'inclusive' => false ) ) ) );
+	$html   = '';
+	foreach ( $recent as $rc ) {
+		$html .= sprintf( '<li><a href="%1$s">%2$s</a>: %3$s</li>', esc_url( get_comment_link( $rc ) ), esc_html( get_comment_author( $rc ) ), esc_html( dmc_summary( $rc->comment_content, 90 ) ) );
+	}
+	if ( $html ) {
+		$side[] = array( 'Recent Comments', '<ul class="kb-links kb-recent">' . $html . '</ul>' );
+	}
+}
 if ( $dmkb_v2 ) {
 	$random = get_posts( array( 'orderby' => 'rand', 'posts_per_page' => 3, 'no_found_rows' => true ) );
 	$html   = '';
@@ -217,7 +248,7 @@ if ( $dmkb_v2 ) {
 </head>
 <body <?php body_class( 'kb-body' ); ?>>
 <?php wp_body_open(); ?>
-<?php echo dmc_header_html( $cfg + array( 'tagline' => $dmkb_v2 ? 'フリクリ' : 'エッチなのはいけないと思います！' ) ); // phpcs:ignore ?>
+<?php echo dmc_header_html( $cfg + ( $dmkb_d2 ? array() : array( 'tagline' => $dmkb_v2 ? 'フリクリ' : 'エッチなのはいけないと思います！' ) ) ); // phpcs:ignore ?>
 <main id="dm-main" class="bk-main kb-main">
 <?php echo $main; // phpcs:ignore ?>
 </main>

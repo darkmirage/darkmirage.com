@@ -20,12 +20,15 @@
  * key => name (the theme), era (what readers see), years, first moment it was live.
  *
  * b2 is the cafelog weblog that ran at darkmirage.com/blog/ before WordPress. WordPress's first
- * post went up at 13:36 on 2005-11-03, so that day is split by time, not date.
+ * post went up at 13:36 on 2005-11-03, so that day is split by time, not date. default2 is the
+ * customized WordPress Default (Kubrick with DarkMirage's own anime headers) the blog wore until
+ * Kubrick DM in October 2006.
  */
 function dmc_skins(): array {
 	return array(
 		'b2'        => array( 'name' => 'b2', 'era' => '2003', 'years' => '2003–2005', 'from' => '0000-00-00' ),
-		'kubrick'   => array( 'name' => 'Kubrick DM', 'era' => '2006', 'years' => '2005–2006', 'from' => '2005-11-03 13:00:00' ),
+		'default2'  => array( 'name' => 'default2', 'era' => '2005', 'years' => '2005–2006', 'from' => '2005-11-03 13:00:00' ),
+		'kubrick'   => array( 'name' => 'Kubrick DM', 'era' => '2006', 'years' => '2006', 'from' => '2006-10-01 00:00:00' ),
 		'dmbrickv2' => array( 'name' => 'dmbrickv2', 'era' => '2007', 'years' => '2007', 'from' => '2006-12-01' ),
 		'blocks'    => array( 'name' => 'DarkMirage Blocks', 'era' => '2008', 'years' => '2008–2016', 'from' => '2007-12-01' ),
 	);
@@ -79,7 +82,33 @@ function dmc_era_buttons(): string {
  * The timeline colour each skin is drawn in (the chart groups Kubrick DM with dmbrickv2).
  */
 function dmc_skin_era( string $key ): string {
-	return array( 'b2' => 'b2', 'kubrick' => 'kubrick', 'dmbrickv2' => 'kubrick', 'blocks' => 'blocks' )[ $key ] ?? 'now';
+	return array( 'b2' => 'b2', 'default2' => 'default', 'kubrick' => 'kubrick', 'dmbrickv2' => 'kubrick', 'blocks' => 'blocks' )[ $key ] ?? 'now';
+}
+
+/**
+ * default2 showed one of its five headers, and one of its taglines, at random on every page load.
+ * Here the pick follows the page address instead, so each page keeps its header on reload while
+ * moving around the site still cycles through them.
+ */
+function dmc_default2_pick( array $list ) {
+	// Plain parse_url: lyrics and gallery load this file without WordPress.
+	$path = (string) parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
+	return $list[ crc32( $path ) % count( $list ) ];
+}
+
+/**
+ * Taglines the 2005–06 blog showed under its title (from the Wayback Machine), each quoting the
+ * show it linked to.
+ */
+function dmc_default2_taglines(): array {
+	return array(
+		'女の嘘には棘がある',
+		'世界は全てお芝居だ',
+		'The last love song on this little planet',
+		'探し物は何ですか？見つけにくいものなんですか？',
+		'宇宙と地上にひきさかれる恋人',
+		'エッチなのはいけないと思います！',
+	);
 }
 
 /**
@@ -136,6 +165,11 @@ function dmc_lineage_html(): string {
 function dmc_skin_header_html( array $c ): string {
 	$current = dmc_current( $c );
 	$b2      = 'b2' === dmc_skin();
+	$d2      = 'default2' === dmc_skin();
+	$banner  = $d2 ? dmc_default2_pick( array( 'sage', 'nerine', 'nanaka', 'haruhi', 'bakuten' ) ) : '';
+	if ( $d2 && 'blog' === $c['site'] && ! isset( $c['tagline'] ) ) {
+		$c['tagline'] = dmc_default2_pick( dmc_default2_taglines() );
+	}
 	// Before WordPress the site was "DarkMirage's Weblog".
 	$title   = array(
 		'blog'    => $b2 ? array( 'DarkMirage’s', 'Weblog' ) : array( 'Ramblings of', 'DarkMirage' ),
@@ -152,7 +186,7 @@ function dmc_skin_header_html( array $c ): string {
 		$tabs .= sprintf( '<li><a href="%s"%s>%s</a></li>', dmc_e( $item[1] ), $current === $key || ( '' === $current && 'home' === $key ) ? ' aria-current="page"' : '', dmc_e( $item[0] ) );
 	}
 	return sprintf(
-		'<a class="dm-skip" href="%1$s">Skip to content</a><nav class="dm-skinbar" aria-label="Time machine"><span class="dm-skinbar__lead">%2$s<span>Time machine</span></span><span class="dm-skinbar__years">%3$s</span></nav><div class="bk-shell"><header class="bk-banner bk-banner--%4$s"><div class="bk-banner__text"><a class="bk-title" href="%5$s" rel="home"><span class="bk-title__of">%6$s</span> <span class="bk-title__name">%7$s</span></a><p class="bk-tagline">%8$s</p></div><nav class="bk-tabs" aria-label="Main"><ul>%9$s</ul></nav>%10$s</header><div class="bk-page">',
+		'<a class="dm-skip" href="%1$s">Skip to content</a><nav class="dm-skinbar" aria-label="Time machine"><span class="dm-skinbar__lead">%2$s<span>Time machine</span></span><span class="dm-skinbar__years">%3$s</span></nav><div class="bk-shell"><header class="bk-banner bk-banner--%4$s"%11$s><div class="bk-banner__text"><a class="bk-title" href="%5$s" rel="home"><span class="bk-title__of">%6$s</span> <span class="bk-title__name">%7$s</span></a><p class="bk-tagline">%8$s</p></div><nav class="bk-tabs" aria-label="Main"><ul>%9$s</ul></nav>%10$s</header><div class="bk-page">',
 		dmc_e( $c['skip'] ),
 		dmc_icon( 'clock', 14 ),
 		dmc_era_buttons(),
@@ -162,7 +196,8 @@ function dmc_skin_header_html( array $c ): string {
 		dmc_e( $title[1] ),
 		dmc_e( $tagline ),
 		$tabs,
-		'blog' === $c['site'] ? '<a class="bk-feed" href="' . dmc_e( $c['www'] . 'feed/' ) . '" title="RSS feed"><span>RSS</span></a>' : ''
+		'blog' === $c['site'] ? '<a class="bk-feed" href="' . dmc_e( $c['www'] . 'feed/' ) . '" title="RSS feed"><span>RSS</span></a>' : '',
+		$banner ? ' data-banner="' . dmc_e( $banner ) . '"' : ''
 	);
 }
 
@@ -195,12 +230,16 @@ function dmc_skin_footer_html( array $c, string $tabbar ): string {
 	$cols['right'] .= dmc_bk_block( 'Search', sprintf( '<form class="bk-search" role="search" method="get" action="%s"><label class="screen-reader-text" for="bk-s">Search</label><input id="bk-s" type="search" name="%s" placeholder="%s"><button type="submit" aria-label="Search">%s</button></form>', dmc_e( $c['search'] ), dmc_e( $field ), dmc_e( $c['placeholder'] ), dmc_icon( 'search', 14 ) ), 'bk-block--search' );
 	// Blocks kept its navigation in the sidebar; the 2007 theme listed it on the left.
 	if ( 'b2' !== $skin ) {
-		$cols[ 'dmbrickv2' === $skin ? 'left' : 'right' ] .= dmc_bk_block( 'Navigation', '<ul class="bk-nav">' . $nav . '</ul>', 'bk-block--nav' );
+		// default2 had no tabs: its "Menu" list in the sidebar was the navigation.
+		$cols[ 'dmbrickv2' === $skin ? 'left' : 'right' ] .= dmc_bk_block( 'default2' === $skin ? 'Menu' : 'Navigation', '<ul class="bk-nav">' . $nav . '</ul>', 'bk-block--nav' );
 	}
 	foreach ( (array) ( $c['side'] ?? array() ) as $block ) {
 		$cols[ 'left' === ( $block[3] ?? '' ) ? 'left' : 'right' ] .= dmc_bk_block( $block[0], $block[1], $block[2] ?? '' );
 	}
-	$note = $c['note'] ?? ( 'b2' === $skin ? 'DarkMirage’s Weblog · 2003–2005 · powered by b2' : 'Ramblings of DarkMirage · 2003–' . date( 'Y' ) );
+	$note = $c['note'] ?? array(
+		'b2'       => 'DarkMirage’s Weblog · 2003–2005 · powered by b2',
+		'default2' => 'Ramblings of DarkMirage is proudly powered by WordPress · 2005–2006',
+	)[ $skin ] ?? 'Ramblings of DarkMirage · 2003–' . date( 'Y' );
 	return sprintf(
 		'%1$s<aside class="bk-side bk-side--right" aria-label="Sidebar">%2$s</aside></div><footer class="bk-footer"><p>%3$s</p><p class="dm-footer__lineage">%4$s <span>·</span> <a class="dm-footer__src" href="https://github.com/darkmirage/darkmirage.com">Source on GitHub</a></p></footer></div>%5$s',
 		$cols['left'] ? '<aside class="bk-side bk-side--left" aria-label="More">' . $cols['left'] . '</aside>' : '',
