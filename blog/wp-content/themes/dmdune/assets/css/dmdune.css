@@ -373,7 +373,7 @@
 .dm-prose .thumbnails a { display: block; line-height: 0; }
 .dm-prose .thumbnails img { width: 100% !important; aspect-ratio: 1; object-fit: cover; border-radius: 10px; transition: transform 0.15s; }
 .dm-prose .thumbnails a:hover img { transform: scale(1.03); }
-.dm-prose a[data-dm-lightbox], .dm-prose .dm-figure a { cursor: zoom-in; }
+.dm-prose a[data-dm-lightbox], .dm-prose .dm-figure > a { cursor: zoom-in; }
 /* [audio:…] files */
 .dm-audio { margin-inline: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--dm-line); border-radius: 16px; background: var(--dm-surface); }
 .dm-audio audio { width: 100%; height: 40px; }
@@ -382,7 +382,8 @@
 /* Old <p class="caption"> images, now figures */
 .dm-figure { margin-inline: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .dm-figure img { display: block; }
-.dm-figure a { display: block; line-height: 0; }
+/* The picture's own link, not links in the caption. */
+.dm-figure > a { display: block; line-height: 0; }
 .dm-figure figcaption, .dm-prose .wp-element-caption, .dm-video figcaption {
 	font-family: var(--wp--preset--font-family--body);
 	font-size: 0.875rem;
