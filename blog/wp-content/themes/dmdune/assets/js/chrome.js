@@ -55,14 +55,14 @@
 		}
 	});
 
-	// "Copy link to this era" shares this page in the era showing (?era=<theme>, or ?era=dune): the
-	// share sheet on phones, the clipboard elsewhere.
+	// In an old era, "Copy link" shares this page in that era (?era=<theme>): the share sheet on
+	// phones, the clipboard elsewhere.
 	(function () {
 		var tm = document.querySelector('.dm-tmw');
 		var btn = tm && tm.querySelector('.dm-tmw__share');
 		var cur = tm && tm.querySelector('[data-dm-skin][aria-pressed="true"]');
-		if (!btn || !cur) return;
-		var skin = cur.getAttribute('data-dm-skin') || 'dune';
+		var skin = cur && cur.getAttribute('data-dm-skin');
+		if (!btn || !skin) return;
 		var text = btn.textContent;
 		btn.addEventListener('click', function () {
 			var canon = document.querySelector('link[rel="canonical"]');

@@ -141,3 +141,6 @@ html[data-skin] .ly-text--pair .ly-stanza { border-left-color: #ddd; }
 	.bk-side--right { border-left: 0; border-top: 1px solid #e4e4e4; }
 	.kb-entry, .kb-post--single .kb-entry { font-size: 0.875rem; }
 }
+
+/* default2: Kubrick's softer grey-blue and rounded corners. */
+.dm-tmw { --tmw-radius: 8px; --tmw-line: #d5d6d7; --tmw-title-fg: #4180b6; }

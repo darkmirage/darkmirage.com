@@ -836,3 +836,20 @@ a.dm-heat__cell:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(-
 
 /* Byline with the "see this post as it looked then" switch beside it */
 .dm-byline-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+
+/* ---------- Featured page (template page-featured.html) ---------- */
+.dm-featured-head { padding-bottom: 18px; border-bottom: 1px dashed var(--dm-line); }
+.dm-featured__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+/* The newest pick leads, picture beside the text. */
+.dm-featured__grid > .dm-card:first-child { grid-column: 1 / -1; }
+.dm-featured__grid > .dm-card:first-child .dm-card__link { flex-direction: row; }
+.dm-featured__grid > .dm-card:first-child .dm-card__media { flex: 0 0 52%; aspect-ratio: 16 / 10; }
+.dm-featured__grid > .dm-card:first-child .dm-card__body { justify-content: center; padding: 26px 30px; }
+.dm-featured__grid > .dm-card:first-child .dm-card__title { font-size: var(--wp--preset--font-size--x-large, 1.9rem); line-height: 1.1; }
+.dm-featured__grid .dm-card__excerpt { display: block; }
+@media (max-width: 760px) {
+	.dm-featured__grid { grid-template-columns: minmax(0, 1fr); }
+	.dm-featured__grid > .dm-card:first-child .dm-card__link { flex-direction: column; }
+	.dm-featured__grid > .dm-card:first-child .dm-card__media { flex: none; }
+	.dm-featured__grid > .dm-card:first-child .dm-card__body { padding: 18px 20px; }
+}

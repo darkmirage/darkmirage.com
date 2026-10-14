@@ -557,28 +557,68 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 .dm-tm__stop:focus-within > .dm-tm__card { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 @media (prefers-reduced-motion: reduce) { .dm-tm__card, .dm-tm__dot { transition: none; } }
 
-/* The floating time machine: the same on every page and in every era. Collapsed it is a clock in
-   the bottom-right corner ringed in the current era's colour (above the tab bar on phones);
-   open, a card with the timeline. Its fonts and colours are Dune's, whatever the era, and the
-   doubled classes keep each old skin's own button and link styles off it. */
-.dm-tmw.dm-tmw { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 90; margin: 0; padding: 0; color: var(--dm-fg); font: 400 14px/1.4 var(--dm-font-body); text-align: left; }
-@media (max-width: 900px) { .dm-tmw.dm-tmw { right: 12px; bottom: calc(var(--dm-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); } }
-.dm-tmw.dm-tmw > summary { display: flex; align-items: center; gap: 8px; box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--dm-line); border-radius: 999px; background: color-mix(in srgb, var(--dm-surface) 94%, transparent); box-shadow: 0 0 0 2px var(--era), 0 10px 28px -12px rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--era); list-style: none; cursor: pointer; }
-.dm-tmw.dm-tmw > summary::-webkit-details-marker { display: none; }
-.dm-tmw__label { display: none; color: var(--dm-fg); font: 500 12px/1 var(--dm-font-mono); letter-spacing: 0.06em; white-space: nowrap; }
-.dm-tmw__label b { color: var(--era); font-weight: 700; }
-@media (hover: hover) {
-	.dm-tmw.dm-tmw > summary:hover .dm-tmw__label { display: inline; }
+/* The floating time machine. Its geometry is fixed (panel size, padding, line heights, the
+   header's two rows), so the timeline sits in the same spot in every era; each era dresses it in
+   its own colours, fonts and borders by setting the --tmw-* variables in its skin.css. Collapsed
+   it is a clock in the bottom-right corner (above the tab bar on phones), ringed in the era's
+   colour. The doubled classes keep each skin's general button and link rules off it. */
+.dm-tmw {
+	--tmw-bg: var(--dm-surface);
+	--tmw-fg: var(--dm-fg);
+	--tmw-muted: var(--dm-muted);
+	--tmw-line: var(--dm-line);
+	--tmw-radius: 16px;
+	--tmw-pill-radius: 999px;
+	--tmw-font: var(--dm-font-body);
+	--tmw-title-font: 500 11px/18px var(--dm-font-mono);
+	--tmw-title-case: uppercase;
+	--tmw-title-spacing: 0.12em;
+	--tmw-title-bg: none;
+	--tmw-title-fg: var(--tmw-muted);
+	--tmw-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.55);
+	--tmw-btn-bg: var(--dm-bg);
+	--tmw-btn-fg: var(--tmw-fg);
+	--tmw-btn-radius: 999px;
+	--tmw-dot-bg: var(--tmw-bg);
 }
-.dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label, .dm-tmw[open] > summary .dm-tmw__label { display: inline; }
-.dm-tmw__panel { position: absolute; right: 0; bottom: calc(100% + 12px); box-sizing: border-box; width: 440px; max-width: calc(100vw - 24px); padding: 12px 14px 12px; border: 1px solid var(--dm-line); border-radius: 16px; background: var(--dm-surface); box-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.55); }
-/* One line each, so the card keeps its height whichever era it names. */
-.dm-tmw__head { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
-.dm-tmw__title, .dm-tmw__now { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dm-tmw__title { font: 500 11px/1.3 var(--dm-font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dm-muted); }
-.dm-tmw__now { font: 400 12px/1.3 var(--dm-font-body); color: var(--dm-muted); }
-.dm-tmw__now b { color: var(--dm-fg); font-weight: 600; }
-.dm-tmw .dm-tm__card { top: auto; bottom: calc(100% + 10px); transform: translateY(4px); }
-.dm-tmw.dm-tmw .dm-tmw__share { display: block; width: 100%; margin: 12px 0 0; padding: 9px 12px; border: 1px solid var(--dm-line); border-radius: 999px; background: var(--dm-bg); box-shadow: none; color: var(--dm-fg); font: 500 12px/1 var(--dm-font-mono); letter-spacing: 0.06em; text-transform: none; cursor: pointer; }
+.dm-tmw.dm-tmw { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 90; margin: 0; padding: 0; color: var(--tmw-fg); font: 400 12px/16px var(--tmw-font); text-align: left; }
+@media (max-width: 900px) { .dm-tmw.dm-tmw { right: 12px; bottom: calc(var(--dm-tabbar-h) + 24px + env(safe-area-inset-bottom, 0px)); } }
+.dm-tmw.dm-tmw > summary { display: flex; align-items: center; box-sizing: border-box; height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--tmw-line); border-radius: var(--tmw-pill-radius); background: var(--tmw-bg); box-shadow: 0 0 0 2px var(--era), 0 10px 28px -12px rgba(0, 0, 0, 0.5); color: var(--era); list-style: none; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; }
+.dm-tmw.dm-tmw > summary::-webkit-details-marker { display: none; }
+/* The label slides out beside the clock on hover, focus and while open. */
+.dm-tmw__label { display: inline-block; overflow: hidden; max-width: 0; margin-left: 0; opacity: 0; color: var(--tmw-fg); font: var(--tmw-title-font); letter-spacing: 0.04em; white-space: nowrap; transition: max-width 0.28s ease, margin-left 0.28s ease, opacity 0.2s ease, color 0.2s ease; }
+.dm-tmw__label b { color: var(--era); font-weight: 700; transition: color 0.2s ease; }
+/* Hover fills the button with the era's colour. */
+@media (hover: hover) {
+	.dm-tmw.dm-tmw > summary:hover { background: var(--era); color: #fff; }
+	.dm-tmw.dm-tmw > summary:hover .dm-tmw__label { max-width: 260px; margin-left: 8px; opacity: 1; }
+}
+.dm-tmw.dm-tmw > summary:focus-visible, .dm-tmw[open] > summary { background: var(--era); color: #fff; }
+.dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label, .dm-tmw[open] > summary .dm-tmw__label { max-width: 260px; margin-left: 8px; opacity: 1; }
+.dm-tmw.dm-tmw > summary:hover .dm-tmw__label, .dm-tmw.dm-tmw > summary:hover .dm-tmw__label b, .dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label, .dm-tmw.dm-tmw > summary:focus-visible .dm-tmw__label b, .dm-tmw[open] > summary .dm-tmw__label, .dm-tmw[open] > summary .dm-tmw__label b { color: #fff; }
+.dm-tmw__panel { position: absolute; right: 0; bottom: calc(100% + 12px); box-sizing: border-box; width: 440px; max-width: calc(100vw - 24px); padding: 12px 14px; border: 1px solid var(--tmw-line); border-radius: var(--tmw-radius); background: var(--tmw-bg); box-shadow: var(--tmw-shadow); }
+/* Row one: the title, and Copy link in the old eras; row two: what's showing. Fixed heights. */
+.dm-tmw__head { display: grid; grid-template-rows: 22px 16px; gap: 4px; margin-bottom: 12px; }
+.dm-tmw__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.dm-tmw__title { flex: 1 1 auto; min-width: 0; overflow: hidden; padding: 0 4px; background: var(--tmw-title-bg); color: var(--tmw-title-fg); font: var(--tmw-title-font); letter-spacing: var(--tmw-title-spacing); text-overflow: ellipsis; text-transform: var(--tmw-title-case); white-space: nowrap; }
+.dm-tmw__now { overflow: hidden; color: var(--tmw-muted); text-overflow: ellipsis; white-space: nowrap; }
+.dm-tmw__now b { color: var(--tmw-fg); font-weight: 700; }
+.dm-tmw.dm-tmw .dm-tmw__share { flex: 0 0 auto; height: 22px; margin: 0; padding: 0 10px; border: 1px solid var(--tmw-line); border-radius: var(--tmw-btn-radius); background: var(--tmw-btn-bg); box-shadow: none; color: var(--tmw-btn-fg); font: 700 11px/20px var(--tmw-font); letter-spacing: 0; text-transform: none; cursor: pointer; }
 .dm-tmw.dm-tmw .dm-tmw__share:hover, .dm-tmw.dm-tmw .dm-tmw__share:focus-visible { border-color: var(--era); color: var(--era); }
+/* The timeline in the widget: labels in the era's font at a fixed size. */
+.dm-tmw .dm-tm.dm-tm .dm-tm__stop > button { color: var(--tmw-fg); font: 700 10.5px/12px var(--tmw-font); }
+.dm-tmw .dm-tm__dot { background: var(--tmw-dot-bg); }
+/* Cards open upwards from the line and wear the era's colours too. */
+.dm-tmw .dm-tm__card { top: auto; bottom: calc(100% + 10px); transform: translateY(4px); border-color: var(--tmw-line); border-top-color: var(--era); border-radius: var(--tmw-radius); background: var(--tmw-bg); color: var(--tmw-fg); font: 400 12px/16px var(--tmw-font); }
+.dm-tmw .dm-tm__card b { font: 700 13px/17px var(--tmw-font); }
+.dm-tmw .dm-tm__span { color: var(--tmw-muted); font: 400 11px/14px var(--tmw-font); }
+.dm-tmw .dm-tm__blurb { color: var(--tmw-fg); }
+/* Opening rises out of the corner; reopening after an era switch (.dm-tmw--still) doesn't. */
+@keyframes dm-tmw-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
+.dm-tmw[open] > .dm-tmw__panel { transform-origin: 100% 100%; animation: dm-tmw-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1); }
+.dm-tmw--still[open] > .dm-tmw__panel { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+	.dm-tmw[open] > .dm-tmw__panel { animation: none; }
+	.dm-tmw.dm-tmw > summary, .dm-tmw__label, .dm-tmw__label b { transition: none; }
+}
 @media print { .dm-tmw { display: none; } }

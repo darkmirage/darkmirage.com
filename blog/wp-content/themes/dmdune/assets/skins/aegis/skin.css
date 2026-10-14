@@ -265,3 +265,26 @@ html[data-skin] .dm-hud-code, html[data-skin] .dm-meta, html[data-skin] .ly-type
 
 /* The byline above already names friends who posted. */
 .dm-guest { display: none; }
+
+/* The time machine, b2-style: square, black-ruled, Verdana, a ctop.gif bar for the title. */
+.dm-tmw {
+	--tmw-bg: var(--b2-menu);
+	--tmw-fg: #000;
+	--tmw-muted: #1d4f66;
+	--tmw-line: #000;
+	--tmw-radius: 0;
+	--tmw-pill-radius: 0;
+	--tmw-font: var(--b2-font);
+	--tmw-title-font: 700 11px/22px var(--b2-font);
+	--tmw-title-case: lowercase;
+	--tmw-title-spacing: 0;
+	--tmw-title-fg: #000;
+	--tmw-shadow: 4px 4px 0 rgba(0, 0, 0, 0.25);
+	--tmw-btn-bg: var(--b2-field);
+	--tmw-btn-fg: #000;
+	--tmw-btn-radius: 0;
+	--tmw-dot-bg: #fff;
+}
+/* Set here rather than in --tmw-title-bg: a relative url() in a variable resolves against
+   chrome.css, where it's used. */
+.dm-tmw .dm-tmw__title { background: #4bb2e5 url("ctop.gif") no-repeat 0 0 / 100% 100%; }

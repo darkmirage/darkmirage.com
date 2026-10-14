@@ -259,3 +259,24 @@ html[data-skin] .dmg-search button { border-radius: 0; background: var(--kb-blue
 	html[data-skin] .dmg-albums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	html[data-skin] .dmg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 }
+
+/* The time machine, Kubrick-style: white, grey rules, Trebuchet title in the theme's blue. */
+.dm-tmw {
+	--tmw-bg: #fff;
+	--tmw-fg: #333;
+	--tmw-muted: #777;
+	--tmw-line: #ccc;
+	--tmw-radius: 0;
+	--tmw-pill-radius: 22px;
+	--tmw-font: var(--kb-body);
+	--tmw-title-font: 700 13px/22px var(--kb-head);
+	--tmw-title-case: none;
+	--tmw-title-spacing: 0;
+	--tmw-title-bg: none;
+	--tmw-title-fg: var(--kb-blue);
+	--tmw-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35);
+	--tmw-btn-bg: #f4f4f4;
+	--tmw-btn-fg: #333;
+	--tmw-btn-radius: 3px;
+	--tmw-dot-bg: #fff;
+}

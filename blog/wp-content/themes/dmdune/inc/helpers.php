@@ -317,6 +317,7 @@ function dmdune_current_nav(): string {
 	if ( is_page() ) {
 		$slugs = array(
 			'archives'                                => 'archives',
+			'featured'                                => 'featured',
 			'tag'                                     => 'tag',
 			'beginners-japanese-lessons-by-darkmirage' => 'japanese',
 			'haruhiism-time-capsule-project'          => 'capsule',

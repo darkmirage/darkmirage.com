@@ -32,7 +32,8 @@ add_action(
 			'related'        => array( 'title' => __( 'Related posts', 'dmdune' ), 'uses_context' => array( 'postId' ) ),
 			'year-strip'     => array( 'title' => __( 'Archive by year', 'dmdune' ), 'attributes' => array( 'always' => array( 'type' => 'boolean', 'default' => false ) ) ),
 			'archive-index'  => array( 'title' => __( 'Archive index', 'dmdune' ) ),
-			'most-discussed' => array( 'title' => __( 'Most discussed', 'dmdune' ) ),
+			'most-discussed' => array( 'title' => __( 'Most discussed', 'dmdune' ), 'attributes' => array( 'limit' => array( 'type' => 'integer', 'default' => 6 ) ) ),
+			'featured'       => array( 'title' => __( 'Featured posts', 'dmdune' ) ),
 			'not-found'      => array( 'title' => __( 'Not found', 'dmdune' ) ),
 		);
 		foreach ( $blocks as $slug => $b ) {
@@ -365,7 +366,7 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 	if ( is_paged() ) {
 		return '';
 	}
-	$ids = dmdune_loudest( null, 6 );
+	$ids = dmdune_loudest( null, max( 1, (int) ( $attrs['limit'] ?? 6 ) ) );
 	if ( ! $ids ) {
 		return '';
 	}
@@ -396,6 +397,33 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 		'<section class="dm-unit dm-loudest alignwide" aria-labelledby="dm-loudest-title">%s<ol class="dm-ranks">%s</ol></section>',
 		dmdune_hud_head( 'LOUDEST TRANSMISSIONS', __( 'Most discussed', 'dmdune' ), esc_html__( 'Ranked by replies, all time', 'dmdune' ), 'dm-loudest-title' ),
 		$rows
+	);
+}
+
+/**
+ * The Featured page's hand-picked posts: everything tagged "featured", newest pick first and
+ * largest. The tag itself stays out of sight elsewhere (see inc/featured.php).
+ */
+function dmdune_render_featured( array $attrs, WP_Block $block ): string {
+	$posts = get_posts(
+		array(
+			'tag'            => 'featured',
+			'posts_per_page' => 24,
+			'no_found_rows'  => true,
+			'has_password'   => false,
+		)
+	);
+	$cards = '';
+	foreach ( $posts as $i => $p ) {
+		$cards .= dmdune_card_html( $p, 0 === $i ? 'h2' : 'h3' );
+	}
+	return sprintf(
+		'<header class="dm-page-head dm-featured-head alignwide"><p class="dm-kicker">// %1$s</p><h1>%2$s</h1><p>%3$s</p></header><section class="dm-unit dm-featured alignwide" aria-labelledby="dm-featured-title">%4$s%5$s</section>',
+		esc_html__( 'Editor’s picks', 'dmdune' ),
+		esc_html__( 'Featured', 'dmdune' ),
+		esc_html__( 'The posts worth starting with, picked by hand, and the ones that drew the most replies.', 'dmdune' ),
+		dmdune_hud_head( 'HAND-PICKED', __( 'Featured', 'dmdune' ), '', 'dm-featured-title' ),
+		$cards ? '<div class="dm-featured__grid">' . $cards . '</div>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
 	);
 }
 

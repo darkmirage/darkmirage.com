@@ -47,3 +47,6 @@ html[data-skin] .single-post .bk-page > main { padding: 20px 20px 40px; }
 	.bk-side--left { padding: 16px; }
 	.bk-block--nav { display: none; }
 }
+
+/* dmbrickv2: the page's grey, ruled in the darker blue. */
+.dm-tmw { --tmw-bg: #eee; --tmw-line: #2f3f55; --tmw-btn-bg: #fff; }

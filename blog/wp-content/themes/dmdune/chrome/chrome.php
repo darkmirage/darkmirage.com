@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.14.4' );
+define( 'DMC_VERSION', '1.15.0' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
@@ -58,6 +58,7 @@ function dmc_nav( array $c ): array {
 	return array(
 		'home'     => array( 'Home', $w, 'home' ),
 		'archives' => array( 'Archive', $w . 'archives/', 'archive' ),
+		'featured' => array( 'Featured', $w . 'featured/', 'star' ),
 		'tag'      => array( 'Tags', $w . 'tag/', 'tag' ),
 		'japanese' => array( '日本語', $w . 'beginners-japanese-lessons-by-darkmirage/', 'kana' ),
 		'lyrics'   => array( 'Lyrics', $c['lyrics'], 'music' ),
@@ -76,6 +77,7 @@ function dmc_icon( string $name, int $size = 20, string $class = '' ): string {
 		'home'    => '<path d="M4 11l8-7 8 7v9H4z"/>',
 		'archive' => '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M10 14h4"/>',
 		'tag'     => '<path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+		'star'    => '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
 		'kana'    => '<path d="M5 7h10M10 4c0 8-2 12-6 15M9 11c3 0 7 2 9 7"/>',
 		'music'   => '<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="16" r="2"/>',
 		'camera'  => '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l2-3h4l2 3"/>',

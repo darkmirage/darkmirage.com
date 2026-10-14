@@ -316,3 +316,24 @@ html[data-skin] .dmg-search button { border-radius: 8px; background: #444; font:
 /* "See this post as it looked in 2007" */
 html[data-skin] .dm-era-post { margin-top: 8px; padding: 4px 10px; border: 1px dashed #bbb; border-radius: 999px; background: none; color: var(--bk-soft); font: 400 0.75rem var(--bk-body); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
 html[data-skin] .dm-era-post:hover { border-color: var(--bk-red); color: var(--bk-red); }
+
+/* The time machine, Blocks-style: a carbon card with Jura labels and deep red. */
+.dm-tmw {
+	--tmw-bg: #2b2b2b;
+	--tmw-fg: #ddd;
+	--tmw-muted: #999;
+	--tmw-line: #555;
+	--tmw-radius: 12px;
+	--tmw-pill-radius: 999px;
+	--tmw-font: var(--bk-body);
+	--tmw-title-font: 300 14px/22px var(--bk-label);
+	--tmw-title-case: uppercase;
+	--tmw-title-spacing: 0.08em;
+	--tmw-title-bg: none;
+	--tmw-title-fg: #ddd;
+	--tmw-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8);
+	--tmw-btn-bg: #3a3a3a;
+	--tmw-btn-fg: #ddd;
+	--tmw-btn-radius: 999px;
+	--tmw-dot-bg: #2b2b2b;
+}

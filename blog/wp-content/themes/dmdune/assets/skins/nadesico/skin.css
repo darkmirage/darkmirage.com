@@ -51,3 +51,6 @@ html[data-skin] .dm-tabbar { background: rgba(255, 255, 255, 0.97); }
 	.bk-banner { border-top: 0; }
 	.bk-banner__text { background: var(--b2-band); }
 }
+
+/* Nadesico's menu boxes were white. */
+.dm-tmw { --tmw-bg: #fff; --tmw-muted: #3a6f88; --tmw-btn-bg: #c9ebf7; }
