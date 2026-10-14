@@ -306,15 +306,16 @@ function dmdune_render_hero( array $attrs, WP_Block $block ): string {
 		$k        = $layout[ "kiro-$mode" ];
 		$priority = 'day' === $mode ? 'fetchpriority="high"' : 'loading="lazy"';
 		$layers  .= sprintf(
-			'<img class="dm-hero__scene is-%1$s" src="%2$sscene-%1$s-1536.webp" srcset="%2$sscene-%1$s-960.webp 960w, %2$sscene-%1$s-1536.webp 1536w" sizes="(max-width: 1180px) 120vw, 1180px" width="%3$d" height="%4$d" alt="" %5$s decoding="async">',
+			'<img class="dm-hero__scene is-%1$s" src="%2$sscene-%1$s-1536.webp?v=%6$s" srcset="%2$sscene-%1$s-960.webp?v=%6$s 960w, %2$sscene-%1$s-1536.webp?v=%6$s 1536w" sizes="(max-width: 1180px) 120vw, 1180px" width="%3$d" height="%4$d" alt="" %5$s decoding="async">',
 			$mode,
 			esc_url( $base ),
 			$w,
 			$h,
-			$priority
+			$priority,
+			esc_attr( DMDUNE_VERSION )
 		);
 		$layers  .= sprintf(
-			'<img class="dm-hero__kiro is-%1$s" src="%2$skiro-%1$s.webp" width="%3$d" height="%4$d" alt="" %5$s decoding="async" style="left:%6$.3f%%;top:%7$.3f%%;width:%8$.3f%%">',
+			'<img class="dm-hero__kiro is-%1$s" src="%2$skiro-%1$s.webp?v=%9$s" width="%3$d" height="%4$d" alt="" %5$s decoding="async" style="left:%6$.3f%%;top:%7$.3f%%;width:%8$.3f%%">',
 			$mode,
 			esc_url( $base ),
 			$k['w'],
@@ -322,7 +323,8 @@ function dmdune_render_hero( array $attrs, WP_Block $block ): string {
 			$priority,
 			100 * $k['x'] / $w,
 			100 * $k['y'] / $h,
-			100 * $k['w'] / $w
+			100 * $k['w'] / $w,
+			esc_attr( DMDUNE_VERSION )
 		);
 	}
 
