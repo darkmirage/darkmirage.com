@@ -34,7 +34,7 @@ function dmdune_meta_fields(): array {
 	$home = home_url( '/' );
 	$m    = array(
 		'title'       => $site,
-		'description' => 'The DarkMirage blog, 2005–2013: anime, games, J-pop, Japan trips and student life from Singapore to Stanford. Est. 2005 · ' . number_format_i18n( (int) wp_count_posts()->publish ) . ' posts.',
+		'description' => 'The DarkMirage blog, 2003–2013: anime, games, J-pop, Japan trips and student life from Singapore to Stanford. Est. 2003 · ' . number_format_i18n( (int) wp_count_posts()->publish ) . ' posts.',
 		'url'         => $home,
 	);
 	$paged = max( 1, (int) get_query_var( 'paged' ) );
@@ -59,7 +59,9 @@ function dmdune_meta_fields(): array {
 		// Plain text: old titles hold entities like &mdash;, which the tag escaping would double-encode.
 		$m['title']       = html_entity_decode( wp_strip_all_tags( get_the_title( $post ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 		$m['url']         = get_permalink( $post );
-		$body             = has_excerpt( $post ) ? $post->post_excerpt : $post->post_content;
+		// Password-protected posts give away nothing: no description or picture from the body.
+		$locked           = '' !== $post->post_password;
+		$body             = $locked ? '' : ( has_excerpt( $post ) ? $post->post_excerpt : $post->post_content );
 		// Captions sit above the first paragraph in old posts; they make poor descriptions.
 		$body = preg_replace( array( '#\[caption[^\]]*\].*?\[/caption\]#is', '#<figcaption.*?</figcaption>#is', '#<(p|div|span)\b[^>]*class=["\'][^"\']*\bcaption\b[^>]*>.*?</\1>#is', '#<(script|style)\b.*?</\1>#is' ), '', $body );
 		if ( '' !== dmc_summary( $body ) ) {
@@ -67,7 +69,7 @@ function dmdune_meta_fields(): array {
 		} elseif ( 'page' === $post->post_type ) {
 			$m['description'] = $m['title'] . ' · ' . $m['description'];
 		}
-		$image            = dmdune_first_image( $post );
+		$image            = $locked ? null : dmdune_first_image( $post );
 		if ( $image ) {
 			$m['image']     = dmdune_share_image( $image );
 			$m['image_alt'] = $m['title'];

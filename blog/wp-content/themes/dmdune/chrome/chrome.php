@@ -196,7 +196,7 @@ function dmc_footer_html( array $c = array() ): string {
 	}
 	$field  = array( 'blog' => 's', 'lyrics' => 'q', 'gallery' => 's' )[ $c['site'] ];
 	$hidden = '';
-	$note  = $c['note'] ?? 'Ramblings of DarkMirage · 2005–' . date( 'Y' ) . ' · Kiro and the art: all rights reserved · Theme code: GPL-2.0';
+	$note  = $c['note'] ?? 'Ramblings of DarkMirage · 2003–' . date( 'Y' ) . ' · Kiro and the art: all rights reserved · Theme code: GPL-2.0';
 	$tabbar = sprintf(
 		'<nav class="dm-tabbar" aria-label="Main (mobile)">%1$s<details class="dm-sheet"><summary>%2$s<span>More</span></summary><div class="dm-sheet__panel"><form class="dm-search" role="search" method="get" action="%3$s"><label class="screen-reader-text" for="dm-sheet-search">Search</label>%9$s<input id="dm-sheet-search" type="search" name="%4$s" placeholder="%5$s"><button type="submit" aria-label="Search">%6$s</button></form><ul>%7$s</ul>%8$s</div></details></nav>',
 		implode( '', array_map( $tab, $tabs ) ),

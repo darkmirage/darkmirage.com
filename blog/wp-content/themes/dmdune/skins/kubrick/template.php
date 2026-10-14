@@ -36,7 +36,11 @@ function dmkb_post( WP_Post $post, bool $full, bool $tags ): string {
 	} else {
 		$more = true;
 		$img  = dmdune_first_image( $post );
-		$body = ( $img ? '<p class="kb-thumb"><a href="' . esc_url( $link ) . '"><img src="' . esc_url( $img ) . '" alt="" loading="lazy"></a></p>' : '' ) . '<p>' . esc_html( dmc_summary( preg_replace( '#<(p|div|span)\b[^>]*class=["\'][^"\']*\bcaption\b[^>]*>.*?</\1>#is', '', $post->post_content ), 300 ) ) . '</p>';
+		if ( post_password_required( $post ) ) {
+			$body = '<p>' . esc_html__( 'This entry is password protected.', 'dmdune' ) . '</p>';
+		} else {
+			$body = ( $img ? '<p class="kb-thumb"><a href="' . esc_url( $link ) . '"><img src="' . esc_url( $img ) . '" alt="" loading="lazy"></a></p>' : '' ) . '<p>' . esc_html( dmc_summary( preg_replace( '#<(p|div|span)\b[^>]*class=["\'][^"\']*\bcaption\b[^>]*>.*?</\1>#is', '', $post->post_content ), 300 ) ) . '</p>';
+		}
 	}
 	return sprintf(
 		'<article class="kb-post"><h2 class="kb-title"><a href="%1$s" rel="bookmark">%2$s</a></h2><small class="kb-date">%3$s</small><div class="kb-entry">%4$s%5$s</div>%6$s</article>',

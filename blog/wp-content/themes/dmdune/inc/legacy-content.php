@@ -176,7 +176,7 @@ add_filter( 'the_content', 'dmdune_legacy_after_autop', 20 );
 add_filter(
 	'get_the_excerpt',
 	static function ( $excerpt, $post ) {
-		if ( has_excerpt( $post ) ) {
+		if ( has_excerpt( $post ) || post_password_required( $post ) ) {
 			return $excerpt;
 		}
 		$text = $post->post_content;

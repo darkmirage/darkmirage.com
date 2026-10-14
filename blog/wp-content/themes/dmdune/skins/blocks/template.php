@@ -14,6 +14,9 @@ defined( 'ABSPATH' ) || exit;
  * Plain-text opening of a post (the old posts have no excerpts).
  */
 function dmbk_excerpt( WP_Post $post, int $chars = 220 ): string {
+	if ( post_password_required( $post ) ) {
+		return __( 'This entry is password protected.', 'dmdune' );
+	}
 	return dmc_summary( has_excerpt( $post ) ? $post->post_excerpt : preg_replace( '#<(p|div|span)\b[^>]*class=["\'][^"\']*\bcaption\b[^>]*>.*?</\1>#is', '', $post->post_content ), $chars );
 }
 

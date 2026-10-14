@@ -254,3 +254,6 @@ html[data-skin] .dm-hud-code, html[data-skin] .dm-meta, html[data-skin] .ly-type
 	.bk-footer { margin: 0 12px; padding-bottom: 96px; }
 	html[data-skin] .ly-main, html[data-skin] .dmg-main { padding: 0; }
 }
+
+/* The byline above already names friends who posted. */
+.dm-guest { display: none; }

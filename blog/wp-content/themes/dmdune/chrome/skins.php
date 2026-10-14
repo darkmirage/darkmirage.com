@@ -181,7 +181,7 @@ function dmc_skin_footer_html( array $c, string $tabbar ): string {
 	foreach ( (array) ( $c['side'] ?? array() ) as $block ) {
 		$cols[ 'left' === ( $block[3] ?? '' ) ? 'left' : 'right' ] .= dmc_bk_block( $block[0], $block[1], $block[2] ?? '' );
 	}
-	$note = $c['note'] ?? ( 'b2' === $skin ? 'DarkMirage’s Weblog · 2003–2005 · powered by b2' : 'Ramblings of DarkMirage · 2005–' . date( 'Y' ) );
+	$note = $c['note'] ?? ( 'b2' === $skin ? 'DarkMirage’s Weblog · 2003–2005 · powered by b2' : 'Ramblings of DarkMirage · 2003–' . date( 'Y' ) );
 	return sprintf(
 		'%1$s<aside class="bk-side bk-side--right" aria-label="Sidebar">%2$s</aside></div><footer class="bk-footer"><p>%3$s</p><p class="dm-footer__lineage">%4$s <span>·</span> <a class="dm-footer__src" href="https://github.com/darkmirage/darkmirage.com">Source on GitHub</a></p></footer></div>%5$s',
 		$cols['left'] ? '<aside class="bk-side bk-side--left" aria-label="More">' . $cols['left'] . '</aside>' : '',

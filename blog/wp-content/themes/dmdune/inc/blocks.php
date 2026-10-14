@@ -295,7 +295,7 @@ function dmdune_render_hero( array $attrs, WP_Block $block ): string {
 		esc_attr__( 'Kiro, a black-and-tan shiba in goggles and a DM団 armband, keeps watch over desert dunes and a distant mirage city. At night he sleeps on the dune under a crescent moon.', 'dmdune' ),
 		$layers,
 		/* translators: %s: number of posts */
-		esc_html( sprintf( __( 'Est. 2005 · %s transmissions', 'dmdune' ), number_format_i18n( $total ) ) ),
+		esc_html( sprintf( __( 'Est. 2003 · %s transmissions', 'dmdune' ), number_format_i18n( $total ) ) ),
 		$tag,
 		esc_html( get_bloginfo( 'name' ) ),
 		esc_html( get_bloginfo( 'description' ) ),
@@ -558,7 +558,7 @@ function dmdune_render_channels( array $attrs, WP_Block $block ): string {
 	$total_tags = (int) wp_count_terms( array( 'taxonomy' => 'post_tag', 'hide_empty' => true ) );
 	return sprintf(
 		'<div class="dm-channels alignwide"><section class="dm-unit" aria-labelledby="dm-ch-title">%1$s<ul class="dm-channel-grid">%2$s</ul></section><section class="dm-unit" aria-labelledby="dm-fq-title">%3$s%4$s</section></div>',
-		dmdune_hud_head( 'CHANNELS', __( 'Categories', 'dmdune' ), esc_html__( 'Each bar is a year, 2005–2013', 'dmdune' ), 'dm-ch-title' ),
+		dmdune_hud_head( 'CHANNELS', __( 'Categories', 'dmdune' ), esc_html__( 'Each bar is a year, 2003–2013', 'dmdune' ), 'dm-ch-title' ),
 		$tiles,
 		/* translators: %s: number of tags */
 		dmdune_hud_head( 'FREQUENCIES', __( 'Tags', 'dmdune' ), esc_html( sprintf( __( '%s tags; showing those used 3+ times', 'dmdune' ), number_format_i18n( $total_tags ) ) ), 'dm-fq-title' ),
@@ -577,7 +577,7 @@ function dmdune_chrome_config(): array {
 		'assets'      => get_template_directory_uri() . '/assets/',
 		/* translators: %s: number of posts */
 		'placeholder' => sprintf( __( 'Search %s posts', 'dmdune' ), number_format_i18n( array_sum( dmdune_year_counts() ) ) ),
-		'note'        => esc_html( sprintf( __( '%1$s · 2005–%2$s · Kiro and the art: all rights reserved · Theme code: GPL-2.0', 'dmdune' ), get_bloginfo( 'name' ), wp_date( 'Y' ) ) ),
+		'note'        => esc_html( sprintf( __( '%1$s · 2003–%2$s · Kiro and the art: all rights reserved · Theme code: GPL-2.0', 'dmdune' ), get_bloginfo( 'name' ), wp_date( 'Y' ) ) ),
 	);
 }
 

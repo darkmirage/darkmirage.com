@@ -110,3 +110,30 @@ add_filter(
 
 // The lock box explains itself, so titles stay as written instead of "Protected: …".
 add_filter( 'protected_title_format', static fn() => '%s' );
+
+/**
+ * Locked posts stay out of search results, so a search for a friend's name doesn't list them.
+ */
+add_filter(
+	'posts_where',
+	static function ( string $where, WP_Query $q ): string {
+		global $wpdb;
+		return ! is_admin() && $q->is_search() ? $where . " AND {$wpdb->posts}.post_password = ''" : $where;
+	},
+	10,
+	2
+);
+
+/**
+ * A few locked b2 posts are titled with a friend's name; until unlocked they show a neutral title.
+ */
+function dmdune_b2_title( $title, $post = 0 ) {
+	$id = $post instanceof WP_Post ? $post->ID : (int) $post;
+	if ( ! $id || is_admin() || ! get_post_meta( $id, '_dm_b2_hide_title', true ) || ! post_password_required( $id ) ) {
+		return $title;
+	}
+	return __( 'Locked post', 'dmdune' );
+}
+add_filter( 'the_title', 'dmdune_b2_title', 10, 2 );
+// The <title> tag comes from single_post_title(), which skips the_title.
+add_filter( 'single_post_title', 'dmdune_b2_title', 10, 2 );

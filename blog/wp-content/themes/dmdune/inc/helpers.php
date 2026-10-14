@@ -88,6 +88,9 @@ function dmdune_first_image( WP_Post $post ): ?string {
 		$src = get_the_post_thumbnail_url( $post, 'medium_large' );
 		return $src ?: null;
 	}
+	if ( '' !== $post->post_password ) {
+		return null;
+	}
 	$cache = wp_cache_get( $post->ID, 'dmdune_first_image' );
 	if ( false !== $cache ) {
 		return '' === $cache ? null : $cache;
