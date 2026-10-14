@@ -51,6 +51,37 @@
 		}
 	});
 
+	// In an old era, "Copy link" shares this page in that era (?era=<theme>): the share sheet on
+	// phones, the clipboard elsewhere.
+	(function () {
+		var bar = document.querySelector('.dm-skinbar');
+		var cur = bar && bar.querySelector('[data-dm-skin][aria-pressed="true"]');
+		var skin = cur && cur.getAttribute('data-dm-skin');
+		if (!skin) return;
+		var btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'dm-skinbar__share';
+		btn.textContent = 'Copy link';
+		btn.addEventListener('click', function () {
+			var canon = document.querySelector('link[rel="canonical"]');
+			var url = new URL(canon ? canon.href : location.href);
+			url.searchParams.set('era', skin);
+			var link = url.toString();
+			var done = function (msg) {
+				btn.textContent = msg;
+				setTimeout(function () { btn.textContent = 'Copy link'; }, 1800);
+			};
+			if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+				navigator.share({ title: document.title, url: link }).catch(function () {});
+			} else if (navigator.clipboard) {
+				navigator.clipboard.writeText(link).then(function () { done('Copied!'); }, function () { window.prompt('Copy this link:', link); });
+			} else {
+				window.prompt('Copy this link:', link);
+			}
+		});
+		bar.appendChild(btn);
+	})();
+
 	document.addEventListener('click', function (e) {
 		var toggle = e.target.closest('[data-dm-toggle]');
 		if (toggle) {

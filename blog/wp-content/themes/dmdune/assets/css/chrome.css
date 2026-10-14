@@ -559,3 +559,6 @@ a.dm-spec__col:hover .dm-spec__bar { filter: brightness(1.2); transform: scaleY(
 }
 button:focus-visible > .dm-era-peek { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 @media (prefers-reduced-motion: reduce) { .dm-era-peek { transition: none; } }
+
+/* "Copy link" in an old era's time machine bar; each skin styles .dm-skinbar button. */
+.dm-skinbar__share { margin-left: 4px; }
