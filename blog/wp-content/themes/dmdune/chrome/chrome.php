@@ -17,7 +17,7 @@ if ( defined( 'DMC_LOADED' ) ) {
 	return;
 }
 define( 'DMC_LOADED', true );
-define( 'DMC_VERSION', '1.15.13' );
+define( 'DMC_VERSION', '1.15.14' );
 
 require __DIR__ . '/skins.php';
 require __DIR__ . '/era-link.php';
@@ -207,7 +207,7 @@ function dmc_footer_html( array $c = array() ): string {
 	$tab     = static function ( string $key ) use ( $nav, $current ) {
 		return sprintf( '<a href="%s"%s>%s<span>%s</span></a>', dmc_e( $nav[ $key ][1] ), $current === $key ? ' aria-current="page"' : '', dmc_icon( $nav[ $key ][2], 22 ), dmc_e( $nav[ $key ][0] ) );
 	};
-	$tabs = array( 'home', 'archives', 'lyrics', 'gallery' );
+	$tabs = array( 'home', 'featured', 'lyrics', 'gallery' );
 	$more = '';
 	foreach ( $nav as $key => $item ) {
 		if ( in_array( $key, $tabs, true ) ) {
