@@ -186,6 +186,10 @@ h1, h2, h3, h4 { text-wrap: balance; }
 
 .dm-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; }
 .dm-topbar {
+	/* The backdrop blur makes this a stacking context; lift it so the Time machine panel stays above
+	   positioned page content (gallery's year chart) where there is no sticky .dm-header around it. */
+	position: relative;
+	z-index: 50;
 	border-bottom: 1px solid var(--dm-line);
 	background: color-mix(in srgb, var(--dm-bg) 88%, transparent);
 	backdrop-filter: saturate(1.4) blur(12px);
