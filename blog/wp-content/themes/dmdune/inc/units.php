@@ -86,9 +86,56 @@ function dmdune_row_html( WP_Post $post, string $heading = 'h3', bool $number = 
  * [label, count, url, era, tick-label-or-empty].
  */
 function dmdune_spectrum( array $points, string $class = '' ): string {
-	$max  = max( 1, max( array_column( $points, 1 ) ) );
-	$bars = '';
-	foreach ( $points as $p ) {
+	$max    = max( 1, max( array_column( $points, 1 ) ) );
+	$bars   = '';
+	$months = false !== strpos( $class, 'months' );
+	// A long silence between posts (2013 to 2026) would otherwise take most of the axis: three or
+	// more empty years in a row collapse into a short break, labelled.
+	$min_gap = $months ? 36 : 3;
+	$first   = null;
+	$last    = null;
+	foreach ( $points as $i => $p ) {
+		if ( $p[1] ) {
+			$first = $first ?? $i;
+			$last  = $i;
+		}
+	}
+	$skip = array();
+	for ( $i = (int) $first; null !== $first && $i < $last; $i++ ) {
+		if ( $points[ $i ][1] ) {
+			continue;
+		}
+		$j = $i;
+		while ( $j < $last && ! $points[ $j ][1] ) {
+			$j++;
+		}
+		if ( $j - $i >= $min_gap ) {
+			$skip[ $i ] = $j;
+			// The point after the break names its year, as the one at a year's start would.
+			if ( '' === $points[ $j ][4] ) {
+				$points[ $j ][4] = substr( (string) $points[ $j ][0], -4 );
+			}
+		}
+		$i = $j;
+	}
+	foreach ( $points as $i => $p ) {
+		if ( isset( $skip[ $i ] ) ) {
+			$run   = $skip[ $i ] - $i;
+			$years = $months ? (int) round( $run / 12 ) : $run;
+			/* translators: %d: number of years */
+			$quiet = sprintf( _n( '%d yr off air', '%d yrs off air', $years, 'dmdune' ), $years );
+			$bars .= sprintf(
+				'<span class="dm-spec__gap" style="--g:%d" title="%s"><span class="dm-spec__gapl">%s</span></span>',
+				$months ? 24 : 3,
+				esc_attr( $p[0] . ' – ' . $points[ $skip[ $i ] - 1 ][0] . ' · ' . __( 'nothing posted', 'dmdune' ) ),
+				esc_html( $quiet )
+			);
+		}
+		foreach ( $skip as $a => $b ) {
+			if ( $i >= $a && $i < $b ) {
+				continue 2;
+			}
+		}
 		list( $label, $n, $url, $era, $tick ) = $p;
 		$h     = $n ? max( 0.04, $n / $max ) : 0;
 		$tip   = esc_attr( $label . ' · ' . sprintf( _n( '%s post', '%s posts', $n, 'dmdune' ), number_format_i18n( $n ) ) );
