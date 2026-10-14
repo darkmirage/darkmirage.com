@@ -401,13 +401,14 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 }
 
 /**
- * The Featured page's hand-picked posts: everything tagged "featured", newest pick first and
- * largest. The tag itself stays out of sight elsewhere (see inc/featured.php).
+ * The Featured page's hand-picked posts: everything tagged "featured", in a fresh random order on
+ * each visit, the first one largest. The tag itself stays out of sight elsewhere (see inc/featured.php).
  */
 function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 	$posts = get_posts(
 		array(
 			'tag'            => 'featured',
+			'orderby'        => 'rand',
 			'posts_per_page' => 24,
 			'no_found_rows'  => true,
 			'has_password'   => false,
@@ -422,7 +423,7 @@ function dmdune_render_featured( array $attrs, WP_Block $block ): string {
 		esc_html__( 'Editor’s picks', 'dmdune' ),
 		esc_html__( 'Featured', 'dmdune' ),
 		esc_html__( 'The posts worth starting with, picked by hand, and the ones that drew the most replies.', 'dmdune' ),
-		dmdune_hud_head( 'HAND-PICKED', __( 'Featured', 'dmdune' ), '', 'dm-featured-title' ),
+		dmdune_hud_head( 'HAND-PICKED', __( 'Worth reading', 'dmdune' ), '', 'dm-featured-title' ),
 		$cards ? '<div class="dm-featured__grid">' . $cards . '</div>' : '<p class="dm-empty">' . esc_html__( 'Nothing picked yet.', 'dmdune' ) . '</p>'
 	);
 }
