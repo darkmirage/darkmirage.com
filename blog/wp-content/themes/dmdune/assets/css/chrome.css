@@ -35,7 +35,7 @@
 	--dm-accent-line: rgba(196, 90, 28, 0.35);
 	--dm-brigade: #b63428;
 	--dm-era-b2: #2a9dc8;
-	--dm-era-default: #b9b2a8;
+	--dm-era-default: #5e4fb3;
 	--dm-era-kubrick: #4f78b3;
 	--dm-era-blocks: var(--dm-accent);
 	--dm-hero-scrim: rgba(250, 245, 236, 0.82);
@@ -62,7 +62,7 @@
 		--dm-accent-line: rgba(240, 154, 74, 0.38);
 		--dm-brigade: #e0574a;
 		--dm-era-b2: #4bbde3;
-		--dm-era-default: #5d6070;
+		--dm-era-default: #8f84e6;
 		--dm-era-kubrick: #6f93c8;
 		--dm-hero-scrim: rgba(11, 15, 24, 0.72);
 		--dm-hero-fg: #f4eee4;
@@ -85,7 +85,7 @@
 	--dm-accent-line: rgba(240, 154, 74, 0.38);
 	--dm-brigade: #e0574a;
 	--dm-era-b2: #4bbde3;
-	--dm-era-default: #5d6070;
+	--dm-era-default: #8f84e6;
 	--dm-era-kubrick: #6f93c8;
 	--dm-hero-scrim: rgba(11, 15, 24, 0.72);
 	--dm-hero-fg: #f4eee4;

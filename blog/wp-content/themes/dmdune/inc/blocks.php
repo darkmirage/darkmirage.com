@@ -316,7 +316,7 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 	$first = $points[0][0];
 	$last  = end( $points )[0];
 	$note  = sprintf(
-		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><span><i data-era="b2"></i>b2</span> <span><i data-era="default"></i>WP Default</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>',
+		'<span><b>%1$s</b> %2$s</span><span>%4$s <b>%3$s</b></span><span class="dm-legend"><span><i data-era="b2"></i>b2</span> <span><i data-era="default"></i>default2</span> <span><i data-era="kubrick"></i>Kubrick DM · dmbrickv2</span> <span><i data-era="blocks"></i>Blocks</span></span>',
 		esc_html( number_format_i18n( $total ) ),
 		esc_html__( 'transmissions', 'dmdune' ),
 		esc_html( $peak[0] ),
@@ -334,7 +334,7 @@ function dmdune_render_year_strip( array $attrs, WP_Block $block ): string {
 
 function dmdune_render_archive_index( array $attrs, WP_Block $block ): string {
 	global $wp_locale;
-	$era_names = array( 'b2' => 'b2 Weblog', 'default' => 'WP Default', 'kubrick' => 'Kubrick DM · dmbrickv2', 'blocks' => 'DarkMirage Blocks' );
+	$era_names = array( 'b2' => 'b2 Weblog', 'default' => 'default2', 'kubrick' => 'Kubrick DM · dmbrickv2', 'blocks' => 'DarkMirage Blocks' );
 	$out       = '';
 	foreach ( dmdune_month_counts() as $year => $months ) {
 		$max   = max( $months );
@@ -463,7 +463,7 @@ function dmdune_render_archive_head( array $attrs, WP_Block $block ): string {
 		$points = dmdune_year_points( dmdune_year_counts_for( 'term', $tt ), static fn( $y ) => add_query_arg( 'year', $y, $link ) );
 	} elseif ( is_year() ) {
 		$y      = (int) get_query_var( 'year' );
-		$code   = 'ARCHIVE · ' . strtoupper( dmdune_era( $y ) ) . ' ERA';
+		$code   = 'ARCHIVE · ' . strtoupper( str_replace( 'default', 'default2', dmdune_era( $y ) ) ) . ' ERA';
 		$title  = (string) $y;
 		$months = dmdune_month_counts()[ $y ] ?? array();
 		for ( $m = 1; $m <= 12; $m++ ) {

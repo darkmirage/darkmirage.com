@@ -261,7 +261,8 @@ function dmdune_era( int $year, int $month = 0 ): string {
 	if ( $year <= 2004 || ( 2005 === $year && $month >= 1 && $month <= 10 ) ) {
 		return 'b2';
 	}
-	if ( $year <= 2005 ) {
+	// default2 (a customized WordPress Default with anime headers) ran until Kubrick DM in October 2006.
+	if ( $year <= 2005 || ( 2006 === $year && $month >= 1 && $month <= 9 ) ) {
 		return 'default';
 	}
 	if ( $year <= 2007 ) {
