@@ -676,8 +676,8 @@
       const i = Math.max(0, Math.min(posts.length - 1, centerPost() + dir));
       scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
     }
-    const GAP = 0.03;
-    const SILENCE = 3 * 365.25 * 864e5;
+    const YEAR = 365.25 * 864e5;
+    const SILENCE = 3 * YEAR;
     const spans = [];
     {
       const runs = [];
@@ -692,14 +692,17 @@
         prev = t;
       }
       runs.push([from, prev]);
-      const total2 = Math.max(1, runs.reduce((sum, [a, b]) => sum + a - b, 0));
-      const room = 1 - GAP * (runs.length - 1);
+      const breaks = runs.slice(0, -1).map(([a, b]) => {
+        const label2 = Math.min(Date.UTC(new Date(b).getUTCFullYear() + 1, 0, 1) - 1, a);
+        return Math.max(YEAR / 4, YEAR - (label2 - b));
+      });
+      const total2 = Math.max(1, runs.reduce((sum, [a, b]) => sum + a - b, 0) + breaks.reduce((sum, g) => sum + g, 0));
       let at2 = 0;
-      for (const [a, b] of runs) {
-        const len = (a - b) / total2 * room;
+      runs.forEach(([a, b], k) => {
+        const len = (a - b) / total2;
         spans.push({ from: a, to: b, at: at2, len });
-        at2 += len + GAP;
-      }
+        at2 += len + (breaks[k] ?? 0) / total2;
+      });
     }
     function railAt(t) {
       for (const sp of spans) {

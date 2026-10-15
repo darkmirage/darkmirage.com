@@ -709,8 +709,8 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
      more is cut down to a small // break, as on the charts, so the dot crawls through busy years
      and hurries through quiet ones. ---------- */
 
-  const GAP = 0.03;
-  const SILENCE = 3 * 365.25 * 864e5;
+  const YEAR = 365.25 * 864e5;
+  const SILENCE = 3 * YEAR;
   interface Span { from: number; to: number; at: number; len: number }   // from: newest; at, len: rail fractions
   const spans: Span[] = [];
   {
@@ -723,14 +723,19 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
       prev = t;
     }
     runs.push([from, prev]);
-    const total = Math.max(1, runs.reduce((sum, [a, b]) => sum + a - b, 0));
-    const room = 1 - GAP * (runs.length - 1);
+    // Each break is as tall as the time it leaves below the last year label above it, topped up to
+    // a year, so the labels either side ('26, '13) sit a year apart like all the others.
+    const breaks = runs.slice(0, -1).map(([a, b]) => {
+      const label = Math.min(Date.UTC(new Date(b).getUTCFullYear() + 1, 0, 1) - 1, a);
+      return Math.max(YEAR / 4, YEAR - (label - b));
+    });
+    const total = Math.max(1, runs.reduce((sum, [a, b]) => sum + a - b, 0) + breaks.reduce((sum, g) => sum + g, 0));
     let at = 0;
-    for (const [a, b] of runs) {
-      const len = (a - b) / total * room;
+    runs.forEach(([a, b], k) => {
+      const len = (a - b) / total;
       spans.push({ from: a, to: b, at, len });
-      at += len + GAP;
-    }
+      at += len + (breaks[k] ?? 0) / total;
+    });
   }
   function railAt(t: number): number {
     for (const sp of spans) {
