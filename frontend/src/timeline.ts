@@ -723,11 +723,15 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
       prev = t;
     }
     runs.push([from, prev]);
-    // Each break is as tall as the time it leaves below the last year label above it, topped up to
-    // a year, so the labels either side ('26, '13) sit a year apart like all the others.
+    // Either side of a break the years run whole (2013 to December, 2026 from January), so every
+    // year label is a year from the next; the break makes up the rest of a year between '26 and '13.
+    runs.forEach((r, k) => {
+      if (k > 0) r[0] = Math.max(r[0], Date.UTC(new Date(r[0]).getUTCFullYear() + 1, 0, 1) - 1);
+      if (k < runs.length - 1) r[1] = Math.min(r[1], Date.UTC(new Date(r[1]).getUTCFullYear(), 0, 1));
+    });
     const breaks = runs.slice(0, -1).map(([a, b]) => {
       const label = Math.min(Date.UTC(new Date(b).getUTCFullYear() + 1, 0, 1) - 1, a);
-      return Math.max(YEAR / 4, YEAR - (label - b));
+      return Math.max(YEAR / 8, YEAR - (label - b));
     });
     const total = Math.max(1, runs.reduce((sum, [a, b]) => sum + a - b, 0) + breaks.reduce((sum, g) => sum + g, 0));
     let at = 0;
@@ -779,7 +783,10 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
     for (let k = 1; k < spans.length; k++) {
       const a = spans[k - 1];
       const b = spans[k];
-      if (a && b) marks += `<span class="tl-scrub__gap" style="top:${((a.at + a.len + b.at) / 2 * 100).toFixed(2)}%"></span>`;
+      if (!a || !b) continue;
+      // Midway between the year labels either side, not the empty months after the last post.
+      const above = railAt(Math.min(Date.UTC(new Date(a.to).getUTCFullYear() + 1, 0, 1) - 1, a.from));
+      marks += `<span class="tl-scrub__gap" style="top:${((above + b.at) / 2 * 100).toFixed(2)}%"></span>`;
     }
     track.innerHTML = marks;
     track.append(ghost, scrubThumb, bubble);
