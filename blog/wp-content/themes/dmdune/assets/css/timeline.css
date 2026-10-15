@@ -128,6 +128,8 @@
 	.tl-scrub__ghost { border: 2px solid var(--era, var(--dm-accent)); background: var(--dm-bg); opacity: 0; transition: opacity 0.12s; }
 	.tl-scrub__bubble { position: absolute; right: 26px; margin-top: -13px; padding: 5px 9px; border-radius: 8px; background: var(--dm-fg); color: var(--dm-bg); font: 500 11px var(--wp--preset--font-family--mono); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.12s; }
 	.tl-scrub.is-pointing .tl-scrub__ghost, .tl-scrub.is-pointing .tl-scrub__bubble { opacity: 1; }
+	/* The silent years: the chart's // break, turned to run across the rail. */
+	.tl-scrub__gap { position: absolute; right: 5px; width: 8px; height: 5px; margin-top: -2.5px; transform: skewY(-24deg); border-block: 1.5px solid var(--dm-muted); background: var(--dm-bg); pointer-events: none; }
 }
 
 /* The year the reader is in, pinned under the header in the same outlined numerals as the log's

@@ -31,6 +31,7 @@ interface Post {
   m: number;          // 0-11
   d: number;
   date: string;       // YYYY-MM-DD
+  t: number;          // ms, in the site's time zone
 }
 
 type Row =
@@ -71,6 +72,7 @@ function parsePost(r: unknown, tz: number): Post | null {
     id, title: title !== '' ? title : '(untitled)', cat, era, n, locked: locked === 1 || locked === true, thumb, url,
     y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(),
     date: `${String(d.getUTCFullYear())}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`,
+    t: d.getTime(),
   };
 }
 
@@ -207,7 +209,7 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
       if (x) x.textContent = 'wwww '.repeat(59);
       return box.offsetHeight;
     }
-    const sample: Post = { id: 0, title: 'Wwww '.repeat(29), cat: 'blog', era: 'now', n: 9, locked: false, thumb: '', url: '#', y: 2013, m: 0, d: 1, date: '2013-01-01' };
+    const sample: Post = { id: 0, title: 'Wwww '.repeat(29), cat: 'blog', era: 'now', n: 9, locked: false, thumb: '', url: '#', y: 2013, m: 0, d: 1, date: '2013-01-01', t: 0 };
     posts.push(sample);
     const p = posts.length - 1;
     const yhdr = measureHtml({ t: 'yhdr', y: 2013, p, h: 0 });
@@ -703,7 +705,58 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
     scrollToPost(i, window.innerHeight / 2 - postH(i) / 2);
   }
 
-  /* ---------- Scrubber: years spaced by how many posts they hold ---------- */
+  /* ---------- Scrubber: the rail runs on time, newest at the top. A silence of three years or
+     more is cut down to a small // break, as on the charts, so the dot crawls through busy years
+     and hurries through quiet ones. ---------- */
+
+  const GAP = 0.03;
+  const SILENCE = 3 * 365.25 * 864e5;
+  interface Span { from: number; to: number; at: number; len: number }   // from: newest; at, len: rail fractions
+  const spans: Span[] = [];
+  {
+    const runs: [number, number][] = [];
+    let from = post(0).t;
+    let prev = from;
+    for (let i = 1; i < posts.length; i++) {
+      const t = post(i).t;
+      if (prev - t >= SILENCE) { runs.push([from, prev]); from = t; }
+      prev = t;
+    }
+    runs.push([from, prev]);
+    const total = Math.max(1, runs.reduce((sum, [a, b]) => sum + a - b, 0));
+    const room = 1 - GAP * (runs.length - 1);
+    let at = 0;
+    for (const [a, b] of runs) {
+      const len = (a - b) / total * room;
+      spans.push({ from: a, to: b, at, len });
+      at += len + GAP;
+    }
+  }
+  function railAt(t: number): number {
+    for (const sp of spans) {
+      if (t >= sp.to) return sp.from === sp.to ? sp.at : sp.at + (sp.from - Math.min(t, sp.from)) / (sp.from - sp.to) * sp.len;
+    }
+    return 1;
+  }
+  function timeAt(f: number): number {
+    let prev: Span | null = null;
+    for (const sp of spans) {
+      if (f < sp.at) return prev && f - (prev.at + prev.len) < sp.at - f ? prev.to : sp.from;   // in a break: its nearer side
+      if (f <= sp.at + sp.len) return sp.len > 0 ? sp.from - (f - sp.at) / sp.len * (sp.from - sp.to) : sp.from;
+      prev = sp;
+    }
+    return prev ? prev.to : 0;
+  }
+  /** The post nearest in time (posts run newest first). */
+  function postNear(t: number): number {
+    let lo = 0;
+    let hi = posts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (post(mid).t > t) lo = mid + 1; else hi = mid;
+    }
+    return lo > 0 && post(lo - 1).t - t < t - post(lo).t ? lo - 1 : lo;
+  }
 
   function buildScrub(): void {
     let marks = '';
@@ -712,11 +765,17 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
     posts.forEach((p, i) => {
       if (seen.has(p.y)) return;
       seen.add(p.y);
-      // The quiet later years are only a sliver of the rail; label them only where there's room.
-      if (last >= 0 && (i - last) / posts.length < 0.035) return;
-      last = i;
-      marks += `<span class="tl-scrub__y" data-p="${String(i)}" style="top:${(i / posts.length * 100).toFixed(2)}%">'${String(p.y).slice(2)}</span>`;
+      // A year's label sits at its top: New Year's Eve, or the top of its span if that comes sooner.
+      const f = railAt(Date.UTC(p.y + 1, 0, 1) - 1);
+      if (last >= 0 && f - last < 0.025) return;
+      last = f;
+      marks += `<span class="tl-scrub__y" data-p="${String(i)}" style="top:${(f * 100).toFixed(2)}%">'${String(p.y).slice(2)}</span>`;
     });
+    for (let k = 1; k < spans.length; k++) {
+      const a = spans[k - 1];
+      const b = spans[k];
+      if (a && b) marks += `<span class="tl-scrub__gap" style="top:${((a.at + a.len + b.at) / 2 * 100).toFixed(2)}%"></span>`;
+    }
     track.innerHTML = marks;
     track.append(ghost, scrubThumb, bubble);
     ui.appendChild(scrub);
@@ -724,7 +783,7 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
     const pointAt = (e: MouseEvent): number => {
       const b = track.getBoundingClientRect();
       const f = Math.max(0, Math.min(1, (e.clientY - b.top) / b.height));
-      const i = Math.min(posts.length - 1, Math.floor(f * posts.length));
+      const i = postNear(timeAt(f));
       const p = post(i);
       ghost.style.top = bubble.style.top = `${String(f * 100)}%`;
       if (ghost.getAttribute('data-era') !== p.era) ghost.setAttribute('data-era', p.era);
@@ -765,7 +824,7 @@ function run(api: string, feed: HTMLElement, log: HTMLElement, posts: Post[]): v
     flag('is-deep', level !== 4 || window.scrollY + window.innerHeight / 2 > firstRow);
     flag('is-in', level !== 4 || docTop(log) - window.scrollY < window.innerHeight * 0.4);
     flag('is-off', window.scrollY + window.innerHeight < docTop(postLevel() ? log : canvas));
-    scrubThumb.style.top = `${String(i / posts.length * 100)}%`;
+    scrubThumb.style.top = `${String(railAt(p.t) * 100)}%`;
     if (scrubThumb.getAttribute('data-era') !== p.era) scrubThumb.setAttribute('data-era', p.era);
 
     const hb = headerBottom();
