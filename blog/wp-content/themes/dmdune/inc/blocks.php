@@ -436,18 +436,23 @@ function dmdune_render_most_discussed( array $attrs, WP_Block $block ): string {
 
 /**
  * The Featured page's hand-picked posts: eight of those tagged "featured", picked at random on
- * each visit. The tag itself stays out of sight elsewhere (see inc/featured.php).
+ * each visit (the era skins show the same picks). The tag itself stays out of sight elsewhere
+ * (see inc/featured.php).
  */
-function dmdune_render_featured( array $attrs, WP_Block $block ): string {
-	$posts = get_posts(
+function dmdune_featured_picks( int $n = 8 ): array {
+	return get_posts(
 		array(
 			'tag'            => 'featured',
 			'orderby'        => 'rand',
-			'posts_per_page' => 8,
+			'posts_per_page' => $n,
 			'no_found_rows'  => true,
 			'has_password'   => false,
 		)
 	);
+}
+
+function dmdune_render_featured( array $attrs, WP_Block $block ): string {
+	$posts = dmdune_featured_picks();
 	// Two columns of compact transmission-log entries: the same frame, category line, title and
 	// signal line as the home page's rows, without the date rail.
 	$cards = '';

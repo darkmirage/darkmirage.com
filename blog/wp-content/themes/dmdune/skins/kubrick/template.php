@@ -181,7 +181,7 @@ if ( is_singular() ) {
 }
 $main = ob_get_clean();
 
-// Archive and Tags are Dune screens built from blocks; here they are Kubrick's lists again.
+// Archive, Featured and Tags are Dune screens built from blocks; here they are Kubrick's lists again.
 if ( is_page( 'archives' ) ) {
 	$years = '';
 	foreach ( array_reverse( dmdune_month_counts(), true ) as $year => $months ) {
@@ -192,6 +192,20 @@ if ( is_page( 'archives' ) ) {
 		$years .= '<h3>' . (int) $year . '</h3><ul class="kb-links">' . $cells . '</ul>';
 	}
 	$main = '<article class="kb-post kb-post--single"><h1 class="kb-title">Archives by Month</h1><div class="kb-entry kb-archives">' . $years . '</div></article>';
+} elseif ( is_page( 'featured' ) ) {
+	$main = '<h2 class="kb-pagetitle">Featured Entries</h2>';
+	foreach ( dmdune_featured_picks() as $p ) {
+		$main .= dmkb_post( $p, false, $dmkb_v2, $dmkb_d2 );
+	}
+	wp_reset_postdata();
+	$loud = '';
+	foreach ( dmdune_loudest( null, 10 ) as $id ) {
+		$n     = (int) get_post_field( 'comment_count', $id );
+		$loud .= sprintf( '<li><a href="%s">%s</a> (%d)</li>', esc_url( get_permalink( $id ) ), esc_html( wp_strip_all_tags( get_the_title( $id ) ) ), $n );
+	}
+	if ( $loud ) {
+		$main .= '<article class="kb-post kb-post--single"><h2 class="kb-title">Most Discussed</h2><div class="kb-entry"><ol class="kb-links">' . $loud . '</ol></div></article>';
+	}
 } elseif ( is_page( 'tag' ) ) {
 	$main = '<article class="kb-post kb-post--single"><h1 class="kb-title">Taglist</h1><div class="kb-entry kb-tagcloud">' . wp_tag_cloud( array( 'echo' => false, 'number' => 0, 'smallest' => 9, 'largest' => 24, 'unit' => 'px' ) ) . '</div></article>';
 }

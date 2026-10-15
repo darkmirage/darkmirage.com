@@ -223,7 +223,7 @@ if ( is_front_page() || is_home() ) {
 
 $main = ob_get_clean();
 
-// Archive and Tags are Dune screens built from blocks; in Blocks they are the 2008 lists again.
+// Archive, Featured and Tags are Dune screens built from blocks; in Blocks they are the 2008 lists again.
 if ( is_page( 'archives' ) ) {
 	$years = '';
 	foreach ( array_reverse( dmdune_month_counts(), true ) as $year => $months ) {
@@ -234,6 +234,16 @@ if ( is_page( 'archives' ) ) {
 		$years .= '<section class="bk-year"><h2>' . (int) $year . '</h2><ul>' . $cells . '</ul></section>';
 	}
 	$main = '<article class="bk-card bk-card--single"><h1 class="bk-card__title">Archives</h1><div class="bk-years">' . $years . '</div></article>';
+} elseif ( is_page( 'featured' ) ) {
+	$tiles = implode( '', array_map( 'dmbk_short', dmdune_featured_picks() ) );
+	$loud  = '';
+	foreach ( dmdune_loudest( null, 10 ) as $id ) {
+		$n     = (int) get_post_field( 'comment_count', $id );
+		$loud .= sprintf( '<li><a href="%s">%s</a> <span>(%d)</span></li>', esc_url( get_permalink( $id ) ), esc_html( wp_strip_all_tags( get_the_title( $id ) ) ), $n );
+	}
+	$main = '<article class="bk-card bk-card--single"><h1 class="bk-card__title">Featured</h1></article>'
+		. ( $tiles ? '<div class="bk-shorts bk-shorts--wide">' . $tiles . '</div>' : '<div class="bk-card"><p>Nothing picked yet.</p></div>' )
+		. ( $loud ? '<article class="bk-card bk-card--single"><h2 class="bk-card__title">Most Discussed</h2><ol class="bk-loud">' . $loud . '</ol></article>' : '' );
 } elseif ( is_page( 'tag' ) ) {
 	$main = '<article class="bk-card bk-card--single"><h1 class="bk-card__title">Tags</h1><div class="bk-tagcloud">' . wp_tag_cloud( array( 'echo' => false, 'number' => 0, 'smallest' => 9, 'largest' => 26, 'unit' => 'px' ) ) . '</div></article>';
 }

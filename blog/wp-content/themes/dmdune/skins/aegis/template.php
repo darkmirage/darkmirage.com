@@ -184,7 +184,7 @@ if ( is_singular() ) {
 }
 $main = ob_get_clean();
 
-// Archive and Tags are Dune screens built from blocks; here they are plain b2 lists again.
+// Archive, Featured and Tags are Dune screens built from blocks; here they are plain b2 lists again.
 if ( is_page( 'archives' ) ) {
 	$years = '';
 	$counts = dmdune_month_counts();
@@ -198,6 +198,22 @@ if ( is_page( 'archives' ) ) {
 		$years .= '<h2 class="b2-day">' . (int) $year . '</h2><ul class="b2-list">' . $cells . '</ul>';
 	}
 	$main = '<h1 class="b2-pagetitle">archives</h1><div class="b2-content b2-archives">' . $years . '</div>';
+} elseif ( is_page( 'featured' ) ) {
+	// Featured is a Dune screen too: here the picks are b2 stories under their date tabs.
+	$picks = dmdune_featured_picks();
+	usort( $picks, static fn( $a, $b ) => strcmp( $b->post_date, $a->post_date ) );
+	$day     = null;
+	$stories = '';
+	foreach ( $picks as $p ) {
+		$stories .= dmb2_day( $p, $day ) . dmb2_story( $p, 'summary' );
+	}
+	wp_reset_postdata();
+	$loud = '';
+	foreach ( dmdune_loudest( null, 10 ) as $id ) {
+		$n     = (int) get_post_field( 'comment_count', $id );
+		$loud .= sprintf( '<li><a href="%s">%s</a> (%s)</li>', esc_url( get_permalink( $id ) ), esc_html( wp_strip_all_tags( get_the_title( $id ) ) ), esc_html( sprintf( _n( '%s comment', '%s comments', $n, 'dmdune' ), number_format_i18n( $n ) ) ) );
+	}
+	$main = '<h1 class="b2-pagetitle">featured</h1>' . ( $stories ?: '<p class="b2-none">Nothing picked yet.</p>' ) . ( $loud ? '<h2 class="b2-day">most discussed</h2><div class="b2-content"><ol class="b2-list">' . $loud . '</ol></div>' : '' );
 } elseif ( is_page( 'tag' ) ) {
 	$main = '<h1 class="b2-pagetitle">tags</h1><div class="b2-content b2-tagcloud">' . wp_tag_cloud( array( 'echo' => false, 'number' => 0, 'smallest' => 9, 'largest' => 22, 'unit' => 'px' ) ) . '</div>';
 }
