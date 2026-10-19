@@ -1,6 +1,8 @@
 
 
 
+Options -Indexes
+
 # Serve everything over https (certificate renewals still reach /.well-known/ over http).
 <IfModule mod_rewrite.c>
 RewriteEngine On
