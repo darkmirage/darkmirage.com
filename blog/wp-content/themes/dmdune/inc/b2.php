@@ -70,7 +70,7 @@ add_filter(
 			static fn( $m ) => $m[1] . '=' . $m[2] . esc_url( dmdune_b2_url( $m[3] ) ) . $m[2],
 			$content
 		);
-		$author = get_post_meta( $post->ID, '_dm_b2_author', true );
+		$author = post_password_required( $post ) ? '' : get_post_meta( $post->ID, '_dm_b2_author', true );
 		if ( $author ) {
 			$content = sprintf( '<p class="dm-guest">%s</p>', sprintf( esc_html__( 'Guest post by %s', 'dmdune' ), '<b>' . esc_html( $author ) . '</b>' ) ) . $content;
 		}

@@ -42,7 +42,8 @@ function dmb2_story( WP_Post $post, string $mode ): string {
 	$cats   = get_the_category( $post->ID );
 	$cat    = $cats ? '<a class="b2-cat" href="' . esc_url( get_category_link( $cats[0] ) ) . '">[' . esc_html( $cats[0]->name ) . ']</a>' : '';
 	// Friends posted under their own names; the importer kept them in _dm_b2_author.
-	$author = get_post_meta( $post->ID, '_dm_b2_author', true ) ?: ( get_the_author_meta( 'display_name', (int) $post->post_author ) ?: 'DarkMirage' );
+	$guest  = post_password_required( $post ) ? '' : get_post_meta( $post->ID, '_dm_b2_author', true );
+	$author = $guest ?: ( get_the_author_meta( 'display_name', (int) $post->post_author ) ?: 'DarkMirage' );
 	$title  = wp_strip_all_tags( get_the_title( $post ) );
 	$head   = 'single' === $mode
 		? '<h1 class="b2-title">' . esc_html( $title ) . '</h1>'

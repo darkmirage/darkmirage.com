@@ -6,6 +6,14 @@
 #    </Files>
  ###HGDENY### 
 
+# No folder listings anywhere in the account (uploads/ listed every year's files).
+Options -Indexes
+
+# Pingbacks and remote publishing aren't used; xmlrpc.php is mostly a target for password guessing.
+<Files xmlrpc.php>
+	Require all denied
+</Files>
+
 # Serve everything over https (certificate renewals still reach /.well-known/ over http).
 <IfModule mod_rewrite.c>
 RewriteEngine On

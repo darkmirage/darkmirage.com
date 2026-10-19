@@ -82,7 +82,7 @@ function dmdune_timeline_rows(): array {
 		$rows[] = array(
 			$post->ID,
 			$ts,
-			html_entity_decode( wp_strip_all_tags( get_the_title( $post ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
+			$locked && get_post_meta( $post->ID, '_dm_b2_hide_title', true ) ? __( 'Locked post', 'dmdune' ) : html_entity_decode( wp_strip_all_tags( get_the_title( $post ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
 			$cat ? $cat->slug : '',
 			dmdune_era( (int) wp_date( 'Y', $ts ), (int) wp_date( 'n', $ts ) ),
 			(int) $post->comment_count,

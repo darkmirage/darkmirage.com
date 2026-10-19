@@ -192,7 +192,7 @@ function dmdune_year_counts_for( string $kind, $value ): array {
 			(int) $value
 		) );
 	} else {
-		$ids  = get_posts( array( 's' => (string) $value, 'posts_per_page' => -1, 'fields' => 'ids', 'no_found_rows' => true ) );
+		$ids  = get_posts( array( 's' => (string) $value, 'posts_per_page' => -1, 'fields' => 'ids', 'no_found_rows' => true, 'has_password' => false ) );
 		$rows = array();
 		foreach ( $ids as $id ) {
 			$y          = (int) get_the_date( 'Y', $id );
@@ -204,7 +204,10 @@ function dmdune_year_counts_for( string $kind, $value ): array {
 	foreach ( $rows as $r ) {
 		$counts[ (int) $r->y ] = (int) $r->n;
 	}
-	set_transient( $key, $counts, DAY_IN_SECONDS );
+	// Searches are visitor-chosen, so a transient per search would let anyone fill wp_options.
+	if ( 'term' === $kind ) {
+		set_transient( $key, $counts, DAY_IN_SECONDS );
+	}
 	return $counts;
 }
 

@@ -121,7 +121,7 @@ if ( is_singular() ) {
 		<?php endif; ?>
 	</article>
 	<?php
-	if ( comments_open() || get_comments_number() ) {
+	if ( ! post_password_required( $post ) && ( comments_open() || get_comments_number() ) ) {
 		$comments = get_comments( array( 'post_id' => $post->ID, 'status' => 'approve', 'order' => 'ASC' ) );
 		$total    = count( $comments );
 		$per      = (int) get_option( 'comments_per_page' );
@@ -235,7 +235,8 @@ $side[] = array( 'Archives', '<ul class="kb-links">' . $years . '</ul>', '', $co
 if ( $dmkb_d2 ) {
 	// Comments on locked posts stay out, like the posts' own text.
 	// The newest comments as the sidebar showed them in 2006: none from after the era.
-	$recent = get_comments( array( 'number' => 5, 'status' => 'approve', 'type' => 'comment', 'post_status' => 'publish', 'has_password' => false, 'date_query' => array( array( 'before' => '2006-09-18 21:00:00', 'inclusive' => false ) ) ) );
+	$recent = get_comments( array( 'number' => 40, 'status' => 'approve', 'type' => 'comment', 'post_status' => 'publish', 'date_query' => array( array( 'before' => '2006-09-18 21:00:00', 'inclusive' => false ) ) ) );
+	$recent = array_slice( array_filter( $recent, static fn( $rc ) => '' === get_post( $rc->comment_post_ID )->post_password ), 0, 5 );
 	$html   = '';
 	foreach ( $recent as $rc ) {
 		$html .= sprintf( '<li><a href="%1$s">%2$s</a>: %3$s</li>', esc_url( get_comment_link( $rc ) ), esc_html( get_comment_author( $rc ) ), esc_html( dmc_summary( $rc->comment_content, 90 ) ) );

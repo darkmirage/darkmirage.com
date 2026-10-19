@@ -21,15 +21,22 @@
 RewriteCond %{REQUEST_URI} !^/\.well-known/
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
+  # Image processor security is off (see below), and Zenphoto's sanitize_path keeps a leading "..",
+  # so refuse i.php requests that try to climb out of albums/.
+  RewriteCond %{QUERY_STRING} (^|&)(a|i)=[^&]*(\.\.|%2e%2e|\.%2e|%2e\.) [NC]
+  RewriteRule ^zp-core/i\.php$ - [F,L]
+
   # --- Legacy Zenphoto 1.2 URLs ---
-  # Resized image: /<album>/image/<400|800|thumb>/<file>
-  RewriteRule ^(.+)/image/(thumb|[0-9]+)/([^/]+)$   zp-core/i.php?a=$1&i=$3&s=$2 [L,QSA]
+  # Only the sizes the blog's posts use (checked 2026-10-19), and no extra query parameters, so these
+  # rules can't be used to make i.php render endless new sizes into cache/.
+  # Resized image: /<album>/image/<400|450|800|thumb>/<file>
+  RewriteRule ^(.+)/image/(thumb|400|450|800)/([^/]+)$   zp-core/i.php?a=$1&i=$3&s=$2 [L]
   # Full-size image: /<album>/image/<file>
   RewriteRule ^(.+)/image/([^/]+)$                  albums/$1/$2 [L]
   # Cached resize hot-linked by posts: /cache/<album>/<file>_<size>.jpg. Serve the cached file if it
   # exists, otherwise let i.php make it (it writes the same cache path).
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteRule ^cache/(.+)/([^/]+\.(?:jpe?g|png|gif))_([0-9]+)\.(?:jpe?g|png|gif)$   zp-core/i.php?a=$1&i=$2&s=$3 [L,QSA,NC]
+  RewriteRule ^cache/(.+)/([^/]+\.(?:jpe?g|png|gif))_(400)\.(?:jpe?g|png|gif)$   zp-core/i.php?a=$1&i=$2&s=$3 [L,NC]
   # --- End legacy ---
 
   RewriteCond %{REQUEST_URI} !(/$|\.)

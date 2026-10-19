@@ -161,7 +161,7 @@ if ( is_front_page() || is_home() ) {
 			echo '<section class="bk-section"><h2 class="bk-label bk-label--plain">Related entries</h2><div class="bk-shorts">' . implode( '', array_map( 'dmbk_short', $related ) ) . '</div></section>'; // phpcs:ignore
 		}
 	}
-	if ( comments_open() || get_comments_number() ) {
+	if ( ! post_password_required( $post ) && ( comments_open() || get_comments_number() ) ) {
 		$comments = get_comments( array( 'post_id' => $post->ID, 'status' => 'approve', 'order' => 'ASC' ) );
 		echo '<section class="bk-comments" id="comments"><h2 class="bk-label bk-label--plain">Comments <span>' . (int) count( $comments ) . '</span></h2>'; // phpcs:ignore
 		$per   = (int) get_option( 'comments_per_page' );
