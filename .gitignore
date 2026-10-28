@@ -61,6 +61,8 @@ php.ini.bak.migration
 /blog/wp-content/themes/*
 # ...except the site's own theme, which lives here (code GPL-2.0-or-later, brand art all rights reserved).
 !/blog/wp-content/themes/dmdune/
+# So Raven's theme (soraven.com, site 2 of the network), same licensing split.
+!/blog/wp-content/themes/soraven/
 /blog/wp-content/plugins/
 /gallery/albums/
 # Lyric text + cover art: content managed on the server (metadata lives in MySQL)

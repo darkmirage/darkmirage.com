@@ -1,0 +1,425 @@
+/* So Raven. Colours are sampled from the skyline and raven art so the banner melts into the page; one serif,
+   Newsreader, set at text optical size for reading and display size for titles. */
+
+@font-face {
+	font-family: "Newsreader";
+	src: url("../fonts/newsreader-latin-opsz-normal.woff2") format("woff2");
+	font-weight: 200 800;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Newsreader";
+	src: url("../fonts/newsreader-latin-opsz-italic.woff2") format("woff2");
+	font-weight: 200 800;
+	font-style: italic;
+	font-display: swap;
+}
+
+:root {
+	--paper: #dfd6c5;
+	--leaf: #f2ede3;
+	--water: #b8beb5;
+	--ink: #1e212f;
+	--ink-soft: #565866;
+	--ink-faint: #7d7c80;
+	--rule: #c4b9a5;
+	--vermilion: #c9482e;
+	--mustard: #d9a23a;
+	--teal: #2f7b6c;
+	--navy: #1e212f;
+	--bay: #8fa3a8;
+	--accent: #b23e26;
+	--serif: "Newsreader", Charter, "Iowan Old Style", Georgia, serif;
+	--measure: 36rem;
+	--wide: 72rem;
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--paper: #1c1f2c;
+		--leaf: #232737;
+		/* The skyline's water at the brightness(0.82) it gets below, so the banner has no seam. */
+		--water: #979c94;
+		--ink: #e6dfd0;
+		--ink-soft: #b2ab9c;
+		--ink-faint: #8a8579;
+		--rule: #3a3e50;
+		--accent: #ee8f6c;
+		color-scheme: dark;
+	}
+	/* The illustration is drawn on paper; dim it a little so it doesn't glare against the night page. */
+	.skyline, .brand-mark { filter: brightness(0.82); }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+	margin: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--serif);
+	font-size: 1.1875rem;
+	line-height: 1.6;
+	font-optical-sizing: auto;
+	font-kerning: normal;
+	font-variant-ligatures: common-ligatures;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+@media (min-width: 48rem) {
+	body { font-size: 1.25rem; }
+}
+
+a { color: inherit; text-decoration: none; }
+.entry-content a, .comment-text a, .site-footer a, .comment-notes a, .logged-in-as a {
+	color: var(--accent);
+	text-decoration: underline;
+	text-decoration-thickness: 0.06em;
+	text-underline-offset: 0.2em;
+	text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.entry-content a:hover, .comment-text a:hover, .site-footer a:hover, .comment-notes a:hover, .logged-in-as a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--mustard); outline-offset: 3px; }
+
+img, video, iframe { max-width: 100%; }
+img { height: auto; }
+
+.skip-link { position: absolute; left: -9999px; }
+.skip-link:focus { left: 16px; top: 16px; z-index: 10; background: var(--leaf); padding: 8px 12px; }
+
+.screen-reader-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Small capitals for labels: tracked, a touch smaller than the text around them. */
+.post-meta, .post-nav-label, .comments-title, .comment-reply-title, .listing-title, .comment-origin, .footer-line, .pagination {
+	font-size: 0.72rem;
+	font-weight: 500;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	font-variant-numeric: lining-nums;
+}
+
+/* Masthead: the skyline across the page, the raven on the shoreline, the name set like a title page. */
+
+.site-header { background: var(--water); text-align: center; }
+
+.skyline {
+	display: block;
+	width: 100%;
+	height: clamp(110px, 24vw, 400px);
+	object-fit: cover;
+	object-position: 50% 100%;
+}
+
+.masthead { padding: 0 16px 1.6rem; }
+
+.brand { display: inline-flex; flex-direction: column; align-items: center; color: var(--navy); }
+
+.brand-mark {
+	width: 72px;
+	height: 72px;
+	margin-top: -36px;
+	border-radius: 50%;
+	box-shadow: 0 0 0 3px var(--water);
+}
+
+.brand-name {
+	margin-top: 0.5rem;
+	font-size: clamp(1.9rem, 4vw, 2.5rem);
+	font-weight: 400;
+	font-style: italic;
+	line-height: 1;
+	letter-spacing: -0.01em;
+	font-variation-settings: "opsz" 72;
+}
+
+.tagline { margin: 0.5rem 0 0; font-size: 1rem; font-style: italic; color: var(--navy); }
+
+/* Listing: the lead essay across the page, then rows of three under hairline rules. */
+
+.listing { max-width: var(--wide); margin: 0 auto; padding: 3.5rem 16px 1rem; }
+
+.listing-title { margin: 0 0 2.5rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--rule); color: var(--ink-soft); }
+
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+	gap: 3rem 2.5rem;
+}
+
+.card { border-top: 1px solid var(--ink); padding-top: 1.1rem; }
+
+.card-link { display: block; }
+
+.card-image, .card-field {
+	display: block;
+	width: 100%;
+	aspect-ratio: 3 / 2;
+	object-fit: cover;
+	border-radius: 1px;
+	transition: opacity 0.2s ease;
+}
+
+.card-link:hover .card-image, .card-link:hover .card-field { opacity: 0.88; }
+
+.card-field { display: grid; place-items: center; }
+.card-field span {
+	font-size: 3.2rem;
+	font-style: italic;
+	font-weight: 300;
+	font-variation-settings: "opsz" 72;
+	font-variant-numeric: oldstyle-nums;
+	opacity: 0.85;
+}
+.card-field--vermilion { background: var(--vermilion); color: #f2ede3; }
+.card-field--navy { background: var(--navy); color: var(--mustard); }
+.card-field--teal { background: var(--teal); color: #f2ede3; }
+.card-field--mustard { background: var(--mustard); color: var(--navy); }
+.card-field--bay { background: var(--bay); color: var(--navy); }
+
+@media (prefers-color-scheme: dark) {
+	.card-field--navy { background: #11131b; }
+}
+
+.card-body { padding-top: 1rem; }
+
+.card .post-meta { margin: 0 0 0.45rem; color: var(--ink-faint); }
+
+.card-title {
+	margin: 0 0 0.5rem;
+	font-size: 1.45rem;
+	font-weight: 500;
+	line-height: 1.18;
+	letter-spacing: -0.005em;
+	font-variation-settings: "opsz" 48;
+	text-wrap: balance;
+	transition: color 0.2s ease;
+}
+
+.card-link:hover .card-title { color: var(--accent); }
+
+.card-excerpt { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--ink-soft); text-wrap: pretty; }
+
+@media (min-width: 60rem) {
+	.card--lead { grid-column: 1 / -1; padding-top: 1.4rem; border-top-width: 2px; }
+	.card--lead .card-link { display: grid; grid-template-columns: 3fr 2fr; gap: 2.5rem; align-items: center; }
+	.card--lead .card-body { padding: 0; }
+	.card--lead .card-title { font-size: 2.6rem; line-height: 1.08; font-weight: 400; letter-spacing: -0.015em; font-variation-settings: "opsz" 72; }
+	.card--lead .card-excerpt { font-size: 1.15rem; line-height: 1.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.card-image, .card-field, .card-title { transition: none; }
+}
+
+.listing-empty { font-style: italic; }
+
+.pagination { margin: 4rem 0 0; }
+.pagination .nav-links { display: flex; gap: 1.4rem; justify-content: center; align-items: baseline; }
+.pagination .page-numbers { color: var(--ink-soft); }
+.pagination a.page-numbers:hover { color: var(--accent); }
+.pagination .page-numbers.current { color: var(--ink); border-bottom: 1px solid var(--ink); }
+
+/* An essay */
+
+.entry, .post-nav, .comments { max-width: calc(var(--measure) + 32px); margin: 0 auto; padding: 0 16px; }
+
+.entry { padding-top: 4rem; }
+
+.entry-header { margin-bottom: 3rem; text-align: center; }
+
+.entry-title {
+	margin: 0 auto 1rem;
+	max-width: 15em;
+	font-size: clamp(2.2rem, 6vw, 3.4rem);
+	font-weight: 400;
+	line-height: 1.06;
+	letter-spacing: -0.02em;
+	font-variation-settings: "opsz" 72;
+	text-wrap: balance;
+}
+
+.entry-subtitle { margin: 0 auto 1.4rem; max-width: 28em; font-size: 1.2rem; font-style: italic; line-height: 1.45; color: var(--ink-soft); text-wrap: balance; }
+
+.entry-header .post-meta { margin: 0; color: var(--ink-faint); }
+.entry-header .byline { color: var(--ink); }
+
+.entry-content {
+	hyphens: auto;
+	-webkit-hyphens: auto;
+	hanging-punctuation: first;
+	font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+.entry-content p, .entry-content li { text-wrap: pretty; }
+.entry-content > * { margin: 0; }
+.entry-content > * + * { margin-top: 1.1em; }
+/* Book setting: running paragraphs are indented rather than spaced. */
+.entry-content > p + p { margin-top: 0; text-indent: 1.4em; }
+
+/* A two-line drop cap on the first paragraph of the essay. */
+.entry-content > p:first-of-type::first-letter {
+	float: left;
+	margin: 0.08em 0.08em 0 0;
+	font-size: 3.4em;
+	line-height: 0.82;
+	font-weight: 400;
+	font-variation-settings: "opsz" 72;
+	color: var(--accent);
+}
+
+.entry-content h2 {
+	margin-top: 2.4em;
+	font-size: 1.45rem;
+	font-weight: 500;
+	line-height: 1.25;
+	font-variation-settings: "opsz" 48;
+	text-wrap: balance;
+}
+
+.entry-content h3 {
+	margin-top: 2em;
+	font-size: 1.05rem;
+	font-weight: 600;
+	font-style: italic;
+	line-height: 1.35;
+}
+
+.entry-content h2 + *, .entry-content h3 + * { margin-top: 0.6em; }
+
+.entry-content blockquote { margin-left: 1.5em; margin-right: 1.5em; font-style: italic; color: var(--ink-soft); }
+
+.entry-content blockquote.pullquote {
+	margin: 2em 0;
+	padding: 1.1em 0;
+	border-top: 1px solid var(--rule);
+	border-bottom: 1px solid var(--rule);
+	font-size: 1.5rem;
+	line-height: 1.35;
+	text-align: center;
+	color: var(--ink);
+	font-variation-settings: "opsz" 48;
+	text-wrap: balance;
+}
+
+.entry-content figure { margin-top: 2.2em; margin-bottom: 2.2em; }
+.entry-content figure + * { margin-top: 0; }
+.entry-content figure img { display: block; margin: 0 auto; }
+.entry-content figure.wide { margin-left: calc(50% - min(50vw, 30rem)); margin-right: calc(50% - min(50vw, 30rem)); }
+.entry-content figcaption { margin-top: 0.7em; font-size: 0.85rem; font-style: italic; line-height: 1.4; color: var(--ink-faint); text-align: center; }
+
+.entry-content iframe { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border: 0; }
+
+.entry-content hr { height: auto; margin: 2.6em 0; border: 0; text-align: center; }
+.entry-content hr::before { content: "⁂"; font-size: 1.1rem; color: var(--accent); }
+
+.entry-content code { font-size: 0.82em; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+.entry-content ol, .entry-content ul { padding-left: 1.3em; }
+.entry-content li + li { margin-top: 0.35em; }
+.entry-content li::marker { color: var(--ink-faint); }
+
+.colophon { margin: 3.5rem 0 0; text-align: center; }
+.colophon img { width: 36px; height: 36px; border-radius: 50%; opacity: 0.9; }
+
+.post-nav {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2rem;
+	margin-top: 3rem;
+	padding-top: 1.4rem;
+	/* A rule as wide as the text column, not the padded box. */
+	background: linear-gradient(var(--rule), var(--rule)) 16px 0 / calc(100% - 32px) 1px no-repeat;
+	line-height: 1.3;
+}
+.post-nav-label { display: block; margin-bottom: 0.35rem; color: var(--ink-faint); }
+.post-nav a { font-size: 1.05rem; font-style: italic; }
+.post-nav a:hover { color: var(--accent); }
+.post-nav-next { grid-column: 2; text-align: right; }
+
+/* Responses */
+
+.comments { margin-top: 4rem; padding-bottom: 1rem; }
+
+.comments-title, .comment-reply-title { margin: 0 0 1.6rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--ink); }
+
+.comment-list, .comment-list .children { list-style: none; margin: 0; padding: 0; }
+.comment-list .children { margin-left: 1.6rem; padding-left: 1.2rem; border-left: 1px solid var(--rule); }
+
+.comment-body { padding: 1.1rem 0 1.2rem; border-bottom: 1px solid var(--rule); }
+.comment-list .children .comment-body { border-bottom: 0; padding-bottom: 0.4rem; }
+
+.comment-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.7rem; }
+.comment-author { font-weight: 600; font-size: 1rem; }
+.comment-author a:hover { color: var(--accent); }
+.comment-date { font-size: 0.9rem; font-style: italic; color: var(--ink-faint); }
+.comment-date:hover { color: var(--accent); }
+.comment-origin { font-size: 0.62rem; color: var(--teal); }
+.bypostauthor > .comment-body .comment-author::after { content: " ✶"; color: var(--accent); font-weight: 400; }
+
+@media (prefers-color-scheme: dark) {
+	.comment-origin { color: #7cc1b1; }
+}
+
+.comment-text { font-size: 1.05rem; line-height: 1.55; hyphens: auto; -webkit-hyphens: auto; }
+.comment-text p { margin: 0.55em 0 0; text-wrap: pretty; }
+
+.comment-reply { margin: 0.5rem 0 0; font-size: 0.9rem; font-style: italic; }
+.comment-reply a { color: var(--ink-faint); }
+.comment-reply a:hover { color: var(--accent); }
+
+.comment-respond { margin-top: 3rem; }
+.comment-notes, .logged-in-as { font-size: 0.95rem; font-style: italic; color: var(--ink-soft); }
+.comment-form p { margin: 0 0 1rem; }
+.comment-form label { display: block; margin-bottom: 0.3rem; font-size: 0.95rem; font-style: italic; color: var(--ink-soft); }
+.comment-form input[type="text"], .comment-form input[type="email"], .comment-form input[type="url"], .comment-form textarea, .search-form input[type="search"] {
+	width: 100%;
+	padding: 0.6rem 0.75rem;
+	font: inherit;
+	font-size: 1rem;
+	color: var(--ink);
+	background: var(--leaf);
+	border: 1px solid var(--rule);
+	border-radius: 2px;
+}
+.comment-form input:focus, .comment-form textarea:focus, .search-form input:focus { border-color: var(--ink-soft); outline: 0; }
+.comment-form .comment-form-cookies-consent { display: flex; gap: 0.6rem; align-items: baseline; }
+.comment-form .comment-form-cookies-consent label { display: inline; }
+
+.comment-form input[type="submit"], .search-form input[type="submit"] {
+	padding: 0.65rem 1.3rem;
+	font: inherit;
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--paper);
+	background: var(--ink);
+	border: 0;
+	border-radius: 2px;
+	cursor: pointer;
+}
+.comment-form input[type="submit"]:hover, .search-form input[type="submit"]:hover { background: var(--accent); }
+
+/* Footer */
+
+.site-footer {
+	max-width: var(--wide);
+	margin: 5rem auto 0;
+	padding: 2.4rem 16px 3rem;
+	border-top: 1px solid var(--rule);
+	text-align: center;
+	color: var(--ink-faint);
+}
+
+.footer-line { margin: 1.6rem 0 0; }
+.footer-line .sep { margin: 0 0.4em; }
+.site-footer a { color: var(--ink-soft); text-decoration-color: var(--rule); }
+
+.search-form { display: flex; gap: 0.5rem; max-width: 24rem; margin: 0 auto; }
+.search-form label { flex: 1; }
