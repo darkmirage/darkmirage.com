@@ -1,7 +1,7 @@
 <?php
 /**
- * Old addresses. Posts keep their Medium slugs (/<title>-<id>/), so most links already work; these cover the rest:
- * Medium's short /p/<id> links, Medium slugs whose title part changed, and /yyyy/mm/dd/<slug>/ links from
+ * Old addresses. Posts live at /<title>/; these send the addresses they had before there: Medium's /<title>-<id>/
+ * (whatever the title part says), its short /p/<id> and /@darkmirage/ links, and /yyyy/mm/dd/<slug>/ links from
  * soraven.com's WordPress years before Medium.
  *
  * @package soraven
@@ -33,7 +33,7 @@ function soraven_post_by_medium_id( $medium_id ) {
 }
 
 /**
- * Post whose slug, without the Medium id and hyphens, matches an old WordPress slug.
+ * Post whose slug, without hyphens (and any Medium id), matches an old WordPress slug.
  *
  * @param string $old_slug Slug from a /yyyy/mm/dd/<slug>/ address.
  * @return int Post ID, or 0.
