@@ -259,8 +259,6 @@ img { height: auto; }
 .entry-content p, .entry-content li { text-wrap: pretty; }
 .entry-content > * { margin: 0; }
 .entry-content > * + * { margin-top: 1.1em; }
-/* Book setting: running paragraphs are indented rather than spaced. */
-.entry-content > p + p { margin-top: 0; text-indent: 1.4em; }
 
 /* A two-line drop cap on the first paragraph of the essay. */
 .entry-content > p:first-of-type::first-letter {

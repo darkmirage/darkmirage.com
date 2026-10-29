@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SORAVEN_VERSION', '1.1.0' );
+define( 'SORAVEN_VERSION', '1.1.1' );
 // One author on this site; the network account's display name belongs to darkmirage.com.
 define( 'SORAVEN_BYLINE', 'Raven Jiang' );
 
