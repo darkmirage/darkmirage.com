@@ -31,6 +31,8 @@ RewriteCond %{REQUEST_URI} !^/\.well-known/
   # rules can't be used to make i.php render endless new sizes into cache/.
   # Resized image: /<album>/image/<400|450|800|thumb>/<file>
   RewriteRule ^(.+)/image/(thumb|400|450|800)/([^/]+)$   zp-core/i.php?a=$1&i=$3&s=$2 [L]
+  # Image page with 1.2's ".php" suffix (228 such links 404ed in Search Console, 2026-10-30): /<album>/<file>.php
+  RewriteRule ^(.+\.(?:jpe?g|png|gif))\.php$          /$1 [R=301,L,NC]
   # Full-size image: /<album>/image/<file>
   RewriteRule ^(.+)/image/([^/]+)$                  albums/$1/$2 [L]
   # Cached resize hot-linked by posts: /cache/<album>/<file>_<size>.jpg. Serve the cached file if it

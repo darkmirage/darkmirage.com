@@ -13,12 +13,17 @@ defined( 'ABSPATH' ) || exit;
 remove_action( 'wp_head', 'rel_canonical' );
 
 /**
- * Date archives repeat the posts and the archive page; keep them out of the index but crawlable.
+ * Pages kept out of the index but crawlable: date archives repeat the posts, most of the ~1,000 tags hold
+ * a post or two (Search Console filed them as duplicates), and a locked post shows only its password form.
  */
+function dmdune_noindex(): bool {
+	return is_date() || is_author() || is_404() || is_tag() || ( is_singular() && post_password_required() );
+}
+
 add_filter(
 	'wp_robots',
 	static function ( array $robots ): array {
-		if ( is_date() || is_author() || is_404() ) {
+		if ( dmdune_noindex() ) {
 			$robots['noindex'] = true;
 			$robots['follow']  = true;
 		}
@@ -126,7 +131,7 @@ add_action(
 		$m = dmdune_meta_fields();
 		// WordPress prints its own robots tag; only search results need ours, and only in dmc_meta's
 		// sense of "skip the canonical".
-		if ( ! empty( $m['robots'] ) ) {
+		if ( ! empty( $m['robots'] ) || dmdune_noindex() ) {
 			unset( $m['robots'] );
 			$m['url'] = null;
 		}
