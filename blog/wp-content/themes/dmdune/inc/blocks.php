@@ -305,8 +305,10 @@ function dmdune_render_hero( array $attrs, WP_Block $block ): string {
 	foreach ( array( 'day', 'night' ) as $mode ) {
 		$k        = $layout[ "kiro-$mode" ];
 		$priority = 'day' === $mode ? 'fetchpriority="high"' : 'loading="lazy"';
+		// Phones show the art at ~540 CSS px, which would pick the 296 KB 1536w file at 2x-3x. Understating
+		// the size sends them the 41 KB 960w one instead: slightly softer, but it is the mobile LCP image.
 		$layers  .= sprintf(
-			'<img class="dm-hero__scene is-%1$s" src="%2$sscene-%1$s-1536.webp?v=%6$s" srcset="%2$sscene-%1$s-960.webp?v=%6$s 960w, %2$sscene-%1$s-1536.webp?v=%6$s 1536w" sizes="(max-width: 1180px) 120vw, 1180px" width="%3$d" height="%4$d" alt="" %5$s decoding="async">',
+			'<img class="dm-hero__scene is-%1$s" src="%2$sscene-%1$s-1536.webp?v=%6$s" srcset="%2$sscene-%1$s-960.webp?v=%6$s 960w, %2$sscene-%1$s-1536.webp?v=%6$s 1536w" sizes="(max-width: 700px) 320px, (max-width: 1180px) 120vw, 1180px" width="%3$d" height="%4$d" alt="" %5$s decoding="async">',
 			$mode,
 			esc_url( $base ),
 			$w,
