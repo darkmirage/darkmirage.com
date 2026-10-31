@@ -1,3 +1,46 @@
+# BEGIN LSCACHE
+## LITESPEED WP CACHE PLUGIN - Do not edit the contents of this block! ##
+<IfModule mod_rewrite.c>
+RewriteEngine on
+RewriteRule litespeed/debug/.*\.log$ - [F,L]
+RewriteRule (^|/)\.litespeed_conf\. - [F,L]
+</IfModule>
+<IfModule LiteSpeed>
+CacheLookup on
+RewriteRule .* - [E=Cache-Control:no-autoflush]
+
+### marker ASYNC start ###
+RewriteCond %{REQUEST_URI} /wp-admin/admin-ajax\.php
+RewriteCond %{QUERY_STRING} action=async_litespeed
+RewriteRule .* - [E=noabort:1]
+### marker ASYNC end ###
+
+### marker REST AUTH start ###
+RewriteCond %{HTTP:Authorization} !^$
+RewriteCond %{REQUEST_URI} /wp\-json(?:/|$) [OR]
+RewriteCond %{QUERY_STRING} (^|&)rest_route=
+RewriteRule .* - [E=Cache-Control:no-cache]
+### marker REST AUTH end ###
+
+### marker POSTPASS start ###
+RewriteCond %{HTTP_COOKIE} (^|;\s*)wp-postpass_753acdb9853338aeaa552b10eec1777d=
+RewriteRule .* - [E=Cache-Control:no-cache]
+### marker POSTPASS end ###
+
+### marker DROPQS start ###
+CacheKeyModify -qs:fbclid
+CacheKeyModify -qs:gclid
+CacheKeyModify -qs:utm*
+CacheKeyModify -qs:_ga
+### marker DROPQS end ###
+
+</IfModule>
+## LITESPEED WP CACHE PLUGIN - Do not edit the contents of this block! ##
+# END LSCACHE
+# BEGIN NON_LSCACHE
+## LITESPEED WP CACHE PLUGIN - Do not edit the contents of this block! ##
+## LITESPEED WP CACHE PLUGIN - Do not edit the contents of this block! ##
+# END NON_LSCACHE
 ###HGDENY###
 #    <Files index.php>
 #     order deny,allow
