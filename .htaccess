@@ -17,6 +17,10 @@ Options -Indexes
 # Serve everything over https (certificate renewals still reach /.well-known/ over http).
 <IfModule mod_rewrite.c>
 RewriteEngine On
+# Multisite knows site 1 only as www.darkmirage.com and sends the bare domain to wp-signup.php.
+RewriteCond %{HTTP_HOST} ^darkmirage\.com$ [NC]
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteRule ^ https://www.darkmirage.com%{REQUEST_URI} [R=301,L]
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteCond %{ENV:REDIRECT_STATUS} ^$
